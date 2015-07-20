@@ -4,7 +4,7 @@ include ../Makefile.mk
 
 CFLAGS  += -I./
 CFLAGS  += -I../gui
-CFLAGS  += -I../digitizer/CAEN5740 
+CFLAGS  += -I../digitizer/CAEN5740 -I../digitizer/SIM
 
 SRCCPP  := ABuildEvent.cpp ADataSave.cpp AEvent.cpp AManager.cpp ATrack.cpp ARingBuffer.cpp AHelp.cpp ControlAcq.cpp Digitizer.cpp OnlineServer.cpp main.cpp 
 

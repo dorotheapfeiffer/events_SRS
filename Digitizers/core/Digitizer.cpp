@@ -10,6 +10,7 @@
 
 #include "Digitizer.h"
 #include "CAEN5740.h"
+#include "SimCard.h"
 
 using namespace std;
 
@@ -24,7 +25,7 @@ Digitizer* Digitizer::Factory(const string& type) throw(Digitizer::BadDigitizerC
  //if(type == "M2i")           { return new SpectrumM2i(); }
  //if(type == "SPD214")        { return new SPD214();      }
  //if(type == "SPD412")        { return new SPD412();      }
- //if(type == "SIM")           { return new SimCard();     } 
+   if(type == "SIM")           { return new SimCard();     } 
    if(type == "CAEN5740")      { return new CAEN5740();     } 
  throw BadDigitizerCreation(type);
 }

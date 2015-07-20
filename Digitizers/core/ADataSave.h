@@ -24,7 +24,7 @@ private:
 	ARingBuffer	aRingBuffer;		// the buffer to store the data
 	TThread		aThread;		// separate thread
 
-	static void*	ThreadFunc(void*);	// fuction running in separate thread doing the all the job
+	static void*	ThreadFunc(void*);	// fuction running in separate thread doing all the job
 
 	AManager*	aManager;
 
@@ -39,9 +39,9 @@ private:
         ADataSave( const ADataSave& );		// Disable copy constructor
         ADataSave operator=( ADataSave );	// Disable =Operator
 public:
-        ADataSave();				// default contructor
-        ADataSave(bool);
-	virtual	~ADataSave();
+        ADataSave();				// default contructor needed by ROOT
+        ADataSave(bool);			// constructor
+	virtual	~ADataSave();			// destructor
 
 	void 		 SaveInBuffer(AEvent *);
 	void		 OpenNewFile();

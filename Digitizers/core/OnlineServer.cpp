@@ -25,15 +25,26 @@ extern Int_t gDEBUG_ONLINE;
 
 //===============================================================================
 OnlineServer::OnlineServer() {
+
+   #ifdef DEBUG
+      if(gDEBUG_ONLINE  > 0)   TThread::Printf( "\t\t\tDEBUG [OnlineServer::OnlineServer] Create DEFAULT OnlineServer");
+   #endif
+}
+
+//===============================================================================
+OnlineServer::OnlineServer(Int_t socket) : 
+	aRun(kFALSE), 
+	aRingBuffer(100), 
+	aThread("aThread", 
+	ThreadFunc, this ), 
+	aManager(&AManager::GetInstance()), 
+	aEmptyBuffer(kFALSE),
+	aSocket(socket) 
+{
    #ifdef DEBUG
       if(gDEBUG_ONLINE  > 0)   TThread::Printf( "\t\t\tDEBUG [OnlineServer::OnlineServer] Create OnlineServer");
    #endif
 
-  aManager = &AManager::GetInstance();
-  //aRingBuffer = aManager->GetOnlineBuffer();
-  aThread = 0;
-  aRun = kFALSE;
- 
 }
 
 //===============================================================================
@@ -83,6 +94,7 @@ void OnlineServer::DeleteOnlineServer(){
 }
 
 //===============================================================================
+/*
 void OnlineServer::Run(){
    #ifdef DEBUG
      if(gDEBUG_ONLINE > 0) TThread::Printf( "\t\t\tDEBUG [OnlineServer::Run]" );
@@ -92,10 +104,18 @@ void OnlineServer::Run(){
   
   aThread = new TThread("OnlineThread", (void(*) (void *))ThreadFunc, (void*) this);
   aThread->Run();
+}
+*/
+
+
+//===============================================================================
+
+void OnlineServer::Send(AEvent *){
 
 }
 
 //===============================================================================
+
 void* OnlineServer::ThreadFunc(void* aPtr){
    #ifdef DEBUG
      if(gDEBUG_ONLINE > 0) TThread::Printf( "\t\t\tDEBUG [OnlineServer::ThreadFunction] ");
@@ -112,7 +132,7 @@ void* OnlineServer::ThreadFunc(void* aPtr){
    TSocket *s;
 
 
-   while( p->aRun && p->aThread && p->aThread->GetState() == TThread::kRunningState ){
+   while( (p->aRun) && (&p->aThread) && (p->aThread.GetState() == TThread::kRunningState) ){
 
        if((s = p->fMon->Select(20)) != (TSocket*)-1){
             p->HandleSocket(s);
@@ -168,7 +188,7 @@ void OnlineServer::HandleSocket(TSocket *s) {
       TMessage answer(kMESS_OBJECT);
       if (!strcmp(request, "get")){
 	 cout << "dostalem zadanie eventu "<< endl;     
-	 aRingBuffer->pop_back(&aEvent);    
+	 aRingBuffer.pop_back(&aEvent);    
 	 aEvent.EventShow(); 
 	 cout << "wysylam obiekt "<< endl;     
          answer.WriteObject(p);
@@ -182,35 +202,36 @@ void OnlineServer::HandleSocket(TSocket *s) {
 //====================================================================================
 
 Int_t OnlineServer::Stop(Int_t timeout_ms){
-   #ifdef DEBUG
-     if(gDEBUG_ONLINE > 0) TThread::Printf(" [OnlineServer::StopDataSave] ");
+  #ifdef DEBUG
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::StopDataSave] ");
    #endif
 
-   if(aThread->GetState() == TThread::kRunningState)
+   if(aThread.GetState() == TThread::kRunningState)
      aRun = kFALSE;
 
    Int_t retval = 0;
    Int_t granularity = 25;
    Int_t i = 0;
    timeout_ms /= granularity;
-                                
-   while(aThread->GetState() == TThread::kRunningState && (i < granularity)){
-     TThread::Sleep(0,granularity * 1000); 
+
+   while(aThread.GetState() == TThread::kRunningState && (i < granularity)){
+     TThread::Sleep(0,granularity * 1000);
      i++;
      }
 
 
-    if ( i > granularity) { 
-       TThread::Printf("Failed to stop the thread"); 
-       aThread->Kill();
+    if ( i > granularity) {
+       TThread::Printf("Failed to stop the thread");
+       aThread.Kill();
        retval = 1;
        }
-    
-    delete aThread; 
-    aThread = 0;
 
 
 return retval;
 }
+//==========================================================================
+void OnlineServer::EmptyBuffer(){
 
+         TThread::Printf(" Empty buffer is not implemented yet, some data could not be stored....");
+}
 

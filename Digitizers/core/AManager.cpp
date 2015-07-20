@@ -68,7 +68,7 @@ AManager::AManager() {
      try{
         for(UInt_t i = 0; i < mFindDev.size(); i++) {  
              if( 
-                // !mFindDev.at(i).find(string("Sim"))  
+                 !mFindDev.at(i).find(string("SIM")) || 
                  !mFindDev.at(i).find(string("CAEN5740")) 
               )
                {
@@ -124,7 +124,7 @@ void AManager::FindDevices() {
    #ifdef DEBUG
    if(gDEBUG_MANAGER > 2) cout << "DEBUG [AManager::FindDevies] Searching for spectrum digitizers" << endl;
    #endif
-
+/*
    struct usb_bus *bus;
    struct usb_device *dev;
    
@@ -145,15 +145,15 @@ void AManager::FindDevices() {
          }
       }
    
-
+*/
 
  //----------- simulation cards ------------ 
-/*
+
  int sCount = 1;
   for(int i = 0; i < sCount; i++){
       mFindDev.push_back(string("SIM"));
      }
-*/
+
 
 #ifdef DEBUG
  if(gDEBUG_MANAGER > 2){ cout << "DEBUG [AManager::FindDevices] found " << mFindDev.size() << " cards" << endl;
