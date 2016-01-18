@@ -20,13 +20,8 @@ ClassImp(Digitizer)
 Int_t Digitizer::mDigitizers = 0;
 
 Digitizer* Digitizer::Factory(const string& type) throw(Digitizer::BadDigitizerCreation) {
- //if(type == "PCI::INSTR")    { return new Acqiris();     }
- //if(type == "M3i")           { return new SpectrumM3i(); }
- //if(type == "M2i")           { return new SpectrumM2i(); }
- //if(type == "SPD214")        { return new SPD214();      }
- //if(type == "SPD412")        { return new SPD412();      }
-   if(type == "SIM")           { return new SimCard();     } 
-   if(type == "CAEN5740")      { return new CAEN5740();     } 
+   if(type == "SIM")           { return new SimCard(10);     } 
+   if(type == "CAEN5740")      { return new CAEN5740(1);     } 
  throw BadDigitizerCreation(type);
 }
 
@@ -83,8 +78,9 @@ Int_t Digitizer::Initialize() {
 
 //===============================================================================
 
-void Digitizer::Configure() {
+Int_t Digitizer::Configure() {
   cerr << "DEBUG Digitizer::Configure(), NO IMPLEMENTATION FOR THIS DEVICE, you have to immplement it in the derived class" << endl;
+  return 0;
  }
 
 //===============================================================================

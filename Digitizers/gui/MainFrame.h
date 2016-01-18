@@ -19,6 +19,8 @@ class AManager;
 class AEvent;
 class AHelp;
 class ADisplay;
+class TGTab;
+class TGNumberEntry;
 
 
 class MainFrame : public TGMainFrame {
@@ -32,6 +34,8 @@ enum mSTATE {
 
 enum CommandIdentifiers{ 
      M_FILE_EXIT,
+     M_VIEW_DISPLAY,
+     M_VIEW_DEVICE,	
      M_ACQ_READCONFIG,
      M_ACQ_SAVECONFIG,
      M_ACQ_CONFIGURE,
@@ -49,11 +53,22 @@ enum CommandIdentifiers{
      B_ACQ,
      B_ONLINE,
      B_DISPLAY,
-     B_EXIT
+     B_EXIT,
+
+     eTIMEOUTCHECKB  = 210,
+     eTIMEOUTENTRY   = 220,
+     eEVENTSCHECKB   = 230,   
+     eEVENTSENTRY    = 240,
+     eFILESCHECKB    = 250,
+     eFILESENTRY     = 260,
+     eFILESIZE       = 270,   
+     eFILETIME       = 280
+
    };
 
 
 private:
+   Int_t		mNrTabs;
    AHelp		*aHelpFrame;
    
    ADisplay		*aDisplay;
@@ -66,6 +81,12 @@ private:
    TGStatusBar          *fStatusBar;
  
    TGMenuBar		*fMenuBar;
+   TGCompositeFrame	*fFrame1;
+   TGCompositeFrame	*fFrame2;
+   TGCompositeFrame	*fCommonFrame;
+   TGCompositeFrame	*fControlDisplay;
+   TGCompositeFrame	*fControlDevice;
+  
 
    TGHorizontalFrame	*fButtons;
    TGPictureButton 	*fButtonOnline;
@@ -79,16 +100,41 @@ private:
    
    TGHorizontal3DLine   *l1; 
    TGHorizontal3DLine   *l2; 
+   TGHorizontal3DLine   *l3; 
 
    TGPopupMenu          *fMenuFile;
+   TGPopupMenu          *fMenuView;
    TGPopupMenu          *fMenuAcq;
    TGPopupMenu          *fMenuDisplay;
    TGPopupMenu          *fMenuAnalysis;
    TGPopupMenu          *fMenuHelp;
 
+   TGCompositeFrame** tCF;    // pointers to frames of tabs, each frame has own tab connected to a digitizer
+   TGTab* fTab;
+
+
+      TGGroupFrame *fTimeOutFrame;
+        TGCheckButton *fCBTimeOut;
+        TGNumberEntry *fEntryTimeOut;
+
+        TGGroupFrame *fLoopFrame;
+        TGCheckButton *fCBMaxEvents;
+        TGNumberEntry *fEntryMaxEvents;
+        TGCheckButton *fCBMaxFiles ;
+        TGNumberEntry *fEntryMaxFiles;
+
+
+        TGGroupFrame    *fFileFrame;
+        TGNumberEntry   *fEntryFileSize ;
+        TGNumberEntry   *fEntryFileTime ;
+
+
    void CreateMenuBar();
    void CreateToolBox();
-   void CreateEmbeddedCanvas();
+   void CreateControlDevice();
+   void CreateCommonFrame();   // for embedded canvas and control display
+   void BuildTabs();
+   void BuildWindow(TGCompositeFrame* );
 
 public:
    MainFrame(const TGWindow *p, UInt_t, UInt_t);
@@ -96,7 +142,9 @@ public:
 
    void SetAcquisitionState(mSTATE aState) { mState = aState;}
    MainFrame::mSTATE GetAcquisitionState() {return MainFrame::mState;}
-   
+ 
+   //void NumberEntrySet(Long_t a){cout << "NumberEntrySet  a = "<<  endl;} 
+ 
    void DoExit();
    void DoReadConfig();
    void DoSaveConfig();
@@ -109,6 +157,9 @@ public:
    void DoDisplayOff();
    void DoOnlineOff();
    void DoOnlineOn();
+   void DoEnable(Bool_t );
+   void DoValueSet();
+
    ADisplay		*GetDisplay() { return aDisplay;} 
 
    //Int_t StartAcquisition();

@@ -14,7 +14,7 @@ using namespace std;
 
 int gDEBUG = 5;			//!< 
 int gDEBUG_CAEN = 5;			//!< 
-int gDEBUG_CONTROL = 3;		//!< debuging in the acq_control class
+int gDEBUG_CONTROL = 5;		//!< debuging in the acq_control class
 int gDEBUG_SAVE = 0;		//!< debuging in the data_save class
 int gDEBUG_ONLINE = 0;		//!< debuging in the online server class
 int gDEBUG_MAIN = 5;		//!< debuging in the mainFRAME

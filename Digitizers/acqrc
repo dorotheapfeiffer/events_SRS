@@ -1,5 +1,5 @@
 # Configuration file for the data acquisition system
-# the file was created:  2015.6.24	16:34:39
+# the file was created:  2016.1.18	10:24:32
 # Line starts with a '#' is a comment line
 #
 #
@@ -9,79 +9,10 @@
 #
 [GENERAL SETTINGS]
 SoftTimeout 0
-NrLoops 0
-NrFiles 1
-FileSize 100
+MaxEvents 0
+MaxFiles 0
+NewFileSize 80
+NewFileTime 3600
 
 
-
-
-
-
-[CAEN5740.0]
-# instrument can be enalbed  = 1
-#                or disabled = 0
-InstrEnabled 1
-# All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 1
-IOLevel 0
-# DO NOT USE IT
-SuppresionMode 0
-
-# Acquisition Mode could be software controled = 0; or by signal from the front panel = 1
-AcquisitionMode 0
-# DO NOT USE IT
-BufferConfiguration 0
-# you can change clock setings but I do not know how and what for....
-ClockType 0
-# Define maximum parameter of how many events can be read from instrument
-MaxEvents 1
-# DO not use it
-SynchronizationMode 0
-# 
-
-# Channel Configuration
-# You can difine the track lengt, is the same for all channels
-RecordLength 1023
-# you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
-PostTrigger 80
-# disable = 0 or enable = 1 group channels
-EnableMaskGr1 1
-EnableMaskGr2 0
-EnableMaskGr3 0
-EnableMaskGr4 0
-# Set offet for group channels 
-# DCOffsetGrN: DC offset adjust (DAC channel setting) in mV.
-# -1000: analog input dynamic range = -Vpp to 0 (negative signals)
-# +1000: analog input dynamic range = 0 to +Vpp (positive signals)
-#     0:   analog input dynamic range = -Vpp/2 to +Vpp/2 (bipolar signals)
-DCOffsetGr1 0
-DCOffsetGr2 0
-DCOffsetGr3 0
-DCOffsetGr4 0
-
-# Trigger Configuration
-# Enable or disable software, external and channel trigger
-# the option could be 0, 1, 2, 3, disable, enable acq only, enable ext only, both 
-SoftwareTriggerMode 0
-ExternalTriggerMode 0
-# 
-ChannelTriggerModeGr1 1
-ChannelTriggerModeGr2 0
-ChannelTriggerModeGr3 0
-ChannelTriggerModeGr4 0
-
-# Trigger Channel Configuration
-ChannelPulsPolarity 0
-TriggerPolarity 0xf7c928
-SelfTriggerMaskGr1 5
-SelfTriggerMaskGr2 0
-SelfTriggerMaskGr3 0
-SelfTriggerMaskGr4 0
-# Adjust the threshold to the coresponding channel in mv
-# Treshold value is an absolut value, consider it when you add offset to the channel
-# Possible values between -2000 and 2000 mv
-ThresholdGr1 -394
-ThresholdGr2 0
-ThresholdGr3 0
-ThresholdGr4 0
 

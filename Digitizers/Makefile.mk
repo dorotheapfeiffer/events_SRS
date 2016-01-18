@@ -2,8 +2,8 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-CC	:= clang -g 
-CFLAGS	:= -O2 -m64 -pipe -Wshadow -W -Wall -Woverloaded-virtual -fsigned-char -fno-common -std=c++11 -I./
+CC	:=  g++ -g --std=c++11 
+CFLAGS	:= -m64 -pipe -Wshadow -W -Wall -Woverloaded-virtual -fsigned-char -fno-common -I./
 #CFLAGS  += -DDEBUG
 LFLAGS	:= 
 

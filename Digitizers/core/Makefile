@@ -6,10 +6,11 @@ CFLAGS  += -I./
 CFLAGS  += -I../gui
 CFLAGS  += -I../digitizer/CAEN5740 -I../digitizer/SIM
 
-SRCCPP  := ABuildEvent.cpp ADataSave.cpp AEvent.cpp AManager.cpp ATrack.cpp ARingBuffer.cpp AHelp.cpp ControlAcq.cpp Digitizer.cpp OnlineServer.cpp main.cpp 
+SRCCPP  := ABuildEvent.cpp ADataSave.cpp ADataSave2.cpp AEvent.cpp AManager.cpp ATrack.cpp \
+ARingBuffer.cpp AHelp.cpp ControlAcq.cpp Digitizer.cpp OnlineServer.cpp main.cpp 
 
 OBJECTS := $(SRCCPP:.cpp=.o)
-HEADERS := ABuildEvent.h ADataSave.h AEvent.h AManager.h ATrack.h ARingBuffer.h AHelp.h ControlAcq.h OnlineServer.h Digitizer.h 
+HEADERS := ABuildEvent.h ADataSave.h ADataSave2.h AEvent.h AManager.h ATrack.h ARingBuffer.h AHelp.h ControlAcq.h OnlineServer.h Digitizer.h 
 DICT    := coreDict.cpp
 
 all: $(DICT) $(OBJECTS) 

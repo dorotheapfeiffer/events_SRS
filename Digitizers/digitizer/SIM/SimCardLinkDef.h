@@ -4,7 +4,8 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-#pragma link C++ class SimCard+;
+#pragma link C++ class SimCard;
+#pragma link C++ class SimCardDlg+;
 
 
 #endif

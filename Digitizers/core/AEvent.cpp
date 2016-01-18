@@ -73,7 +73,21 @@ for(unsigned int i = 0; i < from.GetNrTracks(); i++){
    }
 
 }
+
 //===============================================================================
+
+void AEvent::AddEvent(AEvent* aEvent){
+
+aTrackVector.reserve(this->GetNrTracks() + aEvent->GetNrTracks());
+for(unsigned int i = 0; i < aEvent->GetNrTracks(); i++){
+   aTrackVector.push_back( aEvent->GetTrack(i) );
+   }
+aEvent->aTrackVector.clear();
+
+}
+
+//===============================================================================
+
 void AEvent::AddTrack(ATrack* aTrack){
 #ifdef DEBUG
     if(gDEBUG_EVENT > 3) cout << "DEBUG [AEvent::AddTrack ] " << endl;
@@ -115,9 +129,45 @@ fout << "  - Nr of Track: " << aTrackVector.size() << endl;
 */
 
 }
+
+
 //===============================================================================
 
-void AEvent::RemoveTrack(Int_t id){
+UInt_t AEvent::SaveInBuffer(Char_t *aBuffer){
+
+
+Int_t aEventHeader = 0xFFFFFFFF;
+aExtraDataSize = 0;
+Int_t size = 0;
+
+memcpy(aBuffer,        &aEventHeader,  sizeof(Int_t) );
+size += sizeof(Int_t);
+
+memcpy(aBuffer + size, &aEventNr,      sizeof(Int_t) );
+size += sizeof(Int_t);
+
+memcpy(aBuffer + size, &aTimeStamp,    sizeof(ULong_t) );
+size += sizeof(ULong_t);
+
+Int_t cards = 0;
+Int_t cards_tracks = ((cards << 16) | aTrackVector.size());
+
+memcpy(aBuffer + size, &cards_tracks,  sizeof(Int_t) );
+size += sizeof(Int_t);
+
+memcpy(aBuffer + size, &aExtraDataSize,sizeof(Int_t) );
+size += sizeof(Int_t);
+
+
+   for(it = aTrackVector.begin(); it != aTrackVector.end(); ++it){
+     size += (*it)->SaveInBuffer(aBuffer + size);
+     }
+
+return size; 
+}
+//===============================================================================
+
+void AEvent::RemoveTrack(UInt_t id){
     for(unsigned i = 0; i < aTrackVector.size(); i++)
         if(aTrackVector.at(i)->GetTrackNr() == id)
            aTrackVector.erase(aTrackVector.begin()+i); 
@@ -150,9 +200,12 @@ void AEvent::ClearEvent(){
 //===============================================================================
 
 void AEvent::EventShow(){
- cout << "Event ID = " << aEventNr << endl;
+ cout << "---------------------------------" << endl;
+ cout << "Event ID  = " << aEventNr   << endl;
+ cout << "TimeStamp = " << aTimeStamp << endl;
+ cout << "Tracks Nr = " << aTrackVector.size() << endl;
  for(UInt_t i = 0; i < aTrackVector.size(); i++){ 
-    cout << "-+ Track nr = " << i << endl;
+    cout << "-+ Track nr = " << i << "\tTimeStamp = " << aTrackVector.at(i)->GetTimeStamp()<< endl;
        UShort_t* ptr = aTrackVector.at(i)->GetData();
        cout << ptr[0]  << " " << ptr[1]  << " " << ptr[2]  << " " << ptr[3]  << " " 
             << ptr[4]  << " " << ptr[5]  << " " << ptr[6]  << " " << ptr[7]  << " " << endl;

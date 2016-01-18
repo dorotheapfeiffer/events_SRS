@@ -423,7 +423,7 @@ void SimCardDlg::Refresh() {
 //==================================================================
 Bool_t SimCardDlg::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
 
-Long_t msg1 = msg;
+// Long_t msg1 = msg;
 // if(msg > 1001){
 //   cout << "----------------- message: " << msg1 << "\tGET_MSG: " << GET_MSG(msg1) << "\tGET_SUBMSG: " << GET_SUBMSG(msg1) << endl;
 //   return kTRUE; // to avoid messages at the beginning.... there are 6 unknown  
@@ -542,36 +542,36 @@ Long_t msg1 = msg;
          if (parm1 == ePRETRIGGER)  		{aDevice->mPostTrigger  = fPostTrigger->GetNumber();  cout << "kTE_TEXTCHANGED ePRETRIGGER"<< endl;}
          if (parm1 == eOFFSET + 0)  		{
                  aDevice->mDCoffset_mV[0]  =  -fDCoffset[0]->GetNumber(); 
-                 aDevice->mDCoffset[0]  =  aDevice->mV2DAC(-fDCoffset[0]->GetNumber());
+                 //aDevice->mDCoffset[0]  =  aDevice->mV2DAC(-fDCoffset[0]->GetNumber());
                  }
          if (parm1 == eOFFSET + 1)  		{
                  aDevice->mDCoffset_mV[1]  =  fDCoffset[1]->GetNumber();
-                 aDevice->mDCoffset[1]  =  aDevice->mV2DAC(fDCoffset[1]->GetNumber());
+                 //aDevice->mDCoffset[1]  =  aDevice->mV2DAC(fDCoffset[1]->GetNumber());
                  }
          if (parm1 == eOFFSET + 2)  		{
                  aDevice->mDCoffset_mV[2]  =  fDCoffset[2]->GetNumber();
-                 aDevice->mDCoffset[2]  =  aDevice->mV2DAC(fDCoffset[2]->GetNumber());
+                 //aDevice->mDCoffset[2]  =  aDevice->mV2DAC(fDCoffset[2]->GetNumber());
                  }
          if (parm1 == eOFFSET + 3)  		{
                  aDevice->mDCoffset_mV[3]  =  fDCoffset[3]->GetNumber();
-                 aDevice->mDCoffset[3]  =  aDevice->mV2DAC(fDCoffset[3]->GetNumber());
+                 //aDevice->mDCoffset[3]  =  aDevice->mV2DAC(fDCoffset[3]->GetNumber());
                  }
          if (parm1 == eTRIGGER_THRESHOLD + 0)	{
                  aDevice->mThreshold_mV[0] =  fThreshold[0]->GetNumber();
-                 aDevice->mThreshold[0] =  aDevice->mV2ADC(fThreshold[0]->GetNumber());
+                 //aDevice->mThreshold[0] =  aDevice->mV2ADC(fThreshold[0]->GetNumber());
                  cout << "Threshold[0] = " << aDevice->mThreshold[0] << " " << aDevice->mThreshold_mV[0] <<" offset = " << aDevice->mDCoffset[0] << endl;
                  }
          if (parm1 == eTRIGGER_THRESHOLD + 1)	{
                  aDevice->mThreshold_mV[1] =  fThreshold[1]->GetNumber();
-                 aDevice->mThreshold[1] =  aDevice->mV2ADC(fThreshold[1]->GetNumber());
+                 //aDevice->mThreshold[1] =  aDevice->mV2ADC(fThreshold[1]->GetNumber());
                  }
          if (parm1 == eTRIGGER_THRESHOLD + 2)	{
                  aDevice->mThreshold_mV[2] =  fThreshold[2]->GetNumber();
-                 aDevice->mThreshold[2] =  aDevice->mV2ADC(fThreshold[2]->GetNumber());
+                 //aDevice->mThreshold[2] =  aDevice->mV2ADC(fThreshold[2]->GetNumber());
                  }
          if (parm1 == eTRIGGER_THRESHOLD + 3)	{
                  aDevice->mThreshold_mV[3] =  fThreshold[3]->GetNumber();
-                 aDevice->mThreshold[3] =  aDevice->mV2ADC(fThreshold[3]->GetNumber());
+                 //aDevice->mThreshold[3] =  aDevice->mV2ADC(fThreshold[3]->GetNumber());
                  }
          // cout << "Default kTE_TEXTCHANGED " << kTE_TEXTCHANGED << endl;
        break;

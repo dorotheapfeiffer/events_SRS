@@ -32,13 +32,13 @@ private:
 public:
  ATrack();
  ATrack(Int_t card, Int_t channel, Double_t sampling, Int_t offset, Int_t range, ULong_t timestamp, Int_t threshold,
-              Short_t* data, Int_t size /*in bytes*/);
+              Short_t* data, UInt_t size /*in bytes*/);
 
  ATrack(const ATrack&);              
  ATrack& operator= (const ATrack&); 
 
 
- int AddData(Int_t card, Int_t channel, UShort_t* data, Int_t dataSize);
+ int AddData(Int_t card, Int_t channel, UShort_t* data, UInt_t dataSize);
 
  UInt_t		GetTrackNr()	const	{ return aTrackNr;  }
  UInt_t		GetCardNr()	const	{ return aCardNr;   }
@@ -51,6 +51,7 @@ public:
  Double_t	GetSampling()	const	{ return aSampling; }
  UShort_t*	GetData()	const	{ return aData;     }
  void           Write2F(ofstream& fout);
+ UInt_t		SaveInBuffer(Char_t *aBuffer);
 virtual ~ATrack();
 
 ClassDef(ATrack, 1) //simple track

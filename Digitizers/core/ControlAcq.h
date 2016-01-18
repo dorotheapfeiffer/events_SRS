@@ -17,7 +17,7 @@ class ControlAcq : public TQObject{
   
 	Bool_t 		mSimOnly;
 	Int_t		mSegSize;
-	Int_t		mCards;
+	UInt_t		numInst;
 	Int_t		mChannels;
 	Int_t		mTracks;
 	Int_t		mLoopNr;
@@ -53,7 +53,9 @@ class ControlAcq : public TQObject{
 	virtual ~ControlAcq();
 
 	void		DoTimeout(Int_t);
-	void		Start();
+	void		Run();
+	void		StartAllCards();
+	void		StopAllCards();
 
 ClassDef(ControlAcq,0)
 };

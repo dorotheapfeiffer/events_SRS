@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 
 #include "Digitizer.h"
 #include "CAEN5740Dlg.h"
@@ -29,7 +30,7 @@ private:
    CAEN_DGTZ_EventInfo_t	EventInfo;
    CAEN_DGTZ_UINT16_EVENT_t    *Event16;
 
-   UInt_t			mAcqMode;
+   UInt_t			mAcqMode;		// acq controlled on hardware(1) or software mode (0)
    Int_t			mClock;			// clock in the system, could be internal, external or ref ext 
    Int_t			mHandle;		// handle of the instrument
    Int_t			mNumEvents;		// Maximum number of events to transfer in a BlockRead 
@@ -55,15 +56,21 @@ private:
    UInt_t			mTriggerEdge[4];	// per group, not clear from the documentaion
 
    UInt_t			mRunSyncMode;		// synchronization mode for the digitizer
+   UInt_t			mDelay;			// Delay in the daisy chain, for one digitizer = 0, for many the last one should be also 0.
    UInt_t			mSelfTriggerMask[32];	// decide which indyvidual trigger take part in generating global trigger, 
 							// indyvidual for each group
    UInt_t			mSuppresionMode;
-   
-   std::vector<AEvent *>	mEvents;		// List of all events saved by the digitizer during one dataread
+   UInt_t			mCoincidenceWindow; 
+   UInt_t 			mTriggerCoincidenceLevel;
+   UInt_t 			mTriggerOutLogic;
+   UInt_t 			mMajorityLevel;
+
+   std::queue<AEvent *>		mEvents;		// List of all events saved by the digitizer during one dataread
    
    AEvent			testEvent;
 
    CAEN5740(); 
+   CAEN5740(Int_t); 
    friend class Digitizer;
    friend class CAEN5740Dlg;
 
@@ -81,12 +88,13 @@ public:
   //virtual void		PrintInfo(){}
   virtual void		Reset();
   virtual Int_t		Initialize();
-  virtual void		Configure();
+  virtual Int_t		Configure();
   virtual void		StartAcq();
   virtual void		StopAcq();
   virtual void		Close();
 
-  virtual AEvent*	GetEvent(Int_t nr)				{return mEvents[nr];}
+  virtual void		PopEvent()					{mEvents.pop();}
+  virtual AEvent*	GetEvent()					{return mEvents.front();}
   //virtual AEvent*	GetEvent(Int_t nr)				{return &testEvent; }
 
   virtual const char*  	GetName()				const 	{ return mName; }
@@ -110,10 +118,19 @@ public:
           //ADC is 12-bits
 	  Double_t	ADC2mV(UInt_t counts){ return (counts - 2048) / 2.048 ; }
 	  UInt_t	mV2ADC(Double_t mV){ return mV * 2.048 + 2048; }
+
           //DAC is 16-bits
 	  Double_t	DAC2mV(UInt_t counts){ return (counts - 32768) / 32.768; }
 	  UInt_t	mV2DAC(Double_t mV){ return mV * 32.768 + 32768;  }
+
 	  UInt_t	GetDataSize()	{return mSize;}
+
+	  void 		NormalTriggerBuild(     AEvent &);   // for normal work
+          void 		MultiBladeTriggerBuild( AEvent &);   // for Francesco detector
+          void 		MultiGridTriggerBuild ( AEvent &);   // for Anton detector
+
+
+
 /*
   virtual void		BuildWindow(TGCompositeFrame* );
 

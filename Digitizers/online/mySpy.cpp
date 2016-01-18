@@ -60,8 +60,8 @@ void mySpy::WindowsUpdate(){
       InitGraphs();
 
       for(UInt_t i = 0; i < aEvent->GetNrTracks(); i++){
-          Short_t *data = aEvent->GetTrack(i)->GetData();
-          for(Int_t j = 0; j <  aEvent->GetTrack(i)->GetDataSize(); j++){
+          UShort_t *data = aEvent->GetTrack(i)->GetData();
+          for(UInt_t j = 0; j <  aEvent->GetTrack(i)->GetDataSize(); j++){
               mGraphs[i]->SetPoint(j, j, data[j]);
               }
           }
@@ -84,7 +84,7 @@ void mySpy::InitGraphs(){
    cout << "DEBUG [MainFrame::InitGraphs] " << endl;
   #endif
  Int_t aTracks = aEvent->GetNrTracks();
- Int_t aSamples = 0;
+ UInt_t aSamples = 0;
 
 
  for(Int_t i = 0; i < aTracks; i++){
@@ -93,7 +93,7 @@ void mySpy::InitGraphs(){
        }
     }		 
 
- if(aTracks == preTracks && aSamples == preSamples){
+ if(aTracks == preTracks && aSamples == (UInt_t)preSamples){
    //cout << "DEBUG [MainFrame::InitGraph] number of preTracks = " << preTracks  << "\tnumber of tracks in Event  = " << aTracks  <<"\t No Initialization, just draw" << endl;
    //cout << "DEBUG [MainFrame::InitGraph]          preSamples = " << preSamples << "\tnumber of samples in Event = " << aSamples <<"\t" << endl;
    return;	  
@@ -119,7 +119,7 @@ void mySpy::InitGraphs(){
     sprintf(name,"g_%d",i);
     mGraphs[i] = new TGraph( aEvent->GetTrack(i)->GetDataSize() );
     //cout << " DEBUG [MainFrame::InitGraph] create graphs  [" << name << "]\t" << "nr points = " << aEvent.GetTrack(i)->GetDataSize() << endl;;
-    for(Int_t j = 0; j < aEvent->GetTrack(i)->GetDataSize(); j++){
+    for(UInt_t j = 0; j < aEvent->GetTrack(i)->GetDataSize(); j++){
         mGraphs[i]->SetPoint(j, j, 0);
        }
     mGraphs[i]->SetName(name);

@@ -18,6 +18,8 @@
 #include <TGFont.h>
 #include <TGMsgBox.h>
 #include <TRootEmbeddedCanvas.h>
+#include <TGTab.h>
+#include <TGNumberEntry.h>
 
 #include <TGraph.h>
 #include <TMultiGraph.h>
@@ -25,7 +27,6 @@
 #include "MainFrame.h"
 #include "ADataSave.h"
 #include "AManager.h"
-#include "ControlFrame.h"
 #include "Digitizer.h"
 #include "ADisplay.h"
 #include "ARingBuffer.h"
@@ -49,12 +50,15 @@ MainFrame::MainFrame(const TGWindow *p, UInt_t width, UInt_t height) : TGMainFra
     if(gDEBUG_MAIN > 0) cout << "DEBUG [MainFrame::MainFrame] Create Main Window" << endl;
   #endif
 
-   aIsUpdate = kFALSE;
-   aManager = &AManager::GetInstance();
+   aIsUpdate	= kFALSE;
+   aManager	= &AManager::GetInstance();
+   mState	= sSTOP;
+   aHelpFrame	= 0;
+   aDisplay	= 0;
+   
+   mNrTabs	= 1;
    SetCleanup(kDeepCleanup);
-   mState = sSTOP;
-   aHelpFrame = 0;
-   aDisplay = 0;
+
  /* Set the style of the Main Frame, Colors, Lines, Borders, etc
   */
 
@@ -95,12 +99,15 @@ MainFrame::MainFrame(const TGWindow *p, UInt_t width, UInt_t height) : TGMainFra
    //Style_ACQ();
    CreateMenuBar();
    CreateToolBox();
-   CreateEmbeddedCanvas();
+   CreateCommonFrame();
+   CreateControlDevice();
    Refresh();  
  
    //Connect("CloseWindow()", "MainFrame" , this, "CloseWindow()");
    DontCallClose();
    MapSubwindows();
+   HideFrame(fControlDevice);
+   fCommonFrame->HideFrame(fControlDisplay);
    Resize(GetDefaultSize());
    SetWindowName("Data Acquisition System");
    MapWindow();
@@ -174,7 +181,12 @@ void MainFrame::CreateMenuBar() {
    fMenuFile = new TGPopupMenu(gClient->GetRoot());
    fMenuFile->AddEntry("E&xit", M_FILE_EXIT);
    fMenuFile->Associate(this);
-   
+  
+   fMenuView = new TGPopupMenu(gClient->GetRoot());
+   fMenuView->AddEntry("View Display", M_VIEW_DISPLAY);
+   fMenuView->AddEntry("View Device", M_VIEW_DEVICE);
+   fMenuView->Associate(this); 
+
    fMenuAcq = new TGPopupMenu(gClient->GetRoot());
    fMenuAcq->AddEntry("Read Config File", M_ACQ_READCONFIG);
    fMenuAcq->AddEntry("Save Config File", M_ACQ_SAVECONFIG);
@@ -205,9 +217,10 @@ void MainFrame::CreateMenuBar() {
    fMenuHelp->Associate(this);
  
    fMenuBar = new TGMenuBar(this, 1, 1, kHorizontalFrame);
-   fMenuBar->AddPopup("&File", fMenuFile, new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 4, 0, 0));
-   fMenuBar->AddPopup("&Acquisition", fMenuAcq, new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 4, 0, 0));
-   fMenuBar->AddPopup("&Display", fMenuDisplay, new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 4, 0, 0));
+   fMenuBar->AddPopup("&File", fMenuFile, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
+   fMenuBar->AddPopup("&View", fMenuView, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
+   fMenuBar->AddPopup("&Acquisition", fMenuAcq, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
+   fMenuBar->AddPopup("&Display", fMenuDisplay, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
    //fMenuBar->AddPopup("A&nalysis", fMenuAnalysis, new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 4, 0, 0));
    fMenuBar->AddPopup("&Help", fMenuHelp, new TGLayoutHints(kLHintsTop | kLHintsRight));
    AddFrame(fMenuBar, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
@@ -292,18 +305,172 @@ else  fAcqLabel->SetText("");
 }
 //=========================================================================
 
-void MainFrame::CreateEmbeddedCanvas() {
+void MainFrame::CreateCommonFrame(){
+
    #ifdef DEBUG
-      if(gDEBUG_MAIN > 2) cout << "DEBUG [MainFrame::CreateEmbeddedCanvas] "<< endl;
+      if(gDEBUG_MAIN > 2) cout << "DEBUG [MainFrame::CreateCommonFrame] "<< endl;
    #endif
 
-   fEcan = new TRootEmbeddedCanvas("MainCanvas",this,500,400);
-   AddFrame(fEcan, new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX  | kLHintsExpandY,0,0,1,1));
+   fCommonFrame = new TGCompositeFrame(this,500,400, kHorizontalFrame);
+   fCommonFrame->SetName("MainPanel");
+
+   fEcan = new TRootEmbeddedCanvas("MainCanvas", fCommonFrame, 500, 300);
+   fCommonFrame->AddFrame(fEcan, new TGLayoutHints(kLHintsTop | kLHintsLeft |  kLHintsExpandY | kLHintsExpandX, 0, 0, 1, 1) );
 
    aDisplay = new ADisplay(fEcan->GetCanvas());
    AEvent *aEvent = NULL;
    aDisplay->InitGraphs(aEvent);
    aDisplay->InitThreshold();
+
+   fControlDisplay = new TGCompositeFrame(fCommonFrame, 500, 100, kVerticalFrame);  
+   TGTextButton *hhButton = new TGTextButton(fControlDisplay, "DUPAH");
+   fControlDisplay->AddFrame(hhButton, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2) );
+
+   fCommonFrame->AddFrame(fControlDisplay, new TGLayoutHints(kLHintsRight | kLHintsTop | kLHintsExpandY,1,1,1,1)); 
+
+   l3 = new TGHorizontal3DLine(fControlDisplay);
+   fControlDisplay->AddFrame(l3, new TGLayoutHints(kLHintsBottom | kLHintsExpandX));
+
+   AddFrame(fCommonFrame, new  TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsExpandY ,1,1,1,1));
+
+} 
+
+//=========================================================================
+
+void MainFrame::CreateControlDevice(){
+
+   #ifdef DEBUG
+      if(gDEBUG_MAIN > 2) cout << "DEBUG [MainFrame::CreateControlDevice] "<< endl;
+   #endif
+
+   mNrTabs += aManager->GetNrDigitizers();
+
+   fControlDevice = new TGCompositeFrame(this, 500, 100, kVerticalFrame); 
+  
+
+   fTab = new TGTab(fControlDevice, 700, 500);
+   TGLayoutHints* fTLXY = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+
+   tCF = new TGCompositeFrame* [mNrTabs];
+   tCF[0] = fTab->AddTab("General Settings");
+   BuildWindow(tCF[0]);
+
+
+   for(int i = 1; i < mNrTabs; i++) {
+     #ifdef DEBUG
+        cout << "DEBUG [MainFrame::BuildTabs() Create TAB] " << aManager->GetDigitizer(i-1)->GetName() << endl;
+     #endif
+     tCF[i] = fTab->AddTab(aManager->GetDigitizer(i-1)->GetName()); //i+1
+     aManager->GetDigitizer(i-1)->BuildGui(tCF[i]);              //i+1
+     }
+
+   // set active tab to tab 0 (counts form 0)
+   fTab->SetTab(0);
+
+   fTab->Resize();
+
+   fControlDevice->AddFrame(fTab, fTLXY);
+
+
+
+   //fControlDevice->AddFrame(fDeviceFrame, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2) );
+ 
+   AddFrame(fControlDevice, new  TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 2, 2));
+}
+
+//========================================================================================
+void MainFrame::BuildTabs(){
+}
+
+//========================================================================================
+void MainFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
+
+   fMainFrame->SetLayoutManager(new TGHorizontalLayout(fMainFrame));
+
+    fTimeOutFrame = new TGGroupFrame(fMainFrame,"Software Timeout", kVerticalFrame);
+     fCBTimeOut = new TGCheckButton(fTimeOutFrame,"Timeout [ms]",eTIMEOUTCHECKB);
+     fCBTimeOut->Connect("Toggled(Bool_t)", "MainFrame", this, "DoEnable(Bool_t)");
+     fTimeOutFrame->AddFrame(fCBTimeOut, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+     fEntryTimeOut = new TGNumberEntry(fTimeOutFrame, aManager->GetTimeout(),11, eTIMEOUTENTRY,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0);
+     if(aManager->GetTimeout()){
+        fCBTimeOut->SetState(EButtonState(1));
+        fEntryTimeOut->SetState( EButtonState(kTRUE) );
+       }
+     else {
+        fCBTimeOut->SetState(EButtonState(0));
+        fEntryTimeOut->SetState( EButtonState(kFALSE) );
+       }
+     fEntryTimeOut->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+     (fEntryTimeOut->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+
+    fTimeOutFrame->AddFrame(fEntryTimeOut, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,58));
+
+    fMainFrame->AddFrame(fTimeOutFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+    fLoopFrame = new TGGroupFrame(fMainFrame,"Stop ACQ after", kVerticalFrame);
+    fMainFrame->AddFrame(fLoopFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+    fCBMaxEvents = new TGCheckButton(fLoopFrame,"Max Events",eEVENTSCHECKB);
+    fLoopFrame->AddFrame(fCBMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+    fCBMaxEvents->Connect("Toggled(Bool_t)", "MainFrame", this, "DoEnable(Bool_t)");
+
+    fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetMaxEvents(),11,eEVENTSENTRY,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+    if(aManager->GetMaxEvents()){
+       fCBMaxEvents->SetState(EButtonState(1));
+       fEntryMaxEvents->SetState( EButtonState(kTRUE) );
+      }
+    else {
+       fCBMaxEvents->SetState(EButtonState(0));
+       fEntryMaxEvents->SetState( EButtonState(kFALSE) );
+      }
+    fEntryMaxEvents->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+    (fEntryMaxEvents->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+    fLoopFrame->AddFrame(fEntryMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+    fCBMaxFiles = new TGCheckButton(fLoopFrame,"Max Files", eFILESCHECKB);
+    fCBMaxFiles->SetTextJustify(36);
+    fCBMaxFiles->SetMargins(0,0,0,0);
+    fCBMaxFiles->SetWrapLength(-1);
+    fCBMaxFiles->Connect("Toggled(Bool_t)", "MainFrame", this, "DoEnable(Bool_t)");
+    fLoopFrame->AddFrame(fCBMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+    fEntryMaxFiles = new TGNumberEntry(fLoopFrame, aManager->GetMaxFiles(),11,eFILESENTRY,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+
+    if(aManager->GetMaxFiles()){
+      fCBMaxFiles->SetState(EButtonState(1));
+      fEntryMaxFiles->SetState( EButtonState(kTRUE) );
+     }
+    else {
+      fCBMaxFiles->SetState(EButtonState(0));
+      fEntryMaxFiles->SetState( EButtonState(kFALSE) );
+     }
+
+    fEntryMaxFiles->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+    (fEntryMaxFiles->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+    fLoopFrame->AddFrame(fEntryMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,11));
+
+
+    fFileFrame = new TGGroupFrame(fMainFrame,"New File after", kVerticalFrame);
+    fMainFrame->AddFrame(fFileFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("File Size [MB] ")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
+
+    fEntryFileSize = new TGNumberEntry(fFileFrame, aManager->GetFileSize(),11,eFILESIZE,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+    fEntryFileSize->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+    (fEntryFileSize->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+    fFileFrame->AddFrame(fEntryFileSize, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("OR")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
+    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("after time in [sec] ")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
+    fEntryFileTime = new TGNumberEntry(fFileFrame, aManager->GetFileTime(),11,eFILETIME,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+    fEntryFileTime->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+    (fEntryFileTime->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+    fFileFrame->AddFrame(fEntryFileTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
 
 }
 
@@ -411,9 +578,6 @@ void MainFrame::Refresh() {
 
       }
 
-
-         	
-
 }
 
 //==================================================================
@@ -431,6 +595,28 @@ Bool_t MainFrame::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 		cout << "M_FILE_EXIT "<< endl;
 		CloseWindow();
 	   break;
+
+	   case M_VIEW_DISPLAY:
+		if( fMenuView->IsEntryChecked(M_VIEW_DISPLAY) ){
+                    fMenuView->UnCheckEntry(M_VIEW_DISPLAY);
+                    fCommonFrame->HideFrame(fControlDisplay);   
+		}else{
+                    fMenuView->CheckEntry(M_VIEW_DISPLAY);
+                    fCommonFrame->ShowFrame(fControlDisplay);
+		}
+
+	   break;
+
+	   case M_VIEW_DEVICE:
+		if( fMenuView->IsEntryChecked(M_VIEW_DEVICE) ){
+                    fMenuView->UnCheckEntry(M_VIEW_DEVICE);
+                    this->HideFrame(fControlDevice);   
+		}else{
+                    fMenuView->CheckEntry(M_VIEW_DEVICE);
+                    this->ShowFrame(fControlDevice);
+		}
+	   break;
+
 	   case M_ACQ_READCONFIG:
 		aManager->LoadConfiguration();    // dopisac dialog file!!!
 		cout << "M_ACQ_READCONFIG "<< endl;
@@ -442,8 +628,8 @@ Bool_t MainFrame::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 	   break;
 
 	   case M_ACQ_CONFIGURE:
-		aManager->ConfigureFrame();
-		cout << "M_ACQ_CONFIGURE"<< endl;
+  		(fControlDevice->IsVisible(fControlDevice)) ? this->HideFrame(fControlDevice) : this->ShowFrame(fControlDevice) ;
+	//	aManager->ConfigureFrame();
 	   break;
 
 	   case M_ACQ_STARTOSCI:
@@ -506,7 +692,19 @@ Bool_t MainFrame::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 	   break;
 
 	   case B_CONFIGURE:
-		aManager->ConfigureFrame();
+                //cout << "IsVisible  = " << this->IsVisible(fControlDevice) << endl;
+                //cout << "IsArranged = " << this->IsArranged(fControlDevice) << endl;
+                //cout << "GetState   = " << this->GetState(fControlDevice) << endl;
+                
+  		if(this->IsVisible(fControlDevice)){ 
+                     fMenuView->UnCheckEntry(M_VIEW_DEVICE);
+                     this->HideFrame(fControlDevice) ;
+                     }
+                else{ 
+                     fMenuView->CheckEntry(M_VIEW_DEVICE);
+                     this->ShowFrame(fControlDevice) ;
+                    }
+		//aManager->ConfigureFrame();
 
 	   break;
 
@@ -544,41 +742,6 @@ Bool_t MainFrame::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 	   break;
 	   }
 
-/*
-		if(parm1 == B_OSCI){
-                   if(mState == sSTOP){
-                      mState = sOSCI;
-                      aManager->StartAcquisition( mState );
-                      }
-                   else                
-                     mState = sSTOP;
-		   cout << "M_ACQ_START ? STOP OSCI " << mState << endl;
-                   }
-		else if(parm1 == B_CONFIGURE)
-		   aManager->ConfigureFrame();
-		else if(parm1 == B_ACQ){
-                   if(mState == sSTOP || mState == sOSCI){ 
-                      mState = sACQUISITION;
-                      aManager->StartAcquisition( mState );
-                      }
-                   else 
-                      mState = sSTOP;
-		   cout << "M_ACQ_START ? STOP ACQ " << mState << endl;
-                   }
-		else if(parm1 == B_ONLINE){
-		   //if (aManager->GetOnline() == kTRUE ) aManager->SetOnline(kFALSE);
-                   //else                                 aManager->SetOnline(kTRUE); 
-                   }
-		else if(parm1 == B_DISPLAY){
-		   if (aManager->GetDisplay() == kTRUE ) aManager->SetDisplay(kFALSE);
-                   else                                  aManager->SetDisplay(kTRUE); 
-                   }
-		else if(parm1 == B_EXIT){
-		   CloseWindow();
-                   }
-		else   cout << "BUTTON UNKNOWN " << endl;
-
-*/
         break;
 
 	  
@@ -602,6 +765,104 @@ Bool_t MainFrame::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 }
 
 //=========================================================================
+void MainFrame::DoEnable(Bool_t a){
+
+ TGCheckButton *te = (TGCheckButton *) gTQSender;
+ Int_t id = te->WidgetId();
+
+ cout << "DEBUG [ControlFrame::DoEnable] widget id = " << id << endl;
+
+ switch (id){
+   case eTIMEOUTCHECKB:
+     //fCBTimeOut->SetState(EButtonState(a));
+     if(!a) {
+       fEntryTimeOut->SetNumber(0);
+       aManager->SetTimeout(0);
+       }
+     fEntryTimeOut->SetState( EButtonState(a) );
+   break;
+
+   case eEVENTSCHECKB:
+     //fCBMaxEvents->SetState(EButtonState(a));
+     fEntryMaxEvents->SetState( EButtonState(a) );
+     if(!a) {
+       fEntryMaxEvents->SetNumber(0);
+       aManager->SetMaxEvents(0);
+       }
+     else {
+      fEntryMaxEvents->SetNumber(1);
+      aManager->SetMaxEvents(1);
+      fEntryMaxFiles->SetNumber(0); //
+      aManager->SetMaxFiles(0);     //
+      fCBMaxFiles->SetState(EButtonState(0));
+      fEntryMaxFiles->SetState( EButtonState(0) );
+      }
+   break;
+ 
+   case eFILESCHECKB:
+     //fCBMaxFiles->SetState(EButtonState(a));
+     fEntryMaxFiles->SetState( EButtonState(a) );
+     if(!a) {
+       fEntryMaxFiles->SetNumber(0);
+       aManager->SetMaxFiles(0);
+       }
+     else {
+       fEntryMaxFiles->SetNumber(1);
+       aManager->SetMaxFiles(1);
+       fEntryMaxEvents->SetNumber(0); //
+       aManager->SetMaxEvents(0);      //
+       fCBMaxEvents->SetState(EButtonState(0));
+       fEntryMaxEvents->SetState( EButtonState(0) );
+       }
+   break;
+
+   default:
+   break;
+
+  }
+
+
+}
+
+//========================================================================================
+
+void MainFrame::DoValueSet(){
+
+ TGNumberEntry *te = (TGNumberEntry *) gTQSender;
+ Int_t id = te->WidgetId();
+
+   switch (id) {
+      case eTIMEOUTENTRY:
+         aManager->SetTimeout((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] SoftTimeout = " << aManager->GetTimeout() << endl;
+      break;
+
+      case eEVENTSENTRY:
+         aManager->SetMaxEvents((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] MAxEvents = " << aManager->GetMaxEvents() << endl;
+      break;
+
+      case eFILESENTRY:
+         aManager->SetMaxFiles((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] MaxFiles = " << aManager->GetMaxFiles() << endl;
+      break;
+
+      case eFILESIZE:
+         aManager->SetFileSize((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] FileSize = " << aManager->GetFileSize() << endl;
+      break;
+
+      case eFILETIME:
+         aManager->SetFileTime((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] FileTime = " << aManager->GetFileTime() << endl;
+      break;
+
+      default:
+      break;
+      }
+
+}
+
 
 void MainFrame::DoExit() {
 /*   
@@ -638,17 +899,12 @@ void MainFrame::DoReadConfig() {
  if(fi.fFilename)
    aManager->ReadConfigFile(fi.fFilename);
 
- //if(aManager->IsControlFrame()) 
- //  aManager->ReconfigureControlFrame();
-
 
 }
 
 //=========================================================================
 
 void MainFrame::CreateConfigureFrame(){
-   //if(!aManager->IsControlFrame()) 
-   //  aManager->CreateControlFrame();	   
 
 }
 

@@ -145,7 +145,6 @@ void ADisplay::UpdateGraph(AEvent *aEvent){
  //   return;
   //  }
 
-  static int aRefreshThreshold = 0;           
  
   //if( mRefreshGraph || aManager->GetMode() == MainFrame::sOSCI){  
   if( mRefreshGraph ){  
@@ -156,7 +155,7 @@ void ADisplay::UpdateGraph(AEvent *aEvent){
 
      for(UInt_t i = 0; i < aTracks; i++){
         UShort_t *data = aEvent->GetTrack(i)->GetData();
-        for(Int_t j = 0; j <  aEvent->GetTrack(i)->GetDataSize(); j++){
+        for(UInt_t j = 0; j <  aEvent->GetTrack(i)->GetDataSize(); j++){
            mGraphs[i]->SetPoint(j, j, (data[j] - 2048) / 2.048);
            //mGraphs[i]->SetPoint(j, j, data[j]);
            }
@@ -280,7 +279,7 @@ UInt_t ADisplay::InitThreshold(){
  
 
  UInt_t		aThreshold = 0;
- Int_t		aSamples = 0;
+ UInt_t		aSamples = 0;
 
  for(Int_t i = 0; i < aManager->GetNrDigitizers(); i++){ 
     if( !(aManager->GetDigitizer(i)->IsEnabled()) ) continue;
@@ -341,7 +340,7 @@ UInt_t ADisplay::InitGraphs(AEvent *aEvent){
    if(gDEBUG_DISPLAY > 2) cout << "DEBUG [ADisplay::InitGraphs] " << endl;
   #endif
 
- Int_t aSamples		= 0;
+ UInt_t aSamples	= 0;
  Int_t aRange		= 1500;
  UInt_t aTracks		= 0;
 
@@ -359,7 +358,7 @@ UInt_t ADisplay::InitGraphs(AEvent *aEvent){
    aTracks = 0; 
    for(Int_t i = 0; i < aManager->GetNrDigitizers(); i++){ 
        if( !(aManager->GetDigitizer(i)->IsEnabled()) ) continue;
-       if( aSamples < aManager->GetDigitizer(i)->GetTrackLength() )
+       if( aSamples < static_cast<UInt_t>(aManager->GetDigitizer(i)->GetTrackLength() ))
            aSamples = aManager->GetDigitizer(i)->GetTrackLength();
        }      
    }
@@ -474,7 +473,7 @@ return &mEvent;
 //=========================================================================
 //
 
-Bool_t ADisplay::HandleTimer(TTimer *aTimer){
+Bool_t ADisplay::HandleTimer(TTimer *){
   
   mRefreshGraph++;
   mRefreshData++;

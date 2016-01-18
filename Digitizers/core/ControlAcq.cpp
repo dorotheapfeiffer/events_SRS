@@ -12,13 +12,14 @@
 #include "AManager.h"
 #include "AEvent.h"
 #include "ATrack.h"
-#include "ADataSave.h"
+#include "ADataSave2.h"
 #include "ADisplay.h"
 #include "ARingBuffer.h"
 
 #include <TMath.h>
 #include <TRandom.h>
 #include <TObjArray.h>
+#include <TStopwatch.h>
 //#include <TList.h>
 
 using namespace std;
@@ -29,6 +30,8 @@ extern int gDEBUG_CONTROL;
 
 ClassImp(ControlAcq)
 
+Bool_t  findMinTimeStamp(AEvent* , AEvent* );
+
 //============================================================================================
 
 ControlAcq::ControlAcq( Bool_t a) : mSimOnly(a) {
@@ -37,8 +40,7 @@ ControlAcq::ControlAcq( Bool_t a) : mSimOnly(a) {
 #endif
 
 aManager = &AManager::GetInstance();
-mCards   = aManager->GetNrDigitizers();
-mSegSize = aManager->GetSegments();
+numInst = aManager->GetNrDigitizers();
 
 mNrAllEvents	= 0;
 mMaxSegment	= 0;
@@ -73,106 +75,185 @@ void ControlAcq::DoTimeout(Int_t n){
 
 
 //============================================================================================
-// Start function is divided into two parts, one for OSCI mode second for ACQ mode. In such a case is easier to control all the acquisition
+// Run function is divided into two parts, one for OSCI mode second for ACQ mode. In such a case is easier to control all the acquisition
 //
-void ControlAcq::Start(){
+void ControlAcq::Run(){
    #ifdef DEBUG
      if(gDEBUG_CONTROL > 0) cout << "DEBUG [ControlAcq::Start], mode = " << aManager->GetMode() << endl;
    #endif
 
 //----- Initialization ----
 
-  UInt_t numInst = aManager->GetNrDigitizers();
   Int_t  retval;
   ADisplay *aDisplay = aManager->GetFrame()->GetDisplay();
 
- for(UInt_t i = 0; i < numInst; i++) {    
-    retval = aManager->GetDigitizer(i)->Initialize();
-    if(retval){ 
-       cout << "Intrument " << i << " cannot be initalized, end..." << endl; 
-       return;
-       }
-    }
-
 //----- OSCI mode ------
-
- for(UInt_t i = 0; i < numInst; i++) {    
-     aManager->GetDigitizer(i)->Configure();
-     aManager->GetDigitizer(i)->StartAcq();
-     }
-
+ StartAllCards();
  aManager->SetStartAcqTime();
  aManager->SetEventNr(0);
 
-  while( LoopCondition( 1 ) ){
+ Bool_t allEventsZero = kFALSE;
+ Bool_t oneEventZero = kFALSE;
+ Bool_t proceedFlag = kFALSE;
+
+ ULong_t	aTimeStamp;
+ ULong_t	aMinTimeStamp;
+ Int_t		aEventInstrument;
+ UInt_t		aLoop = 0; 
+
+ 
+
+  while( LoopCondition( 1 ) ){   // transfer data from digitizers to PC memory
+    AEvent *aGlobalEvent = NULL;
     for(UInt_t i = 0; i < numInst; i++) {   
        // if( !aManager->GetDigitizer(i)->IsEnabled() ) continue; 
-       aManager->GetDigitizer(i)->Configure();
+       if(aManager->GetDigitizer(i)->Configure())
+          aManager->GetDigitizer(i)->StartAcq();
+       numEvents[i] = aManager->GetDigitizer(i)->GetData();  	
+       //cout << "Digitizer [" << i << "] Number of events  " << numEvents[i] << endl;	
+       }
+    
+    for(UInt_t i = 0; i < numInst; i++) {   
+       allEventsZero |= (Bool_t) numEvents[i];
+       oneEventZero  &= (Bool_t) numEvents[i];  // at least one event!
+       }
+                       
+    if( oneEventZero && proceedFlag ) { 
+       proceedFlag = kTRUE; 
+       continue; 
+       }
 
-       numEvents[i] = aManager->GetDigitizer(i)->GetData();  		
-       
- 
-       if( numEvents[i] ){
-          aManager->SetEventNr(aManager->GetEventNr() + numEvents[i]);
-          aManager->SetDataSize(aManager->GetDataSize() + aManager->GetDigitizer(i)->GetDataSize());	
-          AEvent *aE = aManager->GetDigitizer(i)->GetEvent(0);
-          aDisplay->UpdateGraph( aE );
-         }
-       else{
-          AEvent *aE = NULL;
-          aDisplay->UpdateGraph( aE );
-         }
-      } 
+    proceedFlag = kFALSE;
+
+    while( allEventsZero ){
+	 
+	 aMinTimeStamp = -1L;
+	 aEventInstrument = -1;
+         for(UInt_t i = 0; i < numInst; i++){
+            if( numEvents[i] ){   
+              aTimeStamp = aManager->GetDigitizer(i)->GetEvent()->GetTimeStamp();
+              //cout << "DEBUG [ControlAcq::StartAcq] Name = " << aManager->GetDigitizer(i)->GetName() << " TimeStamp = " << aTimeStamp << endl;
+              if(aTimeStamp <= aMinTimeStamp){
+                aMinTimeStamp = aTimeStamp;  
+                aEventInstrument = i;
+                }
+              }
+           }
+
+  //       if(aEventInstrument == -1) continue;  
+     
+         aGlobalEvent = aManager->GetDigitizer(aEventInstrument)->GetEvent();
+	 aGlobalEvent->SetEventNr( aLoop++ ); 
+	 aGlobalEvent->SetTimeStamp(aMinTimeStamp);
+         aManager->GetDigitizer(aEventInstrument)->PopEvent(); 
+	 numEvents[aEventInstrument]--;	 
+
+         for(UInt_t i = 0; i < numInst; i++){
+	     while(numEvents[i]){
+                   //cout << "DEBUG [] " << aManager->GetDigitizer(i)->GetEvent()->GetTimeStamp() << " - " << aGlobalEvent->GetTimeStamp() 
+                   //     << " = " << aManager->GetDigitizer(i)->GetEvent()->GetTimeStamp()/1000 - aGlobalEvent->GetTimeStamp()/1000 << endl;    
+                   Int_t difference = aManager->GetDigitizer(i)->GetEvent()->GetTimeStamp() - aGlobalEvent->GetTimeStamp();
+                   if( difference < 220){
+                      aGlobalEvent->AddEvent( aManager->GetDigitizer(i)->GetEvent() )  ; 
+                      aManager->GetDigitizer(i)->PopEvent(); 
+	              numEvents[i]--;	 
+                      }
+                   else {
+                       //cout << "difference = " << difference << endl;
+                       break;
+                      } 
+                  }
+            }
+
+
+         //aGlobalEvent->SaveEvent();
+         //aGlobalEvent->EventShow();
+	 aManager->SetEventNr( aManager->GetEventNr()+1);
+         //cout << "Nr of TRACKS = " << aGlobalEvent->GetNrTracks() << endl;
+         aDisplay->UpdateGraph( aGlobalEvent );
+         delete aGlobalEvent;
+	 aGlobalEvent = NULL;
+
+         // checking if there are still some local events which have to be added to the global event
+         allEventsZero = kFALSE;    
+         for(UInt_t i = 0; i < numInst; i++)    
+            allEventsZero |= (Bool_t) numEvents[i];
+
+    }
+         
+
     gSystem->ProcessEvents();
     gSystem->Sleep(10);    
 
-  }
+   }
 
+ StopAllCards();
+ 
 ////////////////////////////////////////////////////////////////////////////////////////////// 
 //----- ACQ mode -------
 
- ADataSave aDataSave(kTRUE);
+ if( aManager->GetMode() != MainFrame::sACQUISITION ) return;
+
+
+ ADataSave2 aDataSave(kTRUE);
  aManager->SetStartAcqTime();
  aManager->SetEventNr(0);
- 
+ UInt_t eventNr = 0;
+ UInt_t loop = 0;
+ TStopwatch t;
+	      t.Start();
+
   while( LoopCondition( 2 ) ){
-    
+              //t.Stop();
+              //t.Print();
+	      //t.Start();
        for(UInt_t i = 0; i < numInst; i++) {   
           if( !aManager->GetDigitizer(i)->IsEnabled() ) continue; 
 
-       numEvents[i] = aManager->GetDigitizer(i)->GetData();  		
-       if( numEvents[i] ){
-          aManager->SetEventNr(aManager->GetEventNr() + numEvents[i]);
-          aManager->SetDataSize(aManager->GetDataSize() + aManager->GetDigitizer(i)->GetDataSize());	
-          for(UInt_t j = 0; j < numEvents[i]; j++){ 
+          numEvents[i] = aManager->GetDigitizer(i)->GetData();  		
+          //cout << "hello 20 numEvents["<<i<<"] = " << numEvents[i] << endl;
+          if( numEvents[i] ){
+             aManager->SetDataSize(aManager->GetDataSize() + aManager->GetDigitizer(i)->GetDataSize());	
 
-              AEvent *aE = aManager->GetDigitizer(i)->GetEvent(0);
+             for(UInt_t j = 0; j < numEvents[i]; j++){ 
+ 
+                //cout << "\n========= GetEvents ======" << endl;
+	        //t.Start();
+                //aManager->SetEventNr(aManager->GetEventNr() + j);
+                AEvent *aE = aManager->GetDigitizer(i)->GetEvent();
+                aE->SetEventNr( eventNr++ );
+                //t.Stop();
+                //t.Print();
+ 
+                //cout << "\n========= Display ======" << endl;
+	        //t.Start();
+                if(aManager->GetDisplay())
+                   aDisplay->UpdateGraph( aE );
+                else{
+                  AEvent *aE = NULL;
+                  aDisplay->UpdateGraph( aE );
+                  }
+                //t.Stop();
+                //t.Print();
+                //cout << "\n========= Save ======" << endl;
+                aDataSave.SaveInBuffer( *aE );
+                //t.Stop();
+                //t.Print();
 
-              aE->SetEventNr(aManager->GetEventNr());
+                gSystem->ProcessEvents();
 
-              if(aManager->GetDisplay())
-                aDisplay->UpdateGraph( aE );
-              else{
-                AEvent *aE = NULL;
-                aDisplay->UpdateGraph( aE );
                 }
-
-              aDataSave.SaveInBuffer( aE);
-
-              }
-         }
+            }
+            else{
+              gSystem->ProcessEvents();
+            }
     
-       gSystem->ProcessEvents();
-       gSystem->Sleep(10); 
+            gSystem->Sleep(10); 
    
-      }
-    } 
+        }
+      } 
          
 
- for(UInt_t i = 0; i < numInst; i++) {    
-     aManager->GetDigitizer(i)->StopAcq();
-     }
- 
     //  if( IsForceTrigger() )							// in case that software trigger is necessary...
     //    aManager->GetDigitizer(i)->SendSWTrigger();
     //mNrAllEvents = Aggregate();
@@ -227,12 +308,10 @@ Int_t ControlAcq::Aggregate(){
      #endif
 
   mAggregateEvents.clear();
-  UInt_t numInst = aManager->GetNrDigitizers();
-  
 
   for(UInt_t i = 0; i < numInst; i++) {   
      for(UInt_t j = 0; j < numEvents[i]; j++){
-        AEvent *aE = aManager->GetDigitizer(i)->GetEvent(j);
+        AEvent *aE = aManager->GetDigitizer(i)->GetEvent();
 	mAggregateEvents.push_back(*aE);
         }
      }
@@ -365,15 +444,33 @@ void ControlAcq::DeleteAcq(){
 }
 */
 //============================================================================================
-/*
-Int_t ControlAcq::StartAllCards(){
+
+void ControlAcq::StopAllCards(){
 
      #ifdef DEBUG
-       if(gDEBUG_CONTROL > 0)
-          cout << endl << endl << "DEBUG [ControlAcq::StartAllCards]" << endl;
+       if(gDEBUG_CONTROL > 0) cout << endl << endl << "DEBUG [ControlAcq::StopAllCards]" << endl;
      #endif
+ for(UInt_t i = 0; i < numInst; i++) {    
+     aManager->GetDigitizer(i)->StopAcq();
+     }
 }
-*/
+
+//============================================================================================
+
+void ControlAcq::StartAllCards(){
+
+ #ifdef DEBUG
+   if(gDEBUG_CONTROL > 0) cout << endl << endl << "DEBUG [ControlAcq::StartAllCards]" << endl;
+ #endif
+ 
+ for(UInt_t i = 0; i < numInst; i++) {    
+     aManager->GetDigitizer(i)->Configure();  	
+     }
+ for(UInt_t i = 0; i < numInst; i++) {    
+     aManager->GetDigitizer(i)->StartAcq();
+     }
+}
+
 //============================================================================================
 /*
 Int_t ControlAcq::WaitUntilReady(){
@@ -421,3 +518,6 @@ return 0;
 }
 */
 
+Bool_t  findMinTimeStamp(AEvent* a, AEvent* b){
+ return a->GetTimeStamp() > b->GetTimeStamp();
+}

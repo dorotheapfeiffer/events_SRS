@@ -42,9 +42,9 @@ class ADisplay: public TGMainFrame{
  UInt_t		  aMaxSample; 
 
  UInt_t		  preTracks;
- Int_t		  preSamples;
+ UInt_t		  preSamples;
  Int_t		  preRange;
- Int_t		  preThreshold;
+ UInt_t		  preThreshold;
 
  TTimer		 *fTimer;
  UInt_t 	  mRefreshGraph;

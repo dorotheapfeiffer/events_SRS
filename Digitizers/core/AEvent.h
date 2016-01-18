@@ -35,7 +35,8 @@ public:
   AEvent(const AEvent&);
 
  void		AddTrack(ATrack* aTrack);
- void		RemoveTrack(Int_t id);
+ void		AddEvent(AEvent* aEvent);
+ void		RemoveTrack(UInt_t id);
 
  void		ClearEvent();
  void		SetEventNr(Int_t a)	{ aEventNr = a;} 
@@ -45,6 +46,10 @@ public:
  ULong_t	GetEventSize()	  const;
  ATrack*	GetTrack(Int_t a) const	{ return aTrackVector.at(a); }
  void 		Write2F(ofstream& fout);
+ void		SetTimeStamp(ULong_t a)	{ aTimeStamp = a; }
+ ULong_t	GetTimeStamp()	const	{ return aTimeStamp; }
+
+ UInt_t           SaveInBuffer(Char_t *aBuffer);
 
 ClassDef(AEvent, 1) //simple event
 

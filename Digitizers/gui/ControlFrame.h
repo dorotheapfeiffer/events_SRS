@@ -26,11 +26,14 @@ class ControlFrame : public TGTransientFrame {
 private:
 
         enum WD{
-		eTIMEOUT  = 10,
-		eEVENTS   = 20,
-		eFILES   = 30,
-		eFILESIZE = 40,
-		eFILETIME = 50
+		eTIMEOUTCHECKB	= 10,
+		eTIMEOUTENTRY	= 20,
+		eEVENTS		= 30,
+		eEVENTSCHECKB	= 40,
+		eFILES		= 50,
+		eFILESENTRY	= 60,
+		eFILESIZE	= 70,
+		eFILETIME	= 80
         };       
   
         AManager*	aManager;  // pointer to Manager

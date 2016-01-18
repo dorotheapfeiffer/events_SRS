@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <bitset>
 #include "ARingBuffer.h"
 
 
@@ -31,7 +32,7 @@ private:
 	Int_t		aEmptyBuffer;
 	char		aHeader[4096]; 
 	long		aEventCounter;
-	Int_t		aFileNr;
+	UInt_t		aFileNr;
 	UInt_t		aMaxFiles;
 	UInt_t		aMaxFileSize;
 	ofstream	fout;	

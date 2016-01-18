@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+//#include <atomic>
 
 #include <TRandom.h>
 #include <TSystem.h>
@@ -28,31 +29,44 @@ ClassImp(SimCard)
 using namespace std;
 
 extern int gDEBUG;
-//int SimCard::mNrOfCards = 0;
+int SimCard::gDeviceNr = 0;
 
 
-
-SimCard::SimCard() {
+SimCard::SimCard(Int_t nr ) : aThread("aThread", ThreadFunc, (void*)this ), aRun(kTRUE), mNumEvents(nr)  {
  #ifdef DEBUG
     if(gDEBUG > 2)
-      cout << "DEBUG [SIM::Constructor]" << endl;
+      cout << "DEBUG [SIM::Constructor] arg = " << nr << endl;
   #endif
+ 
+ cout << "TThread::kCanceledState   = " << TThread::kCanceledState   << endl;
+ cout << "TThread::kCancelingState  = " << TThread::kCancelingState  << endl;
+ cout << "TThread::kDeletingState   = " << TThread::kDeletingState   << endl;
+ cout << "TThread::kFinishedState   = " << TThread::kFinishedState   << endl;
+ cout << "TThread::kHighPiority     = " << TThread::kHighPriority    << endl;
+ cout << "TThread::kInvalidState    = " << TThread::kInvalidState    << endl;
+ cout << "TThread::kLowPiority      = " << TThread::kLowPriority     << endl;
+ cout << "TThread::kNewState        = " << TThread::kNewState        << endl;
+ cout << "TThread::kNormalPiority   = " << TThread::kNormalPriority  << endl;
+ cout << "TThread::kRunningState    = " << TThread::kRunningState    << endl;
+ cout << "TThread::kTerminatedState = " << TThread::kTerminatedState << endl;
 
- mCardNr = mNrOfCards;
- mNrOfCards++;
 
+ mCardNr = gDeviceNr;
+ gDeviceNr++;
+ mRecordLength = 1024;
  sprintf(mName,"Sim_%d",mCardNr); 
- cout << "[SimCard::Sim] mCardNr = " << mCardNr << " name = " << GetName() << endl;
 
 }
 
 //=======================================================================================
 SimCard::~SimCard() {
- #ifdef DEBUG
+  #ifdef DEBUG
     if(gDEBUG > 2)
       cout << "DEBUG [SIM::Destructor]" << endl;
   #endif
 
+ aRun = kFALSE;
+ aThread.Join();
 
 }
 
@@ -61,37 +75,93 @@ SimCard::~SimCard() {
 Int_t SimCard::Initialize() {
  #ifdef DEBUG
   if(gDEBUG > 2){
-    cout << "DEBUG [SimCard::Initialization ]" << fName << endl;
+    cout << "DEBUG [SimCard::Initialization ]" << mName << endl;
     }
   #endif
 
- return true;
+ return kFALSE;
 }
 
 //=======================================================================================
-void SimCard::Configure() {
+Int_t SimCard::Configure() {
  #ifdef DEBUG
     if(gDEBUG > 2)
-    cout << "DEBUG [SimCard::Configure] " << fName << endl;
+    cout << "DEBUG [SimCard::Configure] " << mName << " aRun = " << aRun << endl;
   #endif
 
   
 }
 //=======================================================================================
-void SimCard::StartAcq() {
+void SimCard::StartAcq() {  //this is implementation of the RunThread
 
  #ifdef DEBUG
   if(gDEBUG > 2){
-    cout << "DEBUG [SimCard::StartAcq] name:"<< GetName() << " " <<  GetNrOfSamples(0) << flush <<  endl;
+    cout << "DEBUG [SimCard::StartAcq] name:"<< mName << flush <<  endl;
     }
   #endif
+ 
+ aRun = kTRUE;
+ cout << "DEBUG [SimCard::StartAcq] aRun = " << aRun << endl;
+ aThread.Run((void*)this);
 
 }
+
+//=======================================================================================
+void SimCard::StopAcq() { //this is implementation of the StopThread
+ aRun = kFALSE;
+ Int_t retval = aThread.Join();
+ cout << "DEBUG [SimCard::StopAcq] retval after Join = " << retval << " aRun = " << aRun << " state = " << aThread.GetState() << endl;
+ 
+
+}
+
 
 //===============================================================================
 void* SimCard::ThreadFunc(void* aPtr){
 
-aPtr = 0;
+   #ifdef DEBUG
+     if(gDEBUG > 0) TThread::Printf(" THREAD [SimCard::ThreadFunction] " );
+   #endif
+
+   SimCard* p = (SimCard*)aPtr;
+
+   TThread::Printf(" THREAD [SimCard::ThreadFunction] aRun = %d", p->aRun);
+
+   static ULong_t 		aEventCounter = 0;
+   AEvent			aEvent;
+   ULong_t			aTriggerTimeTag = 0;
+   UInt_t			aLoop = 0;
+   UInt_t			aDataSize = p->mRecordLength;
+   Short_t			aData[aDataSize];
+   std::vector<AEvent *>	localEvents;
+
+   TThread::Printf(" THREAD [SimCard::ThreadFunction before while] %d, %d, %d, %d, %d", p->aRun, &p->aThread, p->aThread.GetState(), aLoop, p->mNumEvents);
+   while( (p->aRun) && (&p->aThread) && (p->aThread.GetState() == TThread::kRunningState) && (aLoop < static_cast<ULong_t>(p->mNumEvents)) ){
+          
+          TThread::Printf(" THREAD [SimCard::ThreadFunction] loop = %d, aRun = %d",aLoop, p->aRun);
+	 AEvent *aSingleEvent = new AEvent();
+	 for(Int_t j2 = 0; j2 < 32; j2++){
+            if( ((p->mSaveChannel >> j2) & 1) ) {
+	       p->GenerateEvent(aData, aDataSize);	
+               cout << std::bitset<32>(p->mSaveChannel) << endl;
+               aSingleEvent->AddTrack(new ATrack(p->mCardNr, j2, 1. / 65e6, 0, 1000, aTriggerTimeTag, p->mThreshold_mV[j2], aData, aDataSize));
+               }
+            }
+
+         aSingleEvent->SetEventNr(aEventCounter++);
+         localEvents.push_back(aSingleEvent);
+ 	 aLoop++;
+         TThread::Sleep(0, 10*1000); // sleep 10ms   10 * 1000 * 1000 ns
+	}
+
+   for(vector<AEvent *>::iterator it = localEvents.begin(); it != localEvents.end(); ++it){
+      p->mEvents.push_back( (*it) );
+      delete (*it);
+      }
+ localEvents.clear();
+
+         TThread::Printf(" THREAD [SimCard::ThreadFunction] END");
+
 /*
 cout << "  ThreadFunc: " << endl; 
 cout << "\tiTrackLength = " << p->aTrackLength[p->iTrackLength] << endl;
@@ -153,12 +223,61 @@ for(int k = 0; k < 100; k++){
 
 }
 */
-return 0;
+return aPtr;
+}
+
+
+//=======================================================================================
+
+void	SimCard::GenerateEvent(Short_t *data, Int_t size){
+
+  double amp   = 2 * gRandom->Rndm() * 1000;
+  double sig   = (0.5 + gRandom->Rndm()) ;
+  double noise = gRandom->Rndm() - 0.5;
+
+
+  for(Int_t j = 0; j < size; j++){
+     double y = TMath::Landau(j, 0, sig) * amp;
+          
+     //cout << k3 + p->iPreTrigger << " " << y << " " << p->iPreTrigger << " " << sig << " " << noise << endl; 
+     data[j] = static_cast<Short_t>( y + noise );
+     }
+
 }
 
 //=======================================================================================
-void SimCard::StopAcq() {
- cout << "[SimCard::StopAcq]" << endl;
+
+void	SimCard::Reset(){
+
+}
+
+//=======================================================================================
+
+UInt_t	SimCard::GetData(){
+
+ #ifdef DEBUG
+  if(gDEBUG > 2){
+ //   cout << "DEBUG [SimCard::GetData] " <<  endl;
+    }
+  #endif
+
+ StopAcq();
+ StartAcq();
+ cout << "DEBUG [SimCard::GetData] mEvent.size = " << mEvents.size() << " aRun = " << aRun << endl;
+ return mEvents.size();
+
+}
+
+//=======================================================================================
+
+void	SimCard::Refresh(){
+
+}
+
+//=======================================================================================
+
+void	SimCard::SendSWTrigger(){
+
 }
 
 
@@ -167,8 +286,10 @@ void SimCard::Close() {
 
 }
 //=======================================================================================
-Int_t SimCard::ReadConfigFile(ifstream &file){
+Int_t SimCard::ReadConfigFile(ifstream &fin){
 
+ cout << "\n\n" << endl;
+ cout << "SimCard::ReadConfigFile not implemented yet..." << endl;
 return 0;
 }
 

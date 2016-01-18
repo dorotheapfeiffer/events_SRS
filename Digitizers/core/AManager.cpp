@@ -10,16 +10,9 @@
 #include <TGFileDialog.h>
 
 #include "Digitizer.h"
-//#include "Acqiris.h"
-//#include "Spectrum.h"
 #include "MainFrame.h"
 #include "AManager.h"
 #include "ARingBuffer.h"
-
-
-//#include "ADQAPI.h"
-//#include "AcqirisImport.h"
-//#include "AcqirisD1Import.h" // Import for Agilent Acqiris Digitizers
 
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -51,7 +44,7 @@ AManager::AManager() {
 
    mDisplayEvents 	= kFALSE;
 
-   mAcqLoops		= 0;
+   mMaxEvents		= 0;
    mFileSize		= 80;  // in MB
    mFileTime		= 3600;  // in sec
    mFileNr		= 0;
@@ -85,13 +78,13 @@ AManager::AManager() {
 
    if(mAcqDev.size() == 0){
      cout << endl << endl << endl;
-     cout << "+-----------------------------------------------------------------+" << endl;
-     cout << "| Program did not find any connected digitizers.                  |" << endl;
-     cout << "| Are digitizers connected?                                       |" << endl;
-     cout << "| Then try to reboot the computer while digitizers are pluged in. |" << endl;
-     cout << "+-----------------------------------------------------------------+" << endl;
+     cout << "+----------------------------------------------------------------------+" << endl;
+     cout << "| Program did not find any connected digitizers.                       |" << endl;
+     cout << "| Are digitizers connected?                                            |" << endl;
+     cout << "| Then try to reboot computer with digitizers pluged in and turned on. |" << endl;
+     cout << "+----------------------------------------------------------------------+" << endl;
      cout << endl << endl << endl;
-     gApplication->Terminate();
+//     gApplication->Terminate();
     } 
 
    // Initialize function set the handle to the card
@@ -114,17 +107,16 @@ AManager::AManager() {
    // Read configuration file
    LoadConfiguration();
 
+
 }
 //==============================================================================
 
 void AManager::FindDevices() {
 
- size_t found;
-
    #ifdef DEBUG
    if(gDEBUG_MANAGER > 2) cout << "DEBUG [AManager::FindDevies] Searching for spectrum digitizers" << endl;
    #endif
-/*
+
    struct usb_bus *bus;
    struct usb_device *dev;
    
@@ -145,14 +137,14 @@ void AManager::FindDevices() {
          }
       }
    
-*/
+
 
  //----------- simulation cards ------------ 
 
- int sCount = 1;
-  for(int i = 0; i < sCount; i++){
-      mFindDev.push_back(string("SIM"));
-     }
+// int sCount = 1;
+//  for(int i = 0; i < sCount; i++){
+//      mFindDev.push_back(string("SIM"));
+//     }
 
 
 #ifdef DEBUG
@@ -170,15 +162,15 @@ void AManager::FindDevices() {
 void AManager::StartAcquisition(MainFrame::mSTATE aState){
 
    cout << "DEBUG AManager::StartAcquisition " << GetMode() << endl;
-// SetMode(aState);
+   SetMode(aState);
    mWindow->Refresh();
 
-// if(aState == MainFrame::sOSCI || aState == MainFrame::sACQUISITION){
+ if(aState == MainFrame::sOSCI || aState == MainFrame::sACQUISITION){
    ControlAcq aAcq(1);
-   aAcq.Start();
+   aAcq.Run();
    cout << "DEBUG AManager::StopAcquisition " << GetMode() << endl;
     
-// }
+ }
 }
 
 //==============================================================================
@@ -204,7 +196,13 @@ void AManager::CreateGui() {
 #ifdef DEBUG
  if(gDEBUG_MANAGER > 0) cout << "DEBUG [AManager::CreateGui]" << endl;
 #endif
-	mWindow = new MainFrame(gClient->GetRoot(),800,600);
+
+   // To show on the terminal the actual settings of all digitizers
+   for(UInt_t i = 0; i < mAcqDev.size(); i++) 
+      mAcqDev[i]->Refresh();
+
+   // create GUI and fill all the values according to the digitizers settings
+   mWindow = new MainFrame(gClient->GetRoot(),800,600);
 }
 
 
@@ -229,7 +227,7 @@ void AManager::SaveConfiguration(){
 Int_t AManager::ReadConfigFile(const char *filename) {
 ifstream fin(filename, ios::in);
 if(!fin){
-  cout << "ERROR could not open the file " << filename << ". The default parameters will be used"<< endl;
+  cout << "WARNING! Could not open the configuration file: " << filename << ". The default parameters will be used."<< endl;
   return -1;
   }
 
@@ -263,66 +261,28 @@ if(!fin){
          if(temp <= 0) mTimeout = 0;
          else mTimeout = temp;
          }
-       else if( name == string("NrLoops") ){ 
+       else if( name == string("MaxEvents") ){ 
          temp = atoi( value.c_str() );
-         if(temp <= 0) mAcqLoops = 0;
-         else { mAcqLoops = temp; mFileNr = 0;}
+         if(temp <= 0) mMaxEvents = 0;
+         else { mMaxEvents = temp; mMaxFiles = 0;}
          }    
-       else if( name == string("NrFiles") ){ 
+       else if( name == string("MaxFiles") ){ 
          temp = atoi( value.c_str() );
-         if(temp <= 0) mFileNr = 0;
-         else { mFileNr = temp; mAcqLoops = 0;}
+         if(temp <= 0) mMaxFiles = 0;
+         else { mMaxFiles = temp; mMaxEvents = 0;}
          }    
-       else if( name == string("FileSize") ){ 
+       else if( name == string("NewFileSize") ){ 
          temp = atoi( value.c_str() );
-         if(temp <= 0) mFileSize = 4;
+         if(temp <= 0) mFileSize = 80;
          else mFileSize = temp;
          }    
+      	
+       else if( name == string("NewFileTime") ){ 
+         temp = atoi( value.c_str() );
+         if(temp <= 0) mFileTime = 3600;
+         else mFileTime = temp;
+         }    
      }
-/*
-    if( inSection == string("ACQ SETTINGS")){
-       if( name == string("ACQmode") ){ 
-          mAcqMode   = atoi( value.c_str() ); 
-          if(mAcqMode != 1 && mAcqMode != 2){
-             cout << "ERROR in configuration file: value not allowed, line nr " << lineNr
-                  << "\t[" << inSection << "] " << name << " = " << value << endl;
-             cout << "       ACQmode set to 1 [standard single mode]" << endl;     
-            mAcqMode = 1;
-            }
-         }
-       else if(name == string("NumberOfSegments")){ 
-          mSegments = atoi( value.c_str() ); 
-          if(mSegments < 1){
-             cout << "ERROR in configuration file: value not allowed, line nr " << lineNr
-                  << "\t[" << inSection << "] " << name << " = " << value << endl;
-             cout << "       NumberOfSegments set to 1" << endl;     
-             mSegments = 1;
-            }
-          else if(mSegments > 1000){
-             cout << "ERROR in configuration file: value not allowed, line nr " << lineNr
-                  << "\t[" << inSection << "] " << name << " = " << value << endl;
-             cout << "       NumberOfSegments set to 1" << endl;     
-             mSegments = 1;
-            }
-          else if(mSegments != 1 && mAcqMode == 1){
-             cout << "WARRNING in configuration file: value does not any effect, line nr " << lineNr
-                  << "\t[" << inSection << "] " << name << " = " << value << endl;
-             cout << "       NumberOfSegments set to 1" << endl;     
-             mSegments = 1;
-            }
-          else {
-           } 
-             
-
-           }
-       else if(name == string("NumberOfFiles")){ mFileNr = atoi(value.c_str()); }
-       else if(name == string("NumberOfLoops")){ mAcqLoops = atoi(value.c_str()); }
-       else if(name == string("FileName"))     { mDataFileName = value.c_str(); }
-       else if(name == string("FileSize"))     { mFileSize  = atoi(value.c_str()); }
-       else cout << "ERROR: Parameter not recognized, line nr " << lineNr
-                 << "\t[" << inSection << "] >" << name << "< = >" << value <<"<"<< endl;
-      }
-*/
 
     } // end while loop
 
@@ -330,9 +290,10 @@ if(!fin){
 	cout << "DEBUG [AManager::ReadConfigFile] "	<< endl;
 	cout << "\t[GENERAL SETTINGS]"			<< endl;
 	cout << "SoftTimeout "	<< mTimeout	<< endl;
-	cout << "NrLoops "	<< mAcqLoops	<< endl;
-	cout << "NrFiles " 	<< mFileNr 	<< endl;
-	cout << "FileSize "	<< mFileSize	<< endl;
+	cout << "MaxEvents "	<< mMaxEvents	<< endl;
+	cout << "MaxFiles " 	<< mMaxFiles 	<< endl;
+	cout << "NewFileSize "	<< mFileSize	<< endl;
+	cout << "NewFileTime "	<< mFileTime	<< endl;
    #endif
    // now each card
 fin.clear();
@@ -375,9 +336,10 @@ fout << "#" << endl;
 fout << "#" << endl;
 fout << "[GENERAL SETTINGS]"		<< endl;
 fout << "SoftTimeout "	<< mTimeout	<< endl;
-fout << "NrLoops "	<< mAcqLoops	<< endl;
-fout << "NrFiles " 	<< mFileNr 	<< endl;
-fout << "FileSize "	<< mFileSize	<< endl;
+fout << "MaxEvents "	<< mMaxEvents	<< endl;
+fout << "MaxFiles " 	<< mMaxFiles 	<< endl;
+fout << "NewFileSize "	<< mFileSize	<< endl;
+fout << "NewFileTime "	<< mFileTime	<< endl;
 fout << "" << endl;
 fout << "" << endl;
 fout << "" << endl;

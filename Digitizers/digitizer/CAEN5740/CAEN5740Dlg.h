@@ -17,6 +17,7 @@ class TGTextBuffer;
 class TGComboBox;
 class Digitizer;
 class CAEN5740;
+class TGTab;
 
 //class CAEN5740Dlg : public TQObject {
 class CAEN5740Dlg : public TGMainFrame {
@@ -40,15 +41,17 @@ private:
      eEXTTRIGGERMODE,
      eSWTRIGGERMODE,
      eCHNTRIGGERMODE,
-     eCOINCIDENCE,
+     eCOINCIDENCE = 290,
      eTRIGGERGROUP = 300,
-     eTRIGGER_SELFMASK = 400,
-     eTRIGGER_ENABLE = 500,
-     eTRIGGER_EDGE = 600,
-     eCHANNEL_POLARITY = 700,
-     eTRIGGER_THRESHOLD = 800,
-     eTRIGGER_SYNCHRONIZATION = 900
-     		
+     eTRIGGER_SELFMASK = 350,
+     eTRIGGER_ENABLE = 400,
+     eTRIGGER_EDGE = 450,
+     eCHANNEL_POLARITY = 500,
+     eTRIGGER_THRESHOLD = 550,
+     eTRIGGER_SYNCHRONIZATION = 600,
+     eCHBTSTART,
+     eTRIGGEROUT_DELAY,
+     eACQ_MODE  		
      };
 
    //----------------------------------
@@ -58,7 +61,22 @@ private:
 
    //----------------------------------
    TGGroupFrame* 	fFrameCommon;
-    TGCompositeFrame*	fFrame1;
+   TGCompositeFrame*	fFrameChannel;
+    TGGroupFrame*	fFrame1;
+    TGGroupFrame*	fFrame2;
+     TGCompositeFrame*	fFrame21;
+     TGCompositeFrame*	fFrame22;
+     TGCompositeFrame*	fFrame23;
+    TGGroupFrame*	fFrame3;
+
+   TGCompositeFrame* 	fFrameTrigger;
+     TGCompositeFrame*	fFrameTg1;
+     TGCompositeFrame*	fFrameTg2;
+     TGCompositeFrame*	fFrameTg3;
+     TGCompositeFrame*	fFrameTg4;
+     TGCompositeFrame*	fFrameTg5;
+     TGCompositeFrame*	fFrameTg6;
+     TGCompositeFrame*	fFrameTg7;
      TGNumberEntry*	fRecordLength;
      TGNumberEntry*	fPostTrigger;
     //----------------------------------
@@ -70,7 +88,6 @@ private:
      TGCheckButton*	fCheckButtonSave[32];
  
    //----------------------------------
-   TGGroupFrame* 	fFrameTrigger;
     TGCompositeFrame*	fFrameTrigger1;
      TGCompositeFrame*	fFrameTrigger11;
      TGGroupFrame*	fFrameTrigger12;
@@ -94,7 +111,16 @@ private:
 
      TGGroupFrame*	fFrameTrigger23;
       TGNumberEntry*	fCoincidence;	
-   
+
+   TGCompositeFrame* 	fFrameOptions;
+     TGGroupFrame* 	fFrameOp1;
+     TGCheckButton*	fChBtStart;	
+     TGNumberEntry*	fDelay;
+     TGComboBox*	fAcqMode;
+
+   TGTab* 		fTab;
+   TGCompositeFrame*    fFrameTab[3]; // there are always three tabs
+
 public:
    
   CAEN5740Dlg(){}; 
@@ -103,7 +129,13 @@ public:
 
   void			Refresh(); 
   virtual Bool_t	ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2);
-  
+  void 			NumberEntrySet(Long_t); 
+  void 			ComboBoxSet(Int_t); 
+  void 			CheckButtonSet(Bool_t); 
+  void 			EnableGroup(Bool_t a);
+  void 			EnableTrigger(Int_t a);
+  void 			ButtonClicked();
+
 
 ClassDef(CAEN5740Dlg,0);
 };

@@ -59,7 +59,7 @@ class AManager : public TQObject{
 
 
 	Int_t mSegments;
-	Int_t mAcqLoops;
+	//Int_t mAcqLoops;
 	Int_t mFileSize;
 	Int_t mFileTime;
 	Int_t mFileNr;
@@ -96,7 +96,7 @@ public:
 	Bool_t		GetDisplay()			{return mDisplayEvents;}
         MainFrame	*GetFrame()	{return mWindow;}	
 
-	void		SetLoops(int aAcqLoops)		{ mAcqLoops  = aAcqLoops; }
+//	void		SetLoops(int aAcqLoops)		{ mAcqLoops  = aAcqLoops; }
 	void		SetFileSize(int afilesize)	{ mFileSize  = afilesize; }
 	void		SetFileTime(int afiletime)	{ mFileTime  = afiletime; }
         void		SetFileNr(int afileNr)		{ mFileNr    = afileNr;   }
@@ -120,7 +120,7 @@ public:
         void 		SetMode(MainFrame::mSTATE aState) 	{ mWindow->SetAcquisitionState(aState);}
 	MainFrame::mSTATE GetMode()	                { return mWindow->GetAcquisitionState()      ;}
 
-	Int_t		GetLoops()			{ return mAcqLoops;	}
+//	Int_t		GetLoops()			{ return mAcqLoops;	}
 	Int_t		GetFileSize()			{ return mFileSize;	}
 	Int_t		GetFileTime()			{ return mFileTime;	}
 	Int_t		GetFileNr()			{ return mFileNr;	}

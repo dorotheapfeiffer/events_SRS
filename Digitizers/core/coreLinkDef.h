@@ -6,7 +6,8 @@
 
 #pragma link C++ class AManager;
 #pragma link C++ class ABuildEvent;
-#pragma link C++ class ADataSave+;
+#pragma link C++ class ADataSave;
+#pragma link C++ class ADataSave2;
 #pragma link C++ class AEvent+;
 #pragma link C++ class ATrack+;
 #pragma link C++ class ControlAcq;

@@ -117,13 +117,13 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
    fMainFrame->SetLayoutManager(new TGHorizontalLayout(fMainFrame));
 
    fTimeOutFrame = new TGGroupFrame(fMainFrame,"Software Timeout", kVerticalFrame);
-     fCBTimeOut = new TGCheckButton(fTimeOutFrame,"Timeout [ms]",eTIMEOUT);
+     fCBTimeOut = new TGCheckButton(fTimeOutFrame,"Timeout [ms]",eTIMEOUTCHECKB);
      //fCBTimeOut->SetTextJustify(36);
      //fCBTimeOut->SetMargins(0,0,0,0);
      //fCBTimeOut->SetWrapLength(-1);
      fCBTimeOut->Connect("Toggled(Bool_t)", "ControlFrame", this, "DoEnable(Bool_t)");
      fTimeOutFrame->AddFrame(fCBTimeOut, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
-     fEntryTimeOut = new TGNumberEntry(fTimeOutFrame, aManager->GetTimeout(),11, eTIMEOUT,
+     fEntryTimeOut = new TGNumberEntry(fTimeOutFrame, aManager->GetTimeout(),11, eTIMEOUTENTRY,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0);
      if(aManager->GetTimeout()){
         fCBTimeOut->SetState(EButtonState(1));
@@ -151,9 +151,9 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
     fLoopFrame->AddFrame(fCBMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
     fCBMaxEvents->Connect("Toggled(Bool_t)", "ControlFrame", this, "DoEnable(Bool_t)");
 
-    fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetLoops(),11,eEVENTS,
+    fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetMaxEvents(),11,eEVENTS,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
-    if(aManager->GetLoops()){
+    if(aManager->GetMaxEvents()){
        fCBMaxEvents->SetState(EButtonState(1));
        fEntryMaxEvents->SetState( EButtonState(kTRUE) );
       }  
@@ -244,8 +244,11 @@ void ControlFrame::DoEnable(Bool_t a){
  TGCheckButton *te = (TGCheckButton *) gTQSender;
  Int_t id = te->WidgetId();
 
+ cout << "DEBUG [ControlFrame::DoEnable] widget id = " << id << endl;
+
  switch (id){
-   case eTIMEOUT:
+   case eTIMEOUTCHECKB:
+     cout << "DEBUG [ControlFrame::DoEnable] eTIMEOUTCHECKB, state =  " << a << endl;
      fCBTimeOut->SetState(EButtonState(a));
      if(!a) {
        fEntryTimeOut->SetNumber(0);  
@@ -259,11 +262,11 @@ void ControlFrame::DoEnable(Bool_t a){
      fEntryMaxEvents->SetState( EButtonState(a) );
      if(!a) {
        fEntryMaxEvents->SetNumber(0);
-       aManager->SetLoops(0);
+       aManager->SetMaxEvents(0);
        }       
      else {
       fEntryMaxEvents->SetNumber(1);  
-      aManager->SetLoops(1);
+      aManager->SetMaxEvents(1);
       fEntryMaxFiles->SetNumber(0); //
       aManager->SetFileNr(0);     //
      fCBMaxFiles->SetState(EButtonState(0));
@@ -282,7 +285,7 @@ void ControlFrame::DoEnable(Bool_t a){
        fEntryMaxFiles->SetNumber(1);  
        aManager->SetFileNr(1);
        fEntryMaxEvents->SetNumber(0); //
-       aManager->SetLoops(0);      //
+       aManager->SetMaxEvents(0);      //
      fCBMaxEvents->SetState(EButtonState(0));
      fEntryMaxEvents->SetState( EButtonState(0) );
        }
@@ -355,7 +358,7 @@ Int_t a;
      }
 
 //---
-   if( (a = aManager->GetLoops()) ){
+   if( (a = aManager->GetMaxEvents()) ){
       fEntryMaxEvents->SetNumber(a);
       fCBMaxEvents->SetState(EButtonState(1));
       fEntryMaxEvents->SetState( EButtonState(kTRUE) );
@@ -398,8 +401,9 @@ TGNumberEntry *te = (TGNumberEntry *) gTQSender;
  Int_t id = te->WidgetId();
 
    switch (id) {
-      case eTIMEOUT:
+      case eTIMEOUTENTRY:
          aManager->SetTimeout((Int_t)te->GetNumber());
+         cout << "DEBUG [ControlFrame::DoValueSet] SoftTimeout = " << aManager->GetTimeout() << endl;
       break;
 
       case eEVENTS:

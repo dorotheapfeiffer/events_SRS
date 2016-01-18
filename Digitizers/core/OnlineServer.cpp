@@ -203,7 +203,7 @@ void OnlineServer::HandleSocket(TSocket *s) {
 
 Int_t OnlineServer::Stop(Int_t timeout_ms){
   #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::StopDataSave] ");
+     if(gDEBUG_ONLINE > 0) TThread::Printf(" [ADataSave::StopDataSave] ");
    #endif
 
    if(aThread.GetState() == TThread::kRunningState)

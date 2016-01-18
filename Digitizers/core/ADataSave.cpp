@@ -26,14 +26,14 @@ ClassImp(ADataSave)
 ADataSave::ADataSave(){} 
 
 			     
-ADataSave::ADataSave(bool a) : aRun(a), aRingBuffer(100), aThread("aThread", ThreadFunc, this ) 
+ADataSave::ADataSave(bool a) : aRun(a), aRingBuffer(1000), aThread("aThread", ThreadFunc, this ) 
 {
    #ifdef DEBUG
      if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::ADataSave]" );
    #endif
 
   aManager	= &AManager::GetInstance();
-
+/*
   // Flie dialog to get the file name
   static TString dir(".");
   TGFileInfo fi;
@@ -45,7 +45,7 @@ ADataSave::ADataSave(bool a) : aRun(a), aRingBuffer(100), aThread("aThread", Thr
     //   if(l > 0) (fi.fFilename) = (fi.fFilename).Remove((fi.fFilename).Last('_'));
     aManager->SetDataFileName(fi.fFilename);
     }
-
+*/
   aManager->SetDataFileName("test");
 
   aMaxFileSize 	= aManager->GetFileSize() * 1024 * 1024; // to have it in MB

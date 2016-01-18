@@ -37,7 +37,7 @@ ATrack::ATrack(){
 //===============================================================================
 
 ATrack::ATrack(Int_t card, Int_t channel, Double_t sampling, Int_t offset, Int_t range, ULong_t timestamp, Int_t threshold, 
-              Short_t* data, Int_t size /*in bytes*/){
+              Short_t* data, UInt_t size /*in bytes*/){
      aData = new UShort_t[ size ];
      aTrackNr = gTrackNr++;
      aCardNr = card;
@@ -135,6 +135,53 @@ void ATrack::Write2F(ofstream& fout){
 }
 
 //===============================================================================
+
+UInt_t ATrack::SaveInBuffer(Char_t *aBuffer){
+
+
+UInt_t aHeader = 0xEEEEEEEE;
+UInt_t extraDataSize = 0x0;
+
+UInt_t size = 0;
+
+memcpy(aBuffer,        &aHeader,      sizeof(UInt_t)   );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &aTrackNr,     sizeof(UInt_t)   );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &aTimeStamp,   sizeof(ULong_t) );
+size += sizeof(ULong_t);
+
+memcpy(aBuffer + size, &aSampling,    sizeof(Double_t) );
+size += sizeof(Double_t);
+
+memcpy(aBuffer + size, &aOffset,      sizeof(UInt_t) );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &aRange,       sizeof(UInt_t) );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &aThreshold,   sizeof(UInt_t) );
+size += sizeof(UInt_t);
+                
+ UInt_t card_channel = ((aCardNr << 16) | aChannelNr );
+
+memcpy(aBuffer + size, &card_channel,             sizeof(UInt_t) );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &extraDataSize,            sizeof(UInt_t) );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, &aDataSize,                sizeof(UInt_t) );
+size += sizeof(UInt_t);
+
+memcpy(aBuffer + size, aData,         aDataSize * sizeof(UShort_t) );
+size += (aDataSize * sizeof(UShort_t));
+
+return size;
+}
+//===============================================================================
 /*
 Int_t ATrack::AddData(Int_t card, Int_t channel, Double_t sampling, Int_t offset, Int_t range, ULong_t timestamp, Int_t threshold, 
               Short_t* data, Int_t size ){ // size in bytes
@@ -150,7 +197,8 @@ Int_t ATrack::AddData(Int_t card, Int_t channel, Double_t sampling, Int_t offset
 }
 */
 //===============================================================================
-Int_t ATrack::AddData(Int_t card, Int_t channel, UShort_t* data, Int_t dataSize /*in bytes*/){
+Int_t ATrack::AddData(Int_t card, Int_t channel, UShort_t* data, UInt_t dataSize /*in bytes*/){
+     card = channel = 0;
      if(dataSize != aDataSize){
         delete [] aData;
         aData = new UShort_t [ dataSize ];

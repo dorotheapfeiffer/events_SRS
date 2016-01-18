@@ -35,13 +35,14 @@ public:
   virtual void		PrintInfo();
   virtual void		Reset();
   virtual Int_t		Initialize();
-  virtual void		Configure();
+  virtual Int_t		Configure();
   virtual void		StartAcq();
   virtual void		StopAcq();
   virtual void		Close();
   virtual const char*	GetName()     const 	{return "Digitizer";}
-  
-  virtual AEvent*	GetEvent(Int_t)		{return NULL;} 
+ 
+  virtual void          PopEvent()              {;}
+  virtual AEvent*	GetEvent()		{return NULL;} 
 
 
   virtual      ~Digitizer()      {}  
@@ -86,8 +87,6 @@ public:
 
 ClassDef(Digitizer, 0)
 };
-
-
 
 
 #endif

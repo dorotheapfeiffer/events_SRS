@@ -3,6 +3,7 @@
 #define SimCard_h
 
 #include <iostream>
+#include <TThread.h>
 
 #include "Digitizer.h"
 #include "SimCardDlg.h"
@@ -27,7 +28,12 @@ class SimCardDlg;
 class SimCard : public Digitizer {
 private:
 
-    static Int_t                 gDeviceNr;              // needed for counting cards in case there are more than one
+   TThread			aThread;
+   static void* 		ThreadFunc(void*);
+   Bool_t			aRun;
+
+
+   static Int_t                 gDeviceNr;              // needed for counting cards in case there are more than one
 
    char                         mName[80];              // name of the card
    Int_t                        mCardNr;                // a card number in case there are more than one instrument in the system
@@ -65,20 +71,14 @@ private:
    UInt_t                       mSelfTriggerMask[32];   // decide which indyvidual trigger take part in generating global trigger, 
                                                         // indyvidual for each group
                                                         //    UInt_t                       mSuppresionMode;
-                                                        //
-                                                        //
-
-   Int_t 	aIsReady;
-   TThread*	aThreadSimCard;
-   static void* ThreadFunc(void*);
 
 
    std::vector<AEvent *>        mEvents;                // List of all events saved by the digitizer during one dataread
 
    AEvent                       testEvent;
 
-   SimCard();
-   SimCard(bool);
+   SimCard(){}
+   SimCard(Int_t);
    SimCard(const SimCard&);
    SimCard operator=( SimCard );
 
@@ -99,13 +99,14 @@ public:
   //virtual void                PrintInfo(){}
   virtual void          Reset();
   virtual Int_t         Initialize();
-  virtual void          Configure();
+  virtual Int_t          Configure();
   virtual void          StartAcq();
   virtual void          StopAcq();
   virtual void          Close();
   
-  virtual AEvent*       GetEvent(Int_t nr)                              {return mEvents[nr];}
+  virtual AEvent*       GetEvent()                              {return mEvents[0];}
   //virtual AEvent*     GetEvent(Int_t nr)                              {return &testEvent; }
+
   
   virtual const char*   GetName()                               const   { return mName; }
   virtual UInt_t        GetData();
@@ -121,7 +122,10 @@ public:
   virtual Int_t         GetActiveGroup(Int_t a)                 const   { return mGroupEnableMask[a];}
   virtual Int_t         GetThreshold(Int_t a, Bool_t b = kTRUE) const   { if(b) return mThreshold_mV[a]; else return mThreshold[a];}
   virtual Int_t         GetThresholdMode(Int_t a)               const   { return mChannelTriggerMode[a];}
-  
+
+	void		GenerateEvent(Short_t *, Int_t); 
+	 void          SetReconfigure(Bool_t a){mReconfig = a;}
+          Bool_t        GetReconfigure(){return mReconfig;}
 
 ClassDef(SimCard, 0)
 };
