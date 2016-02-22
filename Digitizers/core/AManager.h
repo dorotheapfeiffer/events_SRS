@@ -64,6 +64,7 @@ class AManager : public TQObject{
 	Int_t mFileTime;
 	Int_t mFileNr;
 	Int_t mMaxFiles;
+	Int_t mMaxAcqTime;
 	Int_t mTimeout;
 	Int_t mMaxRange;
 	Int_t mMaxNrSamples;
@@ -107,6 +108,7 @@ public:
 	void		SetMaxSamples(int a)		{ mMaxNrSamples  = a;	  }
 	void		SetEventNr(int a)		{ mEventNr   = a;	  }
 	void		SetMaxEvents(int a)		{ mMaxEvents   = a;	  }
+	void		SetMaxAcqTime(int a)		{ mMaxAcqTime   = a;	  }
 	void		SetDataSize(int a)		{ mDataSize   = a;	  }
 
 	void		SetLabelEnable(bool a)		{ mWindow->SetLabelAcq(a); }
@@ -125,6 +127,7 @@ public:
 	Int_t		GetFileTime()			{ return mFileTime;	}
 	Int_t		GetFileNr()			{ return mFileNr;	}
 	Int_t		GetMaxFiles()			{ return mMaxFiles;	}
+	Int_t		GetMaxAcqTime()			{ return mMaxAcqTime;	}
         Int_t		GetTimeout()			{ return mTimeout;	}
 	Int_t		GetSegments()			{ return mSegments;	}
 	Int_t		GetMaxRange()			{ return mMaxRange;	}

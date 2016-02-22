@@ -28,12 +28,16 @@ private:
         enum WD{
 		eTIMEOUTCHECKB	= 10,
 		eTIMEOUTENTRY	= 20,
-		eEVENTS		= 30,
-		eEVENTSCHECKB	= 40,
-		eFILES		= 50,
-		eFILESENTRY	= 60,
-		eFILESIZE	= 70,
-		eFILETIME	= 80
+
+		eMAXEVENTSENTRY	= 30,
+		eMAXEVENTSCHB	= 40,
+		eMAXFILESENTRY	= 50,
+		eMAXFILESCHB	= 60,
+		eMAXACQTIMEENTRY= 70,
+		eMAXACQTIMECHB	= 80,
+
+		eMAXFILESIZE	= 90,
+		eMAXFILETIME	= 100
         };       
   
         AManager*	aManager;  // pointer to Manager
@@ -58,8 +62,10 @@ private:
 	TGGroupFrame *fLoopFrame;
 	TGCheckButton *fCBMaxEvents;
 	TGNumberEntry *fEntryMaxEvents;
-	TGCheckButton *fCBMaxFiles ;
+	TGCheckButton *fCBMaxFiles;
 	TGNumberEntry *fEntryMaxFiles;
+	TGCheckButton *fCBMaxAcqTime;
+	TGNumberEntry *fEntryMaxAcqTime;
 
  
 	TGGroupFrame	*fFileFrame;	
@@ -84,7 +90,7 @@ public:
    void DoEnable(Bool_t);
    void DisconnectAll();
 
-   void Reconfigure();
+//   void Reconfigure();
 
    ClassDef(ControlFrame, 0)
 };

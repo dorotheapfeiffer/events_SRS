@@ -30,8 +30,32 @@ extern int gDEBUG_CONTROL;
 
 ClassImp(ControlAcq)
 
-Bool_t  findMinTimeStamp(AEvent* , AEvent* );
+long get_time()
+{
+    long time_ms;
+#ifdef WIN32
+    struct _timeb timebuffer;
+    _ftime( &timebuffer );
+    time_ms = (long)timebuffer.time * 1000 + (long)timebuffer.millitm;
+#else
+    struct timeval t1;
+    struct timezone tz;
+    gettimeofday(&t1, &tz);
+    time_ms = (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
+#endif
+    return time_ms;
+}
 
+Int_t mBytesPerSec ; // for test only
+Long_t mPrevRateTime;
+Long_t mCurrentTime; 
+Long_t mElapsedTime;
+Int_t mEventsPerSec;
+/* ============================================================================== */
+
+
+
+Bool_t  findMinTimeStamp(AEvent* , AEvent* );
 //============================================================================================
 
 ControlAcq::ControlAcq( Bool_t a) : mSimOnly(a) {
@@ -44,12 +68,15 @@ numInst = aManager->GetNrDigitizers();
 
 mNrAllEvents	= 0;
 mMaxSegment	= 0;
+mAcqStopTimer	= 0;
 
 //mMemList = new TObjArray();
   
 for(UInt_t i = 0; i < 100; i++)
      numEvents[ i ] = 0;
 
+ aTimer = new TTimer();
+ aTimer->Connect("Timeout()", "ControlAcq", this, "TimerDone()");
 } 
 
 //============================================================================================
@@ -59,18 +86,9 @@ ControlAcq::~ControlAcq(){
 #endif
 
   aManager = 0;
-}
-
-//============================================================================================
-void ControlAcq::DoTimeout(Int_t n){
-  switch (n){
-     case 2:
-       mTimeout2 = 0;
-       cout << "Timeout 2 "<< endl;
-     break;
-     default:
-     break;
-   }
+  mAggregateEvents.clear();
+  aTimer->Disconnect("Timeout()");
+  delete aTimer;
 }
 
 
@@ -79,7 +97,7 @@ void ControlAcq::DoTimeout(Int_t n){
 //
 void ControlAcq::Run(){
    #ifdef DEBUG
-     if(gDEBUG_CONTROL > 0) cout << "DEBUG [ControlAcq::Start], mode = " << aManager->GetMode() << endl;
+     if(gDEBUG_CONTROL > 0) cout << "DEBUG [ControlAcq::Run], mode = " << aManager->GetMode() << endl;
    #endif
 
 //----- Initialization ----
@@ -90,6 +108,7 @@ void ControlAcq::Run(){
 //----- OSCI mode ------
  StartAllCards();
  aManager->SetStartAcqTime();
+ mPrevRateTime = get_time();
  aManager->SetEventNr(0);
 
  Bool_t allEventsZero = kFALSE;
@@ -109,8 +128,9 @@ void ControlAcq::Run(){
        // if( !aManager->GetDigitizer(i)->IsEnabled() ) continue; 
        if(aManager->GetDigitizer(i)->Configure())
           aManager->GetDigitizer(i)->StartAcq();
+
        numEvents[i] = aManager->GetDigitizer(i)->GetData();  	
-       //cout << "Digitizer [" << i << "] Number of events  " << numEvents[i] << endl;	
+       mBytesPerSec += aManager->GetDigitizer(i)->GetDataSize();
        }
     
     for(UInt_t i = 0; i < numInst; i++) {   
@@ -181,7 +201,7 @@ void ControlAcq::Run(){
 
     }
          
-
+    UpdateRates();
     gSystem->ProcessEvents();
     gSystem->Sleep(10);    
 
@@ -189,58 +209,52 @@ void ControlAcq::Run(){
 
  StopAllCards();
  
+ if( aManager->GetMode() != MainFrame::sACQUISITION ) return;
+
 ////////////////////////////////////////////////////////////////////////////////////////////// 
 //----- ACQ mode -------
 
- if( aManager->GetMode() != MainFrame::sACQUISITION ) return;
-
-
- ADataSave2 aDataSave(kTRUE);
- aManager->SetStartAcqTime();
- aManager->SetEventNr(0);
  UInt_t eventNr = 0;
  UInt_t loop = 0;
- TStopwatch t;
-	      t.Start();
+
+ //---
+ ADataSave2 aDataSave(kTRUE);
+ aManager->SetEventNr(0);
+ aManager->SetStartAcqTime();
+
+ //---
+ if( aManager->GetMaxAcqTime() > 0){
+     aTimer->Start(aManager->GetMaxAcqTime() * 1000); // div by 1000 to have it in msec
+     cout << "Sstar Timer: " << aManager->GetMaxAcqTime() <<"s\t mAcqStopTimer = " << mAcqStopTimer << endl;
+   }
+ //---
+ StartAllCards();
 
   while( LoopCondition( 2 ) ){
-              //t.Stop();
-              //t.Print();
-	      //t.Start();
        for(UInt_t i = 0; i < numInst; i++) {   
-          if( !aManager->GetDigitizer(i)->IsEnabled() ) continue; 
+          //if( !aManager->GetDigitizer(i)->IsEnabled() ) continue; 
 
           numEvents[i] = aManager->GetDigitizer(i)->GetData();  		
-          //cout << "hello 20 numEvents["<<i<<"] = " << numEvents[i] << endl;
           if( numEvents[i] ){
              aManager->SetDataSize(aManager->GetDataSize() + aManager->GetDigitizer(i)->GetDataSize());	
 
              for(UInt_t j = 0; j < numEvents[i]; j++){ 
  
-                //cout << "\n========= GetEvents ======" << endl;
-	        //t.Start();
-                //aManager->SetEventNr(aManager->GetEventNr() + j);
                 AEvent *aE = aManager->GetDigitizer(i)->GetEvent();
                 aE->SetEventNr( eventNr++ );
-                //t.Stop();
-                //t.Print();
  
-                //cout << "\n========= Display ======" << endl;
-	        //t.Start();
                 if(aManager->GetDisplay())
                    aDisplay->UpdateGraph( aE );
                 else{
                   AEvent *aE = NULL;
                   aDisplay->UpdateGraph( aE );
                   }
-                //t.Stop();
-                //t.Print();
-                //cout << "\n========= Save ======" << endl;
-                aDataSave.SaveInBuffer( *aE );
-                //t.Stop();
-                //t.Print();
 
+                aDataSave.SaveInBuffer( *aE );
+                aManager->GetDigitizer(i)->PopEvent(); 
                 gSystem->ProcessEvents();
+	        aManager->SetEventNr( aManager->GetEventNr()+1);
+                delete aE;
 
                 }
             }
@@ -248,6 +262,7 @@ void ControlAcq::Run(){
               gSystem->ProcessEvents();
             }
     
+            UpdateRates();
             gSystem->Sleep(10); 
    
         }
@@ -262,44 +277,90 @@ void ControlAcq::Run(){
     //if(Online)  DoOnlineAnalysis;
     //if(Display) DisplayEvent;
     //if(gnuplot) Gnuplot;
-
-
+ StopAllCards();
+ aManager->SetFileNr(0);
+ 
 }
 //============================================================================================
 bool ControlAcq::LoopCondition(Int_t mode){
 /*
-  #ifdef DEBUG
-     if(gDEBUG_CONTROL > 0) 
-        cout << "DEBUG [ControlAcq::LoopCondition] Mode = " << aManager->GetMode() << "\tEvents = " << aManager->GetEvents() << "\tMaxEvents = " << aManager->GetMaxEvents() << endl;
+//  #ifdef DEBUG
+//     if(gDEBUG_CONTROL > 0) 
+        cout << "  DEBUG [ControlAcq::LoopCondition] " 
+             << "\tLoop mode = "        << mode 	            << endl; 
+             << "\tmAcqStopTimer = "    << mAcqStopTimer            << endl;     
+             << "\tAManager->mAcqMode ="<< aManager->GetMode()      << endl; 
+	     << "\tEvents = "           << aManager->GetEvents()    << endl;
+             << "\tMaxEvents = "        << aManager->GetMaxEvents() << endl;
         cout << "                                             \tFiles = " << aManager->GetFiles() << "\tMaxFiles = " << aManager->GetMaxFiles() << endl;
-  #endif
+//  #endif
 */
+//cout << "Dupa jas 1" << endl;
 
- if( aManager->GetMode() == MainFrame::sSTOP )  		// return 0 when acquisition stops
+
+ if(mAcqStopTimer){ 
+     return kFALSE; 				// return kFALSE when acquisition timeout happened
+   }
+
+//cout << "Dupa jas 2" << endl;
+ if( aManager->GetMode() == MainFrame::sSTOP ) { 		// return 0 when acquisition stops by pressing the button
+   cout << "[ControlAcq::LoopCondition]:stop mAcqMode = " << aManager->GetMode() <<"\t LoopCondition(mode) = " << mode << endl;     
    return kFALSE; 
+   }
 
+//cout << "Dupa jas 3" << endl;
  if( aManager->GetMaxEvents() ){                                // return 0 when user define max number of events
    if( aManager->GetEventNr() > aManager->GetMaxEvents() ){
+       //cout << "[ControlAcq::LoopCondition]:stop mMaxEvents = " << aManager->GetMaxEvents() << "eventNr = "<< aManager->GetEventNr() << endl;     
        return kFALSE;
      } 
    }
 
+//cout << "Dupa jas 4" << endl;
+//cout << "aManager->GetMaxFiles(): " << aManager->GetMaxFiles() << "\taManager->GetFileNr(): " << aManager->GetFileNr() << endl;
  if( aManager->GetMaxFiles() ){					// return 0 when user define max number of files
-   if( aManager->GetFileNr() > aManager->GetMaxFiles())
+   //cout << "aManager->GetMaxFiles(): " << aManager->GetMaxFiles() << "\taManager->GetFileNr(): " << aManager->GetFileNr() << endl;
+   if( aManager->GetFileNr() >= aManager->GetMaxFiles()){
+       //cout << "[ControlAcq::LoopCondition]:stop mMaxFiles = " << aManager->GetMaxFiles() << "fileNr = "<< aManager->GetFileNr() << endl;     
      return kFALSE;
+     }
    }
 
- if( aManager->GetMode() == MainFrame::sACQUISITION && mode == 1){
+ if( (aManager->GetMode() == MainFrame::sACQUISITION) && mode == 1){
+ // cout << "[ControlAcq::LoopCondition]:stop mode = " << mode << endl;
   return kFALSE;
   }
- else if (aManager->GetMode() == MainFrame::sACQUISITION && mode == 2){
+ else if ((aManager->GetMode() == MainFrame::sACQUISITION) && mode == 2){
+//  cout << "[ControlAcq::LoopCondition]:run mode = " << mode << endl;
   return kTRUE;
  }
 
+
+//cout << "Dupa jas 5" << endl;
 return kTRUE;
 }
 
+//============================================================================================
+void ControlAcq::UpdateRates(){
 
+  static int i = 0;
+  mEventsPerSec = aManager->GetEventNr(); 
+  mCurrentTime = get_time();
+  mElapsedTime = mCurrentTime - mPrevRateTime;
+  if( mElapsedTime  > 1000L) {
+    //printf("DEBUG::::Reading at %.2f MB/s (Trg Rate: %.2f Hz)\n", (float)mBytesPerSec/((float)mElapsedTime*1048.576f), (float)mEventsPerSec*1000.0f/(float)mElapsedTime);
+    
+    mBytesPerSec = 0;
+    mEventsPerSec = 0;
+    mPrevRateTime = mCurrentTime;
+    aManager->GetFrame()->SetLabelAcq( Bool_t(i%2));
+    i++;
+    }
+ // else if(mElapsedTime > 500L){
+ //   aManager->GetFrame()->SetLabelAcq(1);
+ //   }
+
+}
 //============================================================================================
 Int_t ControlAcq::Aggregate(){
      #ifdef DEBUG
@@ -423,16 +484,6 @@ Int_t ControlAcq::Aggregate(){
 return 0;
 }
 
-
-//============================================================================================
-/*void ControlAcq::InitAcq(){
-
-  #ifdef DEBUG
-     if(gDEBUG_CONTROL > 0) cout << "DEBUG [ControlAcq::InitAcq] "<< endl; 
-  #endif
-
-}
-*/
 //============================================================================================
 /*
 void ControlAcq::DeleteAcq(){
@@ -481,25 +532,6 @@ return 0;
 }
 */
 //============================================================================================
-bool ControlAcq::IsForceTrigger(){
-//this function should be in loop condition.....
- return kFALSE; 
-
-  if(aManager->GetTimeout()){
-     if(mTimeout2 == 0){
-        mTimeout2 = 1;
-        Disconnect(timer2);
-        timer2->Start(aManager->GetTimeout(), kTRUE); 
-        return kTRUE;
-       }
-     else
-        return kFALSE;  
-     }
-   else
-    return kFALSE;
-
-}
-//============================================================================================
 /*
 Int_t ControlAcq::Stop(Int_t timeout_ms){
      #ifdef DEBUG
@@ -517,7 +549,16 @@ Int_t ControlAcq::IsBadEvent(){
 return 0;
 }
 */
+//============================================================================================   
+Bool_t ControlAcq::TimerDone(){
 
+  mAcqStopTimer = 1;
+  aTimer->TurnOff();
+  cout << "DEBUG [ControlAcq::TimerDone] mAcqStopTimer = "<<  mAcqStopTimer << endl;
+return kTRUE;
+}
+
+//============================================================================================   
 Bool_t  findMinTimeStamp(AEvent* a, AEvent* b){
  return a->GetTimeStamp() > b->GetTimeStamp();
 }

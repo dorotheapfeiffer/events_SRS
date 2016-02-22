@@ -186,6 +186,7 @@ for(Int_t i = 0; i < 32; i++)
    throw  BadDigitizerCreation(str);
    }
  
+
  #ifdef DEBUG
     if(gDEBUG_CAEN > 2)
       cout << "DEBUG [CAEN5740::CAEN5740] mHandle = " << mHandle << endl;
@@ -200,6 +201,7 @@ CAEN5740::~CAEN5740() {
     if(gDEBUG_CAEN > 2)
       cout << "DEBUG [CAEN5740::Destructor]" << endl;
   #endif
+ 
 
  if(mHandle){
    ErrCode = CAEN_DGTZ_CloseDigitizer(mHandle);
@@ -216,6 +218,9 @@ Int_t CAEN5740::Initialize() {
  #ifdef DEBUG
   if(gDEBUG_CAEN > 2){ cout << "DEBUG [CAEN5740::Initialization ]" << mName << endl; }
  #endif
+
+ ErrCode = CAEN_DGTZ_Reset(mHandle);
+ if(ErrCode) printf("ERROR [%s]\n", ErrMsg[0-ErrCode]);
 
  ErrCode = CAEN_DGTZ_GetInfo(mHandle, &BoardInfo);
  if(ErrCode) printf("ERROR [%s]\n", ErrMsg[0-ErrCode]);
@@ -238,8 +243,6 @@ Int_t CAEN5740::Initialize() {
  
  sprintf(mName + strlen(mName), ".%d", BoardInfo.SerialNumber);
 
- ErrCode = CAEN_DGTZ_Reset(mHandle);
- if(ErrCode) printf("ERROR [%s]\n", ErrMsg[0-ErrCode]);
  
 return 0; 
  }
@@ -251,11 +254,24 @@ void CAEN5740::StartAcq(){
     if(gDEBUG_CAEN > 2) cout << "DEBUG [CAEN5740::StartAcq] " << mName << endl;
   #endif
 
- // if (mAcqMode == 0){
+//  ErrCode = CAEN_DGTZ_ClearData(mHandle);
+//  if(ErrCode) printf("ERROR [%s]\n", ErrMsg[0-ErrCode]);
+
+  if (mAcqMode == 0){           // 1 hardware start acq, 0- software start acq
+    cout << "DEBUG [CAEN5740::StartAcq] mAcqMode = " << mAcqMode << endl;
  //    CAEN_DGTZ_WriteRegister(mHandle, 0x8100 , 0xE); 
      ErrCode = CAEN_DGTZ_SWStartAcquisition(mHandle);
  //    CAEN_DGTZ_WriteRegister(mHandle, 0x817C , 0); // Enable TRGIN of the first board
- //   }
+    } 
+  else if (mAcqMode == 1){
+    cout << "DEBUG [CAEN5740::StartAcq] mAcqMode = " << mAcqMode << endl;
+    CAEN_DGTZ_WriteRegister(mHandle, 0x8100 , 0xE); 
+    ErrCode = CAEN_DGTZ_SWStartAcquisition(mHandle);
+    CAEN_DGTZ_WriteRegister(mHandle, 0x817C , 0); // Enable TRGIN of the first board
+    }
+  else
+    cout << "ERROR [CAEN5740::StartAcq] mAcqMode = " << mAcqMode << " is not supported!" << endl;
+  
   RegisterDump(); 
 
   if(ErrCode) printf("ERROR [%s]\n", ErrMsg[0-ErrCode]);
@@ -335,7 +351,7 @@ void CAEN5740::Refresh() {
 
 //for(Int_t i = 0; i < 100; i++) cout << endl;
 
-AManager *aManager = &AManager::GetInstance();
+ AManager *aManager = &AManager::GetInstance();
 
 cout << "\t+---- General -----------"<< endl;
 cout << "\t| Name\t\t\t= "        << mName 		      << endl  ;  
@@ -505,9 +521,22 @@ Int_t CAEN5740::Configure() {
  if(mFPIOtype != send) printf("ERROR Configuration, wrong FPIOtype\n");
 
 
+ AManager *aManager = &AManager::GetInstance();
  // Configure Max number of events
- if( MainFrame::sOSCI ) mNumEvents = 1;
- mNumEvents = 2;
+ cout << "---------------------------- " << MainFrame::sOSCI << endl;
+ if( aManager->GetMode() == MainFrame::sOSCI) { 
+     mNumEvents = 1; 
+     printf("DEBUG [CAEN::Configure] SetMaxNumEventsBTL to 1, sSTATE:\n");
+     }
+ else if (aManager->GetMode() == MainFrame::sACQUISITION) { 
+     mNumEvents= 255; 
+     printf("DEBUG [CAEN::Configure] SetMaxNumEventsBTL to 255, sSTATE:\n");
+     }
+ else { 
+     mNumEvents = 1;
+     printf("ERROR [CAEN::Configure] SetMaxNumEventsBTL 1 (else)\n");
+      }
+
  ErrCode = CAEN_DGTZ_SetMaxNumEventsBLT(mHandle, mNumEvents);
  if(ErrCode) printf("ERROR [CAEN::Configure] SetMaxNumEventsBTL [%s]\n", ErrMsg[0-ErrCode]);
 
@@ -737,9 +766,19 @@ Int_t CAEN5740::Configure() {
     ErrCode = CAEN_DGTZ_SetTriggerPolarity(mHandle, i, static_cast<CAEN_DGTZ_TriggerPolarity_t>(mTriggerEdge[i]));
     //ErrCode = CAEN_DGTZ_SetTriggerPolarity(mHandle, i, CAEN_DGTZ_TriggerOnFallingEdge);
     if(ErrCode) printf("ERROR [CAEN::Configure] SetTriggerEdge [%s]\n", ErrMsg[0-ErrCode]);
+    }
+
+ for(Int_t i = 0; i < 2; i++){ 
     ErrCode = CAEN_DGTZ_SetChannelPulsePolarity(mHandle, i, CAEN_DGTZ_PulsePolarityNegative);
     if(ErrCode) printf("ERROR [CAEN::Configure] SetChannelPulsePolarity ch = %d, [%s]\n", i, ErrMsg[0-ErrCode]);
-    }
+   }
+
+ for(Int_t i = 2; i < 4; i++){ 
+    ErrCode = CAEN_DGTZ_SetChannelPulsePolarity(mHandle, i, CAEN_DGTZ_PulsePolarityPositive);
+    if(ErrCode) printf("ERROR [CAEN::Configure] SetChannelPulsePolarity ch = %d, [%s]\n", i, ErrMsg[0-ErrCode]);
+   }
+
+
 
  //-t channel puls polarity
 /*
@@ -1090,7 +1129,7 @@ UInt_t CAEN5740::GetData(){
 
 
   //cout << "---------- Nr of Events from " << mName << ", mHandle = " << mHandle << " " << aNrEvents << " mSize = " << mSize << endl;
-
+/*
   Nb += mSize;
   Ne += aNrEvents;
   CurrentTime = get_time();
@@ -1111,7 +1150,7 @@ UInt_t CAEN5740::GetData(){
   Ne = 0;
   PrevRateTime = CurrentTime;
   }
-
+*/
  for(Int_t i = 0; i < (Int_t)aNrEvents; i++){
     CAEN_DGTZ_GetEventInfo(mHandle, mBuffer, mSize, i, &EventInfo, &EventPtr);
     CAEN_DGTZ_DecodeEvent(mHandle, EventPtr, (void**)&Event16);
@@ -1173,7 +1212,7 @@ void CAEN5740::NormalTriggerBuild(AEvent &aEvent){   // for normal work
     for(Int_t i = 0; i < 32; i++){   
        if( ((mSaveChannel >> i) & 1) && ((EventInfo.ChannelMask >> i/8 )& 1)) { 
           //cout << std::bitset<32>(mSaveChannel) << " " << EventInfo.ChannelMask << endl;
-          aEvent.AddTrack(new ATrack(mCardNr, i, 1. / 65e6, 0, 1000, EventInfo.TriggerTimeTag, mThreshold_mV[i], 
+          aEvent.AddTrack(new ATrack(mCardNr, i, 62.5e-6, 0, 1000, EventInfo.TriggerTimeTag, mThreshold_mV[i], 
                                (Short_t*)Event16->DataChannel[i], Event16->ChSize[i]));
          }
  

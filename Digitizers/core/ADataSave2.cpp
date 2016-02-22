@@ -1,5 +1,8 @@
 /*****************************************************************************
 *
+* This is anoter immplementation of DataSave WITHOUT multithread buffer
+* This immplementation is a simply one buffer, to check whether is faster than multithread or not.
+*
 *****************************************************************************/
 
 #include <iostream>
@@ -8,28 +11,26 @@
 #include <cstdlib>
 #include <exception>
 #include <ctime>
+#include <TDatime.h>
 
-#include <TThread.h>
-#include <TMutex.h>
 #include <TGFileDialog.h>
 
-#include "ADataSave.h"
-#include "ARingBuffer.h"
+#include "ADataSave2.h"
 #include "AManager.h"
 
 using namespace std;
 
 extern int gDEBUG_SAVE;
 
-ClassImp(ADataSave)
+ClassImp(ADataSave2)
 
-ADataSave::ADataSave(){} 
+ADataSave2::ADataSave2(){} 
 
 			     
-ADataSave::ADataSave(bool a) : aRun(a), aRingBuffer(1000), aThread("aThread", ThreadFunc, this ) 
+ADataSave2::ADataSave2(bool a) 
 {
    #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::ADataSave]" );
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave2::ADataSave2]" );
    #endif
 
   aManager	= &AManager::GetInstance();
@@ -46,70 +47,99 @@ ADataSave::ADataSave(bool a) : aRun(a), aRingBuffer(1000), aThread("aThread", Th
     aManager->SetDataFileName(fi.fFilename);
     }
 
-  aManager->SetDataFileName("test");
+//  aManager->SetDataFileName("test");
 
   aMaxFileSize 	= aManager->GetFileSize() * 1024 * 1024; // to have it in MB
+  aBuffer	= new Char_t [ aMaxFileSize + (40 * 1024*1024) ]; 	 // *1.2 to have some extra space...
+  aBufferPos	= 0;
+  aBufferCounter= 0;
   aMaxFiles 	= aManager->GetMaxFiles(); 
   aEventCounter	= 0;
   aFileNr	= 0;
   aEmptyBuffer  = 0;
-  aThread.Run(this);
+
+
+  // a log file for the aquisition
+
+  TString aFileLog = aManager->GetDataFileName();
+  ofstream Logout(aFileLog, ios::out);
+  if(!Logout.is_open()) { 
+     cout << "ERROR could not open the file... " << aFileLog << endl; 
+    }
+  else{
+    TDatime t;
+    Logout << "Acquisition starts: " << t.GetYear() << "." << t.GetMonth() << "." << t.GetDay() << " at " << t.GetHour() << ":" << t.GetSecond() << endl;
+    Logout.close();
+    }
+   
+
+  
 }
 
 //===============================================================================
 
-ADataSave::~ADataSave(){
+ADataSave2::~ADataSave2(){
    #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::~ADataSave]" );
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave2::~ADataSave2]" );
    #endif
-  aRun = kFALSE;   
-  aThread.Join();
-  
+  delete [] aBuffer; 
   aManager = 0;
 }
 
 
 //===============================================================================
-void ADataSave::OpenNewFile(){
+void ADataSave2::OpenNewFile(){
 
    #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::OpenNewFile] " );
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave2::OpenNewFile] " );
    #endif
 
   char charNr[10];
+  TString aFileName;
+  TDatime t;
 
   if(fout.is_open()) { 
       cout << "The file: " << aManager->GetDataFileName() << " was opened, close it..." << endl;
       fout.close();
       }
 
- cout << "aFileNr   = " << aFileNr << "\t aMaxFiles = " << aMaxFiles << endl;	   
   if(aFileNr < aMaxFiles || aMaxFiles == 0){
 
      sprintf(charNr, "_%03d.dat", aFileNr++);
-     TString aFileName = aManager->GetDataFileName() + charNr;
+     aFileName = aManager->GetDataFileName() + charNr;
 
-     cout << "Try to open a new file: " << aFileName;
      fout.open(aFileName, ios::out);
      if(!fout.is_open()) { 
-       cout << "could not open the file... "<< endl; 
+       cout << "could not open file... " << aFileName << endl; 
        }
-     else
-       cout << " is open and ready to write data"<< endl; 
-      
+     else{
+       fout.write((char *) aBuffer, aBufferPos);
+       fout.close();
+       cout << "New file (" << aFileNr << "/" << aMaxFiles << ")   [" << aFileName << "] was created at " << t.GetHour() << ":" << t.GetSecond() << endl;
+       }
+    }
+
+
+  // writing information to acquisition log file
+  TString aFileLog = aManager->GetDataFileName();
+  ofstream Logout(aFileLog, std::ofstream::out | std::ofstream::app);
+  if(!Logout.is_open()) { 
+     cout << "ERROR could not open the file... " << aFileName << endl; 
     }
   else{
-    aRun = kFALSE;
+    Logout << "New file [" << aFileName << "] was created at" << t.GetHour() << ":" << t.GetSecond() << endl;
+    Logout.close();
     }
+  
 
 }
 
 //===============================================================================
 
-void ADataSave::InitDataSave(){
+void ADataSave2::InitDataSave(){
 
    #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::InitDataSave]");
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave2::InitDataSave]");
    #endif
  
   char charNr[10];   
@@ -124,10 +154,10 @@ void ADataSave::InitDataSave(){
 
 //===============================================================================
 
-void ADataSave::DeleteDataSave(){
+void ADataSave2::DeleteDataSave(){
 
    #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::DeleteDataSave] " );
+     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave2::DeleteDataSave] " );
    #endif
 
   if(fout.is_open()) { 
@@ -139,88 +169,43 @@ void ADataSave::DeleteDataSave(){
 }
 
 //===============================================================================
-void ADataSave::SaveInBuffer(AEvent *aEvent){
+UInt_t ADataSave2::SaveInBuffer(AEvent &aEvent){
 
-  aRingBuffer.push_front(*aEvent);
+   //cout << "DEBUG [ADataSave2::SaveInBuffer] aBufferPos = " << aBufferPos << " aMaxFileSize = " << aMaxFileSize << endl;
+   aBufferPos += aEvent.SaveInBuffer(aBuffer + aBufferPos);
+   if( (aBufferPos > aMaxFileSize) ){
+      OpenNewFile(); 
+      aBufferCounter = 0;
+      aBufferPos = 0;
+      cout << "DEBUG [ADataSave2::SaveInBuffer] Buffer save to file, aBufferPos = " << aBufferPos << endl;
+      }
+ 
+   aManager->SetFileNr(aFileNr);  
 
+return 0;
+
+  
 }
 //===============================================================================
-
-void* ADataSave::ThreadFunc(void* aPtr){
-   #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::ThreadFunction] !!" );
-   #endif
-
-   ADataSave* p = (ADataSave*)aPtr;
-
-   p->InitDataSave();
-
-   UInt_t aFileSize = 0;
-
-   AEvent aEvent;
-
-   while( (p->aRun) && (&p->aThread) && p->aThread.GetState() == TThread::kRunningState ){
-
-	   
-     if(!p->aRingBuffer.pop_back_time(&aEvent)){
-        //TThread::Printf(" ------------- thread2 ------- [ADataSave::ThreadFunction] read event from buffer and write it to file");  
+/*
         aEvent.Write2F(p->fout);
         aFileSize += 2*aEvent.GetEventSize();
-           //cout << "aFileSize = " << aFileSize << "\t aMaxFileSize = " << p->aMaxFileSize << endl;	   
-           //cout << "aFileNr   = " << p->aFileNr << "\t aMaxFiles = " << p->aMaxFiles << endl;	   
         if( (aFileSize > p->aMaxFileSize) ){
            p->OpenNewFile(); 
 	   aFileSize = 0;
            }
         }
-
-      TThread::Sleep(0, 10*1000*1000); // sleep 10ms   10 * 1000 * 1000 ns
-     }      
-     
- //  p->EmptyBuffer();
-   p->DeleteDataSave(); 
-
-return aPtr;      
-}
+*/
 
 //==========================================================================
-Int_t ADataSave::Stop(Int_t timeout_ms){
-   #ifdef DEBUG
-     if(gDEBUG_SAVE > 0) TThread::Printf(" [ADataSave::StopDataSave] ");
-   #endif
-
-   if(aThread.GetState() == TThread::kRunningState)
-     aRun = kFALSE;
-
-   Int_t retval = 0;
-   Int_t granularity = 25;
-   Int_t i = 0;
-   timeout_ms /= granularity;
-                                
-   while(aThread.GetState() == TThread::kRunningState && (i < granularity)){
-     TThread::Sleep(0,granularity * 1000); 
-     i++;
-     }
-
-
-    if ( i > granularity) { 
-       TThread::Printf("Failed to stop the thread"); 
-       aThread.Kill();
-       retval = 1;
-       }
-    
-
-return retval;
-}
-//==========================================================================
-void ADataSave::EmptyBuffer(){
+void ADataSave2::EmptyBuffer(){
 
          TThread::Printf(" Empty buffer is not implemented yet, some data could not be stored....");	
 }
 
 //==========================================================================
 /*
-void ADataSave::SetHeader(const char* header){
+void ADataSave2::SetHeader(const char* header){
 for(int i = 0; i < mCards; i++)
    {
    cout << mAcqDev[i]->GetName()        << endl;

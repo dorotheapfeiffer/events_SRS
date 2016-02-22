@@ -25,6 +25,7 @@ class ControlAcq : public TQObject{
 	Int_t		*mCardReady;
 	Int_t		mAllCardsReady;
 	UInt_t		mNrAllEvents;
+	Bool_t		mAcqStopTimer;
 
 	std::vector<AEvent>	mAggregateEvents;
 
@@ -34,13 +35,13 @@ class ControlAcq : public TQObject{
 	ARingBuffer	*aOnlineBuffer;
   
 	AManager	*aManager;
-	TTimer		*timer2;
-	Long_t 		mTimeout2;
+	TTimer		*aTimer;
 	
 	Int_t		IsBadEvent();
 	Int_t		Aggregate();
 	bool 		LoopCondition(Int_t mode = 0);
 	bool		IsForceTrigger();
+	void		UpdateRates();
 
  	UInt_t 		numEvents[ 100 ];		// number of events per instrument it support 100 instruments....
 
@@ -52,7 +53,7 @@ class ControlAcq : public TQObject{
 	ControlAcq( bool mSimOnly );
 	virtual ~ControlAcq();
 
-	void		DoTimeout(Int_t);
+	Bool_t		TimerDone();
 	void		Run();
 	void		StartAllCards();
 	void		StopAllCards();

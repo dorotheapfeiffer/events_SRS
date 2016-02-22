@@ -59,10 +59,12 @@ enum CommandIdentifiers{
      eTIMEOUTENTRY   = 220,
      eEVENTSCHECKB   = 230,   
      eEVENTSENTRY    = 240,
-     eFILESCHECKB    = 250,
-     eFILESENTRY     = 260,
-     eFILESIZE       = 270,   
-     eFILETIME       = 280
+     eACQTIMEENTRY   = 250,
+     eACQTIMECHB     = 260,
+     eFILESCHECKB    = 270,
+     eFILESENTRY     = 280,
+     eFILESIZE       = 290,   
+     eFILETIME       = 300
 
    };
 
@@ -122,6 +124,8 @@ private:
         TGNumberEntry *fEntryMaxEvents;
         TGCheckButton *fCBMaxFiles ;
         TGNumberEntry *fEntryMaxFiles;
+  	TGCheckButton *fCBAcqTime;
+        TGNumberEntry *fEntryAcqTime;
 
 
         TGGroupFrame    *fFileFrame;

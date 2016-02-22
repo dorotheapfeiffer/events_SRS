@@ -147,11 +147,11 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
    fLoopFrame = new TGGroupFrame(fMainFrame,"Stop ACQ after", kVerticalFrame);
    fMainFrame->AddFrame(fLoopFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
      
-    fCBMaxEvents = new TGCheckButton(fLoopFrame,"Max Events",eEVENTS);
+    fCBMaxEvents = new TGCheckButton(fLoopFrame,"Max Events",eMAXEVENTSCHB);
     fLoopFrame->AddFrame(fCBMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
     fCBMaxEvents->Connect("Toggled(Bool_t)", "ControlFrame", this, "DoEnable(Bool_t)");
 
-    fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetMaxEvents(),11,eEVENTS,
+    fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetMaxEvents(),11,eMAXEVENTSENTRY,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
     if(aManager->GetMaxEvents()){
        fCBMaxEvents->SetState(EButtonState(1));
@@ -165,13 +165,13 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
    (fEntryMaxEvents->GetNumberEntry())->Connect("ReturnPressed()", "ControlFrame", this, "DoValueSet()");
    fLoopFrame->AddFrame(fEntryMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
 
-   fCBMaxFiles = new TGCheckButton(fLoopFrame,"Max Files", eFILES);
+   fCBMaxFiles = new TGCheckButton(fLoopFrame,"Max Files", eMAXFILESCHB);
    fCBMaxFiles->SetTextJustify(36);
    fCBMaxFiles->SetMargins(0,0,0,0);
    fCBMaxFiles->SetWrapLength(-1);
    fCBMaxFiles->Connect("Toggled(Bool_t)", "ControlFrame", this, "DoEnable(Bool_t)");
    fLoopFrame->AddFrame(fCBMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
-   fEntryMaxFiles = new TGNumberEntry(fLoopFrame, aManager->GetFileNr(),11,eFILES,
+   fEntryMaxFiles = new TGNumberEntry(fLoopFrame, aManager->GetFileNr(),11,eMAXFILESENTRY,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
 
    if(aManager->GetFileNr()){
@@ -188,6 +188,31 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
    fLoopFrame->AddFrame(fEntryMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,11));
 
 
+   fCBMaxAcqTime =  new TGCheckButton(fLoopFrame,"Acq time", eMAXACQTIMECHB);
+   fCBMaxAcqTime->SetTextJustify(36);
+   fCBMaxAcqTime->SetMargins(0,0,0,0);
+   fCBMaxAcqTime->SetWrapLength(-1);
+   fCBMaxAcqTime->Connect("Toggled(Bool_t)", "ControlFrame", this, "DoEnable(Bool_t)");
+   fLoopFrame->AddFrame(fCBMaxAcqTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+   fEntryMaxAcqTime = new TGNumberEntry(fLoopFrame, aManager->GetMaxAcqTime(),11,eMAXFILESENTRY,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+   fEntryMaxAcqTime->Connect("ValueSet(Long_t)", "ControlFrame", this, "DoValueSet()");
+   (fEntryMaxAcqTime->GetNumberEntry())->Connect("ReturnPressed()", "ControlFrame", this, "DoValueSet()");
+   fLoopFrame->AddFrame(fEntryMaxAcqTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+
+   if(aManager->GetFileNr()){
+      fCBMaxFiles->SetState(EButtonState(1));
+      fEntryMaxFiles->SetState( EButtonState(kTRUE) );
+     } 
+   else {
+      fCBMaxFiles->SetState(EButtonState(0));
+      fEntryMaxFiles->SetState( EButtonState(kFALSE) );
+     } 
+
+
+
+
 
    // "fFileFrame" group frame
    fFileFrame = new TGGroupFrame(fMainFrame,"New File after", kVerticalFrame);
@@ -195,7 +220,7 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
 
    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("File Size [MB] ")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
 
-   fEntryFileSize = new TGNumberEntry(fFileFrame, aManager->GetFileSize(),11,eFILESIZE,
+   fEntryFileSize = new TGNumberEntry(fFileFrame, aManager->GetFileSize(),11,eMAXFILESIZE,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
    fEntryFileSize->Connect("ValueSet(Long_t)", "ControlFrame", this, "DoValueSet()");
    (fEntryFileSize->GetNumberEntry())->Connect("ReturnPressed()", "ControlFrame", this, "DoValueSet()");
@@ -203,7 +228,7 @@ void ControlFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
 
    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("OR")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
    fFileFrame->AddFrame(new TGLabel(fFileFrame, new TGString("after time in [sec] ")), new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 1));
-   fEntryFileTime = new TGNumberEntry(fFileFrame, aManager->GetFileTime(),11,eFILETIME,
+   fEntryFileTime = new TGNumberEntry(fFileFrame, aManager->GetFileTime(),11,eMAXFILETIME,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
    fEntryFileTime->Connect("ValueSet(Long_t)", "ControlFrame", this, "DoValueSet()");
    (fEntryFileTime->GetNumberEntry())->Connect("ReturnPressed()", "ControlFrame", this, "DoValueSet()");
@@ -257,7 +282,7 @@ void ControlFrame::DoEnable(Bool_t a){
      fEntryTimeOut->SetState( EButtonState(a) );
    break;
 
-   case eEVENTS:
+   case eMAXEVENTSCHB:
      fCBMaxEvents->SetState(EButtonState(a));
      fEntryMaxEvents->SetState( EButtonState(a) );
      if(!a) {
@@ -269,12 +294,12 @@ void ControlFrame::DoEnable(Bool_t a){
       aManager->SetMaxEvents(1);
       fEntryMaxFiles->SetNumber(0); //
       aManager->SetFileNr(0);     //
-     fCBMaxFiles->SetState(EButtonState(0));
-     fEntryMaxFiles->SetState( EButtonState(0) );
+      fCBMaxFiles->SetState(EButtonState(0));
+      fEntryMaxFiles->SetState( EButtonState(0) );
       }
    break;
 
-   case eFILES:
+   case eMAXFILESCHB:
      fCBMaxFiles->SetState(EButtonState(a));
      fEntryMaxFiles->SetState( EButtonState(a) );
      if(!a) {
@@ -286,10 +311,14 @@ void ControlFrame::DoEnable(Bool_t a){
        aManager->SetFileNr(1);
        fEntryMaxEvents->SetNumber(0); //
        aManager->SetMaxEvents(0);      //
-     fCBMaxEvents->SetState(EButtonState(0));
-     fEntryMaxEvents->SetState( EButtonState(0) );
+      fCBMaxEvents->SetState(EButtonState(0));
+      fEntryMaxEvents->SetState( EButtonState(0) );
        }
    break;
+
+   case eMAXACQTIMECHB:
+     cout << "eMAXACQTIMECHB MUST BE IMPLEMENTED! " << endl;
+   break; 
 
    default:
    break;
@@ -342,6 +371,7 @@ void ControlFrame::DoClose()
 }
 
 //========================================================================================
+/*
 void ControlFrame::Reconfigure(){
 
 Int_t a;
@@ -383,17 +413,17 @@ Int_t a;
    fEntryFileTime->SetNumber(aManager->GetFileTime());
 
 //---
-/*
-   gClient->NeedRedraw(fCBTimeOut);
-   gClient->NeedRedraw(fEntryTimeOut);
-   gClient->NeedRedraw(fEntryMaxEvents);
-   gClient->NeedRedraw(fCBMaxEvents);
-   gClient->NeedRedraw(fCBMaxFiles);
-   gClient->NeedRedraw(fEntryMaxFiles);
-   gClient->NeedRedraw(fEntryFileSize);
-*/
-}
 
+  // gClient->NeedRedraw(fCBTimeOut);
+  // gClient->NeedRedraw(fEntryTimeOut);
+  // gClient->NeedRedraw(fEntryMaxEvents);
+  // gClient->NeedRedraw(fCBMaxEvents);
+  // gClient->NeedRedraw(fCBMaxFiles);
+  // gClient->NeedRedraw(fEntryMaxFiles);
+  // gClient->NeedRedraw(fEntryFileSize);
+
+}
+*/
 //========================================================================================
 void ControlFrame::DoValueSet(){
 
@@ -403,22 +433,26 @@ TGNumberEntry *te = (TGNumberEntry *) gTQSender;
    switch (id) {
       case eTIMEOUTENTRY:
          aManager->SetTimeout((Int_t)te->GetNumber());
-         cout << "DEBUG [ControlFrame::DoValueSet] SoftTimeout = " << aManager->GetTimeout() << endl;
+         //cout << "DEBUG [ControlFrame::DoValueSet] SoftTimeout = " << aManager->GetTimeout() << endl;
       break;
 
-      case eEVENTS:
+      case eMAXEVENTSENTRY:
          aManager->SetMaxEvents((Int_t)te->GetNumber());
       break;
 
-      case eFILES:
+      case eMAXFILESENTRY:
          aManager->SetMaxFiles((Int_t)te->GetNumber());
       break;
 
-      case eFILESIZE:
+      case eMAXACQTIMEENTRY:
+         aManager->SetMaxAcqTime((Int_t)te->GetNumber());
+      break;
+
+      case eMAXFILESIZE:
          aManager->SetFileSize((Int_t)te->GetNumber());
       break;
 
-      case eFILETIME:
+      case eMAXFILETIME:
          aManager->SetFileTime((Int_t)te->GetNumber());
       break;
 
@@ -444,6 +478,8 @@ void ControlFrame::DisconnectAll(){
    (fEntryFileSize->GetNumberEntry())->Disconnect("ReturnPressed()");
    fEntryFileTime->Disconnect("ValueSet(Long_t)");
    (fEntryFileTime->GetNumberEntry())->Disconnect("ReturnPressed()");
+   fEntryMaxAcqTime->Disconnect("DoValueSet()");
+   (fEntryMaxAcqTime->GetNumberEntry())->Disconnect("DoValueSet()");
 }
 
 

@@ -76,7 +76,8 @@ private:
 
    CAEN5740Dlg			*mGuiWindow;
    void				RegisterDump();
-  
+ 
+ 
 public:
  
   virtual 		~CAEN5740();
@@ -106,6 +107,7 @@ public:
   virtual Int_t 	WriteConfigFile(ofstream &);
   virtual Int_t 	GetTrackLength()			const 	{ return mRecordLength; }
   virtual Int_t 	GetRange(Int_t )			const 	{ return 2000;} // return in mVolts
+  virtual Int_t 	GetOffset(Int_t a)			const 	{ return mDCoffset[a];} // return in mVolts
   virtual Int_t         GetNrOfGroups()				const	{ return 4;}
   virtual Int_t         GetNrOfChannels()                       const   { return 32;}  
   virtual Int_t         GetActiveGroup(Int_t a)                 const   { return mGroupEnableMask[a];}  

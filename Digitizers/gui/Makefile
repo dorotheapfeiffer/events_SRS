@@ -1,14 +1,14 @@
 
 include ../Makefile.mk
 
-CFLAGS  += -I./
+#CFLAGS  += -I./
 CFLAGS  += -I../core
 
-SRCCPP  := guiDict.cpp ADisplay.cpp ControlFrame.cpp MainFrame.cpp 
+SRCCPP  := guiDict.cpp ADisplay.cpp MainFrame.cpp 
 
 OBJECTS := $(SRCCPP:.cpp=.o)
 
-HEADERS := ADisplay.h ControlFrame.h MainFrame.h
+HEADERS := ADisplay.h MainFrame.h
 
 DICT    := guiDict.cpp
 

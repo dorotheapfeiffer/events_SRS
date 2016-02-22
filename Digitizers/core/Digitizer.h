@@ -67,6 +67,7 @@ public:
   virtual Int_t         GetTrackLength()                        const   { return 0; }
   virtual Int_t         GetRange(Int_t)                	        const   { return 0; }
 
+  virtual Int_t         GetOffset(Int_t )			const   { return 0;} 
   virtual Int_t         GetThresholdMode(Int_t )		const   { return 0;} 
   virtual Int_t         GetThreshold(Int_t, Bool_t b=kTRUE )    const   { return b;} 
   virtual Int_t		GetActiveChannel(Int_t )		const   { return 0;}

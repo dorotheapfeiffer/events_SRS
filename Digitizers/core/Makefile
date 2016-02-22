@@ -2,7 +2,7 @@
 include ../Makefile.mk
 
 
-CFLAGS  += -I./
+#CFLAGS  += -I./
 CFLAGS  += -I../gui
 CFLAGS  += -I../digitizer/CAEN5740 -I../digitizer/SIM
 

@@ -132,7 +132,7 @@ MainFrame::~MainFrame() {
   gApplication->Terminate(0);
 
   SetCleanup(kDeepCleanup);
-  Cleanup(); // deleting all widgets, layouthints and subframes...
+  Cleanup(); // deleting all widgets, layouthints and subframes..r
 }
 
 //=========================================================================
@@ -404,17 +404,17 @@ void MainFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
      fEntryTimeOut->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
      (fEntryTimeOut->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
 
-    fTimeOutFrame->AddFrame(fEntryTimeOut, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,58));
+    fTimeOutFrame->AddFrame(fEntryTimeOut, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,100));
 
     fMainFrame->AddFrame(fTimeOutFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
-
+//----
     fLoopFrame = new TGGroupFrame(fMainFrame,"Stop ACQ after", kVerticalFrame);
     fMainFrame->AddFrame(fLoopFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
 
     fCBMaxEvents = new TGCheckButton(fLoopFrame,"Max Events",eEVENTSCHECKB);
     fLoopFrame->AddFrame(fCBMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
     fCBMaxEvents->Connect("Toggled(Bool_t)", "MainFrame", this, "DoEnable(Bool_t)");
-
+    //--
     fEntryMaxEvents = new TGNumberEntry(fLoopFrame, aManager->GetMaxEvents(),11,eEVENTSENTRY,
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
     if(aManager->GetMaxEvents()){
@@ -428,7 +428,7 @@ void MainFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
     fEntryMaxEvents->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
     (fEntryMaxEvents->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
     fLoopFrame->AddFrame(fEntryMaxEvents, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
-
+    //--
     fCBMaxFiles = new TGCheckButton(fLoopFrame,"Max Files", eFILESCHECKB);
     fCBMaxFiles->SetTextJustify(36);
     fCBMaxFiles->SetMargins(0,0,0,0);
@@ -449,8 +449,30 @@ void MainFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
 
     fEntryMaxFiles->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
     (fEntryMaxFiles->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
-    fLoopFrame->AddFrame(fEntryMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,11));
+    fLoopFrame->AddFrame(fEntryMaxFiles, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+   //--
+   fCBAcqTime =  new TGCheckButton(fLoopFrame,"Time [s]", eACQTIMECHB);
+   fCBAcqTime->SetTextJustify(36);
+   fCBAcqTime->SetMargins(0,0,0,0);
+   fCBAcqTime->SetWrapLength(-1);
+   fCBAcqTime->Connect("Toggled(Bool_t)", "MainFrame", this, "DoEnable(Bool_t)");
+   fLoopFrame->AddFrame(fCBAcqTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+   //-
+   fEntryAcqTime = new TGNumberEntry(fLoopFrame, aManager->GetMaxAcqTime(),11,eACQTIMEENTRY,
+                   TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
+   fEntryAcqTime->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
+   (fEntryAcqTime->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
+   fLoopFrame->AddFrame(fEntryAcqTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
 
+   if(aManager->GetMaxAcqTime()){
+      fCBAcqTime->SetState(EButtonState(1));
+      fEntryAcqTime->SetState( EButtonState(kTRUE) );
+     }
+   else {
+      fCBAcqTime->SetState(EButtonState(0));
+      fEntryAcqTime->SetState( EButtonState(kFALSE) );
+     }
+//----
 
     fFileFrame = new TGGroupFrame(fMainFrame,"New File after", kVerticalFrame);
     fMainFrame->AddFrame(fFileFrame, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
@@ -469,7 +491,7 @@ void MainFrame::BuildWindow(TGCompositeFrame* fMainFrame) {
                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 1);
     fEntryFileTime->Connect("ValueSet(Long_t)", "MainFrame", this, "DoValueSet()");
     (fEntryFileTime->GetNumberEntry())->Connect("ReturnPressed()", "MainFrame", this, "DoValueSet()");
-    fFileFrame->AddFrame(fEntryFileTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,2));
+    fFileFrame->AddFrame(fEntryFileTime, new TGLayoutHints(kLHintsLeft | kLHintsTop,2,2,2,41));
 
 
 }
@@ -782,6 +804,26 @@ void MainFrame::DoEnable(Bool_t a){
      fEntryTimeOut->SetState( EButtonState(a) );
    break;
 
+   //---
+   case eACQTIMECHB:
+     fEntryAcqTime->SetState( EButtonState(a) );
+     if(!a) {
+       fEntryAcqTime->SetNumber(0);
+       aManager->SetMaxAcqTime(0);
+       }
+     else{
+       fEntryAcqTime->SetNumber(1);
+       aManager->SetMaxAcqTime(1);
+
+       fCBMaxFiles->SetState(EButtonState(0));
+       fEntryMaxFiles->SetNumber(0); aManager->SetMaxFiles(0); fEntryMaxFiles->SetState( EButtonState(0) );
+       fCBMaxEvents->SetState(EButtonState(0));
+       fEntryMaxEvents->SetNumber(0); aManager->SetMaxEvents(0); fEntryMaxEvents->SetState( EButtonState(0) );
+       }
+   break;
+
+
+   //---
    case eEVENTSCHECKB:
      //fCBMaxEvents->SetState(EButtonState(a));
      fEntryMaxEvents->SetState( EButtonState(a) );
@@ -792,10 +834,11 @@ void MainFrame::DoEnable(Bool_t a){
      else {
       fEntryMaxEvents->SetNumber(1);
       aManager->SetMaxEvents(1);
-      fEntryMaxFiles->SetNumber(0); //
-      aManager->SetMaxFiles(0);     //
+
       fCBMaxFiles->SetState(EButtonState(0));
-      fEntryMaxFiles->SetState( EButtonState(0) );
+      fEntryMaxFiles->SetNumber(0); aManager->SetMaxFiles(0); fEntryMaxFiles->SetState( EButtonState(0) );
+      fCBAcqTime->SetState(EButtonState(0));
+      fEntryAcqTime->SetNumber(0); aManager->SetMaxAcqTime(0); fEntryAcqTime->SetState( EButtonState(0) );
       }
    break;
  
@@ -809,10 +852,11 @@ void MainFrame::DoEnable(Bool_t a){
      else {
        fEntryMaxFiles->SetNumber(1);
        aManager->SetMaxFiles(1);
-       fEntryMaxEvents->SetNumber(0); //
-       aManager->SetMaxEvents(0);      //
+
        fCBMaxEvents->SetState(EButtonState(0));
-       fEntryMaxEvents->SetState( EButtonState(0) );
+       fEntryMaxEvents->SetNumber(0); aManager->SetMaxEvents(0); fEntryMaxEvents->SetState( EButtonState(0) );
+       fCBAcqTime->SetState(EButtonState(0));
+       fEntryAcqTime->SetNumber(0); aManager->SetMaxAcqTime(0); fEntryAcqTime->SetState( EButtonState(0) );
        }
    break;
 
@@ -840,6 +884,11 @@ void MainFrame::DoValueSet(){
       case eEVENTSENTRY:
          aManager->SetMaxEvents((Int_t)te->GetNumber());
          cout << "DEBUG [MainFrame::DoValueSet] MAxEvents = " << aManager->GetMaxEvents() << endl;
+      break;
+
+      case eACQTIMEENTRY:
+         aManager->SetMaxAcqTime((Int_t)te->GetNumber());
+         cout << "DEBUG [MainFrame::DoValueSet] MaxAcqTime = " << aManager->GetMaxAcqTime() << endl;
       break;
 
       case eFILESENTRY:

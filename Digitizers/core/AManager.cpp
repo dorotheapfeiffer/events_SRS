@@ -53,7 +53,7 @@ AManager::AManager() {
    mMaxEvents		= 0;
    mMaxFiles		= 0;
    mEventNr		= 0;
-   
+   mMaxAcqTime		= 0; //  
 
    FindDevices();
 
@@ -165,12 +165,15 @@ void AManager::StartAcquisition(MainFrame::mSTATE aState){
    SetMode(aState);
    mWindow->Refresh();
 
- if(aState == MainFrame::sOSCI || aState == MainFrame::sACQUISITION){
-   ControlAcq aAcq(1);
-   aAcq.Run();
-   cout << "DEBUG AManager::StopAcquisition " << GetMode() << endl;
-    
- }
+   if(aState == MainFrame::sOSCI || aState == MainFrame::sACQUISITION){
+      ControlAcq aAcq(1);
+      aAcq.Run();
+      cout << "DEBUG AManager::StopAcquisition " << GetMode() << endl;
+     }
+ 
+   SetMode( MainFrame::sSTOP);
+   mWindow->Refresh();
+ 
 }
 
 //==============================================================================
@@ -184,11 +187,12 @@ void AManager::StopAcquisition(MainFrame::mSTATE aState){
 
 //==============================================================================
 void AManager::ConfigureFrame(Bool_t create){
-
+/*
  if(create)
    mControlFrame = new ControlFrame(mWindow);
  else
    mControlFrame = NULL;
+*/
 }
 //==============================================================================
 
@@ -264,12 +268,17 @@ if(!fin){
        else if( name == string("MaxEvents") ){ 
          temp = atoi( value.c_str() );
          if(temp <= 0) mMaxEvents = 0;
-         else { mMaxEvents = temp; mMaxFiles = 0;}
+         else { mMaxEvents = temp; mMaxFiles = 0; mMaxAcqTime = 0;}
          }    
        else if( name == string("MaxFiles") ){ 
          temp = atoi( value.c_str() );
          if(temp <= 0) mMaxFiles = 0;
-         else { mMaxFiles = temp; mMaxEvents = 0;}
+         else { mMaxFiles = temp; mMaxEvents = 0; mMaxAcqTime = 0;}
+         }    
+       else if( name == string("MaxAcqTime") ){ 
+         temp = atoi( value.c_str() );
+         if(temp <= 0) mMaxAcqTime = 0;
+         else { mMaxAcqTime = temp; mMaxEvents = 0; mMaxFiles = 0;}
          }    
        else if( name == string("NewFileSize") ){ 
          temp = atoi( value.c_str() );
@@ -292,6 +301,7 @@ if(!fin){
 	cout << "SoftTimeout "	<< mTimeout	<< endl;
 	cout << "MaxEvents "	<< mMaxEvents	<< endl;
 	cout << "MaxFiles " 	<< mMaxFiles 	<< endl;
+	cout << "MaxAcqTime " 	<< mMaxAcqTime 	<< endl;
 	cout << "NewFileSize "	<< mFileSize	<< endl;
 	cout << "NewFileTime "	<< mFileTime	<< endl;
    #endif
@@ -338,6 +348,7 @@ fout << "[GENERAL SETTINGS]"		<< endl;
 fout << "SoftTimeout "	<< mTimeout	<< endl;
 fout << "MaxEvents "	<< mMaxEvents	<< endl;
 fout << "MaxFiles " 	<< mMaxFiles 	<< endl;
+fout << "MaxAcqTime " 	<< mMaxAcqTime 	<< endl;
 fout << "NewFileSize "	<< mFileSize	<< endl;
 fout << "NewFileTime "	<< mFileTime	<< endl;
 fout << "" << endl;
