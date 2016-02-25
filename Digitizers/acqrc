@@ -1,5 +1,5 @@
 # Configuration file for the data acquisition system
-# the file was created:  2016.2.19	13:50:33
+# the file was created:  2016.2.23	9:39:45
 # Line starts with a '#' is a comment line
 #
 #
@@ -28,7 +28,7 @@ InstrEnabled 1
 
 # Channel Configuration
 # You can difine the track lengt (RecordLength), is the same for all channels
-RecordLength 1023
+RecordLength 513
 # you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
 PostTrigger 50
 # disable = 0 or enable = 1 group channels

@@ -1169,17 +1169,6 @@ UInt_t CAEN5740::GetData(){
     aLocalEvent->SetTimeStamp(EventInfo.TriggerTimeTag);
     mEvents.push( aLocalEvent );
  
-    // roll over....
-    TTT = ((Nroll<<31) + (EventInfo.TriggerTimeTag & 0x7FFFFFFF));
-    if (TTT < prevTTT) {
-       Nroll++;
-       TTT += (1<<31);
-       cout << "---------------------------------------------------------------------------------------------------------" << endl;
-       }
-    prevTTT = TTT;
-
-    EventInfo.TriggerTimeTag = TTT;
-    //cout << "DEBUG [CAEN5740::GetData] Name = " << mName << " TimeStamp = " << EventInfo.TriggerTimeTag << endl;
    }
 
    //cout << "DEBUG[CAEN5740::GetData] size of mEvents = " << mEvents.size() << endl;
