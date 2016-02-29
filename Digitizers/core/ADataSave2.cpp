@@ -115,7 +115,7 @@ void ADataSave2::OpenNewFile(){
      else{
        fout.write((char *) aBuffer, aBufferPos);
        fout.close();
-       cout << "New file (" << aFileNr << "/" << aMaxFiles << ")   [" << aFileName << "] was created at " << t.GetHour() << ":" << t.GetSecond() << endl;
+       cout << "New file (" << aFileNr << "/" << aMaxFiles << ")   [" << aFileName << "] was created on " << t.AsString() << endl;
        }
     }
 
@@ -127,7 +127,7 @@ void ADataSave2::OpenNewFile(){
      cout << "ERROR could not open the file... " << aFileName << endl; 
     }
   else{
-    Logout << "New file [" << aFileName << "] was created at" << t.GetHour() << ":" << t.GetSecond() << endl;
+    Logout << "New file [" << aFileName << "] was created on " << t.AsString()<< endl;
     Logout.close();
     }
   

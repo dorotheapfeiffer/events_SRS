@@ -1,5 +1,5 @@
 # Configuration file for the data acquisition system
-# the file was created:  2016.2.23	9:39:45
+# the file was created:  2016.2.26	13:46:5
 # Line starts with a '#' is a comment line
 #
 #
@@ -10,9 +10,9 @@
 [GENERAL SETTINGS]
 SoftTimeout 0
 MaxEvents 0
-MaxFiles 20
+MaxFiles 0
 MaxAcqTime 0
-NewFileSize 1
+NewFileSize 201
 NewFileTime 3600
 
 
@@ -33,9 +33,9 @@ RecordLength 513
 PostTrigger 50
 # disable = 0 or enable = 1 group channels
 EnableMaskGr1 1
-EnableMaskGr2 0
-EnableMaskGr3 0
-EnableMaskGr4 0
+EnableMaskGr2 1
+EnableMaskGr3 1
+EnableMaskGr4 1
 # Set offet for group channels 
 # DCOffsetGrN: DC offset adjust (DAC channel setting) in mV. It will automatically recalculated to the correct value of DAC
 # -1000: analog input dynamic range = -Vpp to 0 (negative signals)
@@ -49,7 +49,7 @@ DCOffsetGr4 0
 # The save option allows you to save certain channels. The digitizer is designed in such that even only one channel is used
 # all group must be transfered to PC. Then you can choose by software which channel you want to store and/or display.
 # It is one 32 bits word, Each bit correspond to each channel
-SaveChannel 1
+SaveChannel 4294967295
 
 # Trigger Configuration
 # Enable or disable software, external and channel trigger
@@ -58,9 +58,9 @@ SoftwareTriggerMode 0
 ExternalTriggerMode 0
 # 
 ChannelTriggerModeGr1 1
-ChannelTriggerModeGr2 1
-ChannelTriggerModeGr3 1
-ChannelTriggerModeGr4 1
+ChannelTriggerModeGr2 0
+ChannelTriggerModeGr3 0
+ChannelTriggerModeGr4 0
 # 
 # Adjust the threshold to the coresponding channel in mv
 # Treshold value is an absolut value, consider it when you add offset to the channel

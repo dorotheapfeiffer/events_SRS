@@ -251,7 +251,6 @@ void ControlAcq::Run(){
                   }
 
                 aDataSave.SaveInBuffer( *aE );
-                cout << aE->GetTimeStamp() << endl;
                 aManager->GetDigitizer(i)->PopEvent(); 
                 gSystem->ProcessEvents();
 	        aManager->SetEventNr( aManager->GetEventNr()+1);
