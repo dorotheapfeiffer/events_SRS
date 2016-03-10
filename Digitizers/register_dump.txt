@@ -1,0 +1,55 @@
+=== configuration settings ===
+RecordLength       = 513
+DecimationFactor   = 1
+PostTrigger        = 50
+FPIOtype           = 1
+NumEvents          = 255
+Software controled = 0
+ExtTriggerMode     = 0
+EnableMask         = 15
+...... Group 0
+DCoffset[0]          = 32768
+ChannelTriggerMode[0]= 1
+Threshold[0]         = 2048
+GroupTrgEnableMask[0]= 1
+TriggerEdge          = 0
+...... Group 1
+DCoffset[1]          = 32768
+ChannelTriggerMode[1]= 0
+Threshold[1]         = 2048
+GroupTrgEnableMask[1]= 0
+TriggerEdge          = 0
+...... Group 2
+DCoffset[2]          = 32768
+ChannelTriggerMode[2]= 0
+Threshold[2]         = 2048
+GroupTrgEnableMask[2]= 0
+TriggerEdge          = 0
+...... Group 3
+DCoffset[3]          = 32768
+ChannelTriggerMode[3]= 0
+Threshold[3]         = 2048
+GroupTrgEnableMask[3]= 0
+TriggerEdge          = 0
+
+=== Register readout ===
+Group 0 Threshold                   (0x1080) 	= 0x     800 = 00000000'00000000'00001000'00000000
+Group 0 Status                      (0x1088) 	= 0x      18 = 00000000'00000000'00000000'00011000
+Group 0 DAC                         (0x1098) 	= 0x    8000 = 00000000'00000000'10000000'00000000
+Group 0 ADC Configuration           (0x109C) 	= 0x       0 = 00000000'00000000'00000000'00000000
+Group 0 Channel Trigger Enable Mask (0x10A8) 	= 0x       1 = 00000000'00000000'00000000'00000001
+Group Configuration                 (0x8000) 	= 0x      10 = 00000000'00000000'00000000'00010000
+Buffer Organization                 (0x800C) 	= 0x       8 = 00000000'00000000'00000000'00001000
+Custom Size                         (0x8020) 	= 0x     156 = 00000000'00000000'00000001'01010110
+Decimation Factor                   (0x8044) 	= 0x       0 = 00000000'00000000'00000000'00000000
+Acquisition Control                 (0x8100) 	= 0x      44 = 00000000'00000000'00000000'01000100
+Acquisition Status                  (0x8104) 	= 0x     12C = 00000000'00000000'00000001'00101100
+Trigger Source Enable Mask          (0x810C) 	= 0x       1 = 00000000'00000000'00000000'00000001
+Front Panel Trigger Out Enable Mask (0x8110) 	= 0x       1 = 00000000'00000000'00000000'00000001
+Post Trigger                        (0x8114) 	= 0x     101 = 00000000'00000000'00000001'00000001
+Front Panel I/O                     (0x811C) 	= 0x       1 = 00000000'00000000'00000000'00000001
+Group Enable Mask                   (0x8120) 	= 0x       F = 00000000'00000000'00000000'00001111
+ROC FPGA Firmware rev.              (0x8124) 	= 0xF1120405 = 11110001'00010010'00000100'00000101
+Events stored                       (0x812C) 	= 0x      A7 = 00000000'00000000'00000000'10100111
+Run Start/Stop Delay                (0x8170) 	= 0x       0 = 00000000'00000000'00000000'00000000
+External Trigger Inhibit            (0x817C) 	= 0x       0 = 00000000'00000000'00000000'00000000
