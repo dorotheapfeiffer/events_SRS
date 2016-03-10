@@ -2,12 +2,12 @@
 include ../Makefile.mk
 
 
-CFLAGS  += -I$(USER) -I ../lib
+CFLAGS  += -I$(USERAPP) -I ../lib
 
 SRCCPP  := exdnaDict.cpp MainWindow.cpp main.cpp UserBase.cpp 
 
 OBJECTS := $(SRCCPP:.cpp=.o)
-HEADERS := MainWindow.h $(USER)/UserClass.h UserBase.h 
+HEADERS := MainWindow.h $(USERAPP)/UserClass.h UserBase.h 
 DICT    := exdnaDict.cpp
 
 all: $(DICT) $(OBJECTS) 

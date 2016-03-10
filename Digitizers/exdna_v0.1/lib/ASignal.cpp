@@ -32,7 +32,7 @@ void ASignal::BaseLineCorrection(UInt_t n){
 
 Double_t avg = 0;
 if(n > 0){
-    for(Int_t i = 0; i < n; i++) {
+    for(UInt_t i = 0; i < n; i++) {
        avg += GetBinContent(i+1);
        }
     avg /= double(n);

@@ -22,8 +22,10 @@ ReadDataFile::ReadDataFile() {
 ReadDataFile::ReadDataFile(const std::string& filename) {
 
    // you have to delete ALL OBJECT EVENTS!!! not only pointers!!!
-   //for(vector<AEvent >::iterator it = allEvents.begin(); it != allEvents.end(); ++it)
-   //  delete (*it);
+   //for(it = allEvents.begin(); it != allEvents.end(); ++it){
+   //  delete *it;
+   //  *it = 0;
+   //  }
    allEvents.clear();
 
    Int_t nrEvents = 0;
@@ -73,14 +75,13 @@ ReadDataFile::ReadDataFile(const std::string& filename) {
 
    //Char_t aName[30];
    //Char_t aTitle[30];
-
+   //
 
    while( fread(&eHEADER, sizeof(eHEADER), 1, fin) ){
         if(eHEADER.extraData > 0){ 		//printf("There is extra data, must be read...\n"); 
           Short_t extraDataEvent[eHEADER.extraData];
           fread(extraDataEvent, eHEADER.extraData, 1, fin);
           }
-
 	AEvent *aEvent = new AEvent();	
 	//cout << "DEBUG [ReadDataFile::ReadDataFile]::aEvent.nrAllTracks = " << eHEADER.nrAllTracks << endl;
 
@@ -95,17 +96,18 @@ ReadDataFile::ReadDataFile(const std::string& filename) {
             fread(extraDataTrack, tHEADER.extradatasize, 1, fin);
             fread(data, sizeof(data), 1, fin);
 
-	    aEvent->AddTrack( new ATrack((Int_t)tHEADER.instrnr, (Int_t)tHEADER.channelnr, tHEADER.sampling, tHEADER.offset, tHEADER.range, tHEADER.tracktimestamp, tHEADER.threshold, 
-				data , tHEADER.datasize));
+	    aEvent->AddTrack( new ATrack((Int_t)tHEADER.instrnr, (Int_t)tHEADER.channelnr, tHEADER.sampling, 
+                                  tHEADER.offset, tHEADER.range, tHEADER.tracktimestamp, tHEADER.threshold, 
+				   data , tHEADER.datasize));
             }
-	allEvents.push_back( *aEvent );	
+	allEvents.push_back( aEvent );	
 
     nrEvents++;
     }
 
     fclose(fin);
 
-   cout << "DEBUG [ReadDataFile::ReadDataFile] " << filename <<" allEvents.size = " << allEvents.size() << endl;
+   cout << "DEBUG DUPA [ReadDataFile::ReadDataFile] " << filename <<" allEvents.size = " << allEvents.size() << endl;
 
 
 }
@@ -115,7 +117,7 @@ ReadDataFile::ReadDataFile(const std::string& filename) {
 
 
 ReadDataFile::~ReadDataFile() {
-cout << "DEBUG [Destructor ReadDataFile ]"<< endl; 
+//cout << "DEBUG [Destructor ReadDataFile ]"<< endl; 
 }
 
 //============================================================

@@ -2,23 +2,23 @@
 include Makefile.mk
 
 EXE	:= ryba
-LIB	:= lib
-SRC	:= src
+LIB	:= $(APPPATH)/lib
+SRC	:= $(APPPATH)/src
 
-.PHONY: all $(LIB) $(USER) $(SRC) 
+.PHONY: all $(LIB) $(USERAPP) $(SRC) 
 
 all: $(EXE)
 
-$(LIB) $(USER) $(SRC):
+$(LIB) $(USERAPP) $(SRC):
 	@ $(MAKE) --directory=$@
 
-$(EXE): $(LIB) $(USER) $(SRC)
-	 $(CC) $(CFLAGS) $(LFLAGS) -o$@ $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) \
-$(USER)/UserClass.o src/MainWindow.o src/exdnaDict.o src/main.o src/UserBase.o -lData
-#lib/AEvent.o lib/ATrack.o lib/Data.o lib/Files.o lib/ReadData.o lib/ReadDataFile.o lib/dataDict.o lib/ReadDataNet.o 
+$(EXE): $(LIB) $(USERAPP) $(SRC)
+	 $(CC) $(CFLAGS) $(LFLAGS) -o$@ $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS)\
+ $(USERAPP)/UserClass.o $(APPPATH)/src/MainWindow.o $(APPPATH)/src/exdnaDict.o\
+ $(APPPATH)/src/main.o $(APPPATH)src/UserBase.o -L$(LIB) -lData
 
 clean:
-	@ for d in $(LIB) $(APP) $(SRC) ;  \
+	@ for d in $(LIB) $(USERAPP) $(SRC) ;  \
 	   do                              \
 	    $(MAKE) --directory=$$d clean; \
 	   done

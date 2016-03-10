@@ -12,7 +12,6 @@
 #include <fstream>
 #include <string>
 #include <vector>
-using namespace std;
 
 /// Root Includes
 #include <TROOT.h>
@@ -48,6 +47,7 @@ using namespace std;
 #include "Files.h"
 #include "ReadData.h"
 
+using namespace std;
 
 ClassImp(MainWindow)
 
@@ -78,12 +78,17 @@ MainWindow::MainWindow(const TGWindow *p, UInt_t w, UInt_t h) : TGMainFrame( p, 
   mLoopCondition= kTRUE;
   mResetDisplay = kFALSE;
   mUserClass	= 0;
+  mAlgorythm    = 0;
+
   SetCleanup(kDeepCleanup);
 
   mGraphList = new TObjArray();
 
 //-----------------------------------------------
 
+  ReadConfigFile();
+
+//-----------------------------------------------
   AddMenuBar();
   AddButtonsPanel();
   AddCommonFrame( );
@@ -100,17 +105,16 @@ MainWindow::MainWindow(const TGWindow *p, UInt_t w, UInt_t h) : TGMainFrame( p, 
   MapWindow();
   fCommonFrame->HideFrame(fOptionMenu);
 
-//-----------------------------------------------
-
 }
 
 //============================================================
 
 MainWindow::~MainWindow() {
 
-
-  delete mUserClass;
-  mUserClass = 0;
+  if (mUserClass) { 
+      delete mUserClass;
+      mUserClass = 0;
+     }
 
   delete mGraphList;
 
@@ -126,6 +130,10 @@ MainWindow::~MainWindow() {
 void MainWindow::ReadData(){
      UpdateProgressBar((char*)"reading");
      try{
+	if(aReadData) {
+           delete aReadData; 
+           aReadData=0; 
+           }     
         aReadData = ReadData::Factory("FILE", iCurrentFile.Data());
         fEventNumber->SetNumber(0);
         fEventNumber->SetLimits(TGNumberEntry::kNELLimitMax, 0, aReadData->GetNrEvents() );
@@ -141,17 +149,11 @@ void MainWindow::ReadData(){
  
      fStatusBar->SetText(iCurrentFile, 0);
 
-     if( !mUserClass ) mUserClass = new UserClass(iCurrentFile);
-     //Int_t refreshMode = 0;
-     //aReadData->Analyse(fEcan, refreshMode);
+     if( !mUserClass ) mUserClass = new UserClass(iCurrentFile, mAlgorythm);
 
+    
      DisplayEvent(0);    
  
-     //aReadData->DrawEvent(fEcan, 0, 0 );  // 0 - draw tracks per casette, 
-					  // 1 - draw tracks per group, ie group1_in1, group2_in2,  group3_in3, group4_in4, ... , group1_in2 etc 
-					  // 2 - all tracks from one instrument together, 
-					  // 3 - all track separate on each pad
-	
 }
 
 //============================================================
@@ -166,8 +168,8 @@ void MainWindow::AnalyseData(){
            fEventNumber->SetNumber(0);
            for(i = 0; i < aReadData->GetNrEvents(); i++){
                //AEvent &aEvent = aReadData->GetEvent(fEventNumber->GetNumber());  
-               AEvent &aEvent = aReadData->GetEvent(i);  
-               mUserClass->DoAnalysis(aEvent);
+               AEvent *aEvent= aReadData->GetEvent(i);  
+               mUserClass->DoAnalysis(*aEvent, mMode);
                gSystem->ProcessEvents();
            
                if(!(i % 500)){ 
@@ -232,11 +234,21 @@ void MainWindow::AddCommonFrame() {
   fEcan = new TRootEmbeddedCanvas("fEcan",fCommonFrame,500,300);
   fEcan->GetCanvas()->Connect("ProcessedEvent(Int_t, Int_t, Int_t, TObject *)","MainWindow",this,"DrawEventStatus(Int_t, Int_t, Int_t, TObject *)");
   
-  fCommonFrame->AddFrame(fEcan, new TGLayoutHints(kLHintsLeft | kLHintsTop |kLHintsExpandX| kLHintsExpandY,1,1,1,1));
+  fCommonFrame->AddFrame(fEcan, new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX | kLHintsExpandY,1,1,1,1));
   
   fOptionMenu = new TGCompositeFrame(fCommonFrame,300,300,kVerticalFrame);
 //     fDisplayGroup = new TGGroupFrame(fOptionMenu, "Display mode");
    
+     fAlgorythmGroup = new TGVButtonGroup(fOptionMenu, "Algorythm");
+	fButtonAlgorythm = new TGTextButton(fAlgorythmGroup, "INDYVIDUAL");
+        if(mAlgorythm == 1){      
+           fButtonAlgorythm->SetText("CHARGE DIV");
+           }
+	fButtonAlgorythm->MoveResize(0,0,20,20);
+	fButtonAlgorythm->Connect("Clicked()", "MainWindow", this, "DoAlgorythm()");
+	fAlgorythmGroup->AddFrame(fButtonAlgorythm, new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, -20, 0));
+     fOptionMenu->AddFrame(fAlgorythmGroup, new TGLayoutHints(kLHintsLeft | kLHintsTop,0,0,0,0));
+     
      fButtonGroup = new TGVButtonGroup(fOptionMenu, "Display Mode");
      
      fCBDisplayMode = new TGComboBox(fButtonGroup, eDISPLAYMODE);
@@ -455,7 +467,6 @@ void MainWindow::NumberEntrySet(Long_t nrEvent){
 void MainWindow::DoStop() {
 
    mLoopCondition = 0;
-	
  
 }
 
@@ -495,6 +506,23 @@ void MainWindow::DoReset() {
       }
 }
 
+//============================================================
+void MainWindow::DoAlgorythm() {
+
+   if(mAlgorythm == 0) {
+      fButtonAlgorythm->SetText("CHARGE DIV");
+      mAlgorythm = 1;
+      WriteConfigFile();
+      if(mUserClass) mUserClass->DrawCdivCanvas();
+      }
+   else{ 
+      fButtonAlgorythm->SetText("INDYVIDUAL");
+      mAlgorythm = 0;
+      WriteConfigFile();
+      if(mUserClass) mUserClass->DrawIndCanvas();
+      }
+
+}
 //============================================================
 void MainWindow::ResetDisplay(){
 
@@ -831,9 +859,9 @@ void MainWindow::DisplayEvent(Int_t iEvent) {
      return;
      }
 
-     AEvent&  aEvent = aReadData->GetEvent(iEvent);
+   AEvent* aEvent= aReadData->GetEvent(iEvent);
  
-   Int_t mNrTracks = aEvent.GetNrTracks();
+   Int_t mNrTracks = aEvent->GetNrTracks();
 
    //------------==================---------
    if (fRadiob[3]->IsOn()) {
@@ -852,14 +880,14 @@ void MainWindow::DisplayEvent(Int_t iEvent) {
        sprintf(multiGrName, "Event:%d-", iEvent);
 
        for(Int_t i = 0; i < mNrTracks; i++){
-           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent.GetTrack(i)->GetCardNr(), (Int_t)aEvent.GetTrack(i)->GetChannelNr());
+           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent->GetTrack(i)->GetCardNr(), (Int_t)aEvent->GetTrack(i)->GetChannelNr());
            strcpy( multiGrName + strlen(multiGrName), grName);
-           gr = new TGraph( (Int_t)aEvent.GetTrack(i)->GetDataSize() );
+           gr = new TGraph( (Int_t)aEvent->GetTrack(i)->GetDataSize() );
            //sprintf(grTitle, "ch_%d", (Int_t)aEvent.GetTrack(i)->GetChannelNr());  
            //gr->SetTitle(grTitle);
 
-           UShort_t *data = aEvent.GetTrack(i)->GetData();
-           for(UInt_t j = 0; j < aEvent.GetTrack(i)->GetDataSize(); j++){
+           UShort_t *data = aEvent->GetTrack(i)->GetData();
+           for(UInt_t j = 0; j < aEvent->GetTrack(i)->GetDataSize(); j++){
                gr->SetPoint(j, j, data[j]);
               }
 
@@ -897,12 +925,12 @@ void MainWindow::DisplayEvent(Int_t iEvent) {
        sprintf(multiGrName, "Event:%d-", iEvent);
 
        for(Int_t i = 0; i < mNrTracks; i++){
-           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent.GetTrack(i)->GetCardNr(), (Int_t)aEvent.GetTrack(i)->GetChannelNr());
+           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent->GetTrack(i)->GetCardNr(), (Int_t)aEvent->GetTrack(i)->GetChannelNr());
            strcpy( multiGrName + strlen(multiGrName), grName);
-           gr = new TGraph( (Int_t)aEvent.GetTrack(i)->GetDataSize() );
+           gr = new TGraph( (Int_t)aEvent->GetTrack(i)->GetDataSize() );
 
-           UShort_t *data = aEvent.GetTrack(i)->GetData();
-           for(UInt_t j = 0; j < aEvent.GetTrack(i)->GetDataSize(); j++){
+           UShort_t *data = aEvent->GetTrack(i)->GetData();
+           for(UInt_t j = 0; j < aEvent->GetTrack(i)->GetDataSize(); j++){
                gr->SetPoint(j, j, data[j]);
               }
 
@@ -952,16 +980,16 @@ void MainWindow::DisplayEvent(Int_t iEvent) {
        sprintf(multiGrName, "Event:%d-", iEvent);
 
        for(Int_t i = 0; i < mNrTracks; i++){
-           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent.GetTrack(i)->GetCardNr(), (Int_t)aEvent.GetTrack(i)->GetChannelNr());
+           sprintf(grName,"Inst:%d-ch:%d.", (Int_t)aEvent->GetTrack(i)->GetCardNr(), (Int_t)aEvent->GetTrack(i)->GetChannelNr());
            strcpy( multiGrName + strlen(multiGrName), grName);
-           gr[i] = new TGraph( (Int_t)aEvent.GetTrack(i)->GetDataSize() );
-           sprintf(grTitle, "ch_%d", (Int_t)aEvent.GetTrack(i)->GetChannelNr());  
+           gr[i] = new TGraph( (Int_t)aEvent->GetTrack(i)->GetDataSize() );
+           sprintf(grTitle, "ch_%d", (Int_t)aEvent->GetTrack(i)->GetChannelNr());  
            gr[i]->SetTitle(grTitle);
 	   
            mGraphList->Add(gr[i]);
 
-           UShort_t *data = aEvent.GetTrack(i)->GetData();
-           for(UInt_t j = 0; j < aEvent.GetTrack(i)->GetDataSize(); j++){
+           UShort_t *data = aEvent->GetTrack(i)->GetData();
+           for(UInt_t j = 0; j < aEvent->GetTrack(i)->GetDataSize(); j++){
                gr[i]->SetPoint(j, j, data[j]);
               }
 
@@ -1029,3 +1057,33 @@ void MainWindow::SetOutText(char* ch){
   cout<<"filename\t"<<filename<<"\t"<<"path\t"<<path<<endl;
 
 }
+//==============================================================================
+
+void MainWindow::WriteConfigFile(){
+
+   ofstream fout(".rybarc", ios::out);
+   if(!fout){
+     cerr << "Error opening file .rybarc " << endl;
+     }
+   fout << "Algorythm " << mAlgorythm << endl;
+   fout.close(); 
+
+}
+
+//==============================================================================
+void MainWindow::ReadConfigFile(){
+   ifstream fin(".rybarc", ios::in);
+   if(!fin){
+      return;
+      }
+   TString aString;
+   Int_t   aInt = -1;
+
+   fin >> aString >> aInt ;
+
+   if(aString == "Algorythm")
+     mAlgorythm = aInt;
+ 
+   fin.close();
+}
+//==============================================================================

@@ -73,6 +73,7 @@ private:
         TGTextButton		*fButtonStop;
         TGTextButton		*fButtonStart;
         TGTextButton		*fButtonReset;
+        TGTextButton		*fButtonAlgorythm;
 
 	TGHProgressBar		*progressBar;
 	TGNumberEntry		*fEventNumber;
@@ -85,12 +86,15 @@ private:
 	TGComboBox		*fCBCasetteNr;
 
 	TGVButtonGroup      	*fButtonGroup;
+	TGVButtonGroup      	*fAlgorythmGroup;
 	TGRadioButton 		*fRadiob[4];
 
 
 	UserClass		*mUserClass;
 	TMultiGraph             *mMultiGraph = 0; // new standard c++11
 	TObjArray 		*mGraphList;
+	Int_t			mAlgorythm;	
+	Int_t			mMode;
 
 public:
 	MainWindow() {};
@@ -102,10 +106,14 @@ public:
 	void DoStop(); 
 	void DoStart();
 	void DoReset();
+	void DoAlgorythm(); 
         void DoRadioButton();
 	void NumberEntrySet(Long_t);
 
 	void ReadData();
+	void ReadConfigFile();
+	void WriteConfigFile();
+
 	
 	TRootEmbeddedCanvas* GetEmbCanvas(){return fEcan;} 
 

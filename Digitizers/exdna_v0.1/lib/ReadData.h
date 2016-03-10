@@ -25,9 +25,8 @@ protected:
 	static int 		mRefresh;
 	static int		mBreakLoop;
 
-	std::vector< AEvent > 	allEvents;
-	TMultiGraph		*mMultiGraph = 0; // new standard c++11
-	TH1F			*h;
+	std::vector< AEvent *> 	allEvents;
+	std::vector< AEvent *>::iterator it;
 //---------------------------------------------------------------
 
 	class BadDigitizerCreation : public std::exception {
@@ -48,15 +47,10 @@ public:
 	static ReadData* Factory(const std::string&, const std::string&) throw(BadDigitizerCreation);
 
 //---------------------------------------------------------------
-	AEvent&	GetEvent(Int_t nr){ return allEvents.at( nr ); }
+	AEvent*	GetEvent(Int_t nr){ return allEvents.at( nr ); }
 
 	Int_t	GetNrEvents(){	return allEvents.size(); }
 	
-	//Bool_t	HandleTimer(TTimer *);
-	//void 	DoRefresh( MainWindow*, UInt_t);
-	//void	DrawEvent( TRootEmbeddedCanvas*, Int_t, Int_t);
-	//void	Analyse(MainWindow*, Int_t);
-
 	virtual ~ReadData();
 
 ClassDef(ReadData, 0)

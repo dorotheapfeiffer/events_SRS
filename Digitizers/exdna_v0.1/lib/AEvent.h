@@ -26,7 +26,7 @@ private:
   UInt_t	aExtraDataSize;
 
 public:
-  AEvent(){}
+  AEvent();
   AEvent(Int_t a);
   virtual ~AEvent();
 

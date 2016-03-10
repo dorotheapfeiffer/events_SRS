@@ -12,10 +12,14 @@ using namespace std;
 extern int gDEBUG_EVENT; 
 UInt_t gEvent = 0;
 ClassImp(AEvent)
+Int_t con = 0;
 
-
+AEvent::AEvent(){
+//  cout << "AEvent Konstruktor (0)" << con++ << endl;
+}
 //===============================================================================
 AEvent::AEvent(Int_t a){
+//  cout << "AEvent Konstruktor (1)" << con++ << endl;
   aTrackVector.reserve(a);
   aEventNr = -1;
   aExtraDataSize = 0;
@@ -28,6 +32,7 @@ AEvent::~AEvent(){
 #endif    
   //cout << "[AEvent DES] Clear vector, " << aTrackVector.size() << " elements" << endl;
 
+//  cout << "AEvent Destruktor " << con-- << endl;
   aEventNr = -1;
   for(it = aTrackVector.begin(); it != aTrackVector.end(); ++it) {
       delete *it;
@@ -39,6 +44,7 @@ AEvent::~AEvent(){
 //===============================================================================
 AEvent& AEvent::operator= (const AEvent& from){
 
+//  cout << "AEvent Operator= " << con++ << endl;
 #ifdef DEBUG
     if(gDEBUG_EVENT > 3) cout << "DEBUG [AEvent::operator =] " << aEventNr << endl;
 #endif    
@@ -62,6 +68,8 @@ return *this;
 }
 //===============================================================================
 AEvent::AEvent(const AEvent& from){
+//  cout << "AEvent Konstruktor cop" << con++ << endl;
+
 #ifdef DEBUG
     if(gDEBUG_EVENT > 3) cout << "DEBUG [AEvent::copy constructor ] " << from.GetEventNr() << endl;
 #endif    

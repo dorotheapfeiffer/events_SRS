@@ -24,6 +24,9 @@ private:
 	TH1F		*posIND;	// histogram for wires position in indyvidual readout
 	TH1F		*phIND[32];
 
+	Int_t		chdiv_readout;
+	Int_t		mMode;
+
 	ASignal		*aSignal[32];	// convert AEvent to TH1F in order to aplly different algorythms
 	Int_t		mChannel[32];	// table to keep channel number of each signal
 
@@ -34,10 +37,13 @@ private:
 					
 
 public:
-	UserClass(TString );
+	UserClass(TString, int );
 	virtual 	~UserClass();
-	virtual void 	DoAnalysis(AEvent &);
+	virtual void 	DoAnalysis(AEvent &, int);
 	virtual void 	SignalProcessing(AEvent &);
+
+	void DrawIndCanvas();
+	void DrawCdivCanvas();
 
 	void IndyvidualReadout(AEvent &aEvent);
 	void ChargeDiviReadout(AEvent &aEvent);

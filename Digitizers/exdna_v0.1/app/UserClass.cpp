@@ -23,10 +23,15 @@ ClassImp(UserClass)
 
 
 
-Bool_t chdiv_readout = kFALSE; // chdiv_readout = kFALSE means individual readout 
-//Bool_t chdiv_readout = kTRUE; 
 
-UserClass::UserClass(TString name) {
+UserClass::UserClass(TString name, int mAlgorythm) {
+
+ chdiv_readout = mAlgorythm;
+ if(chdiv_readout)
+    cout << "Charge division readout[" << chdiv_readout << "]" << endl;  
+ else
+    cout << "Individual readout[" << chdiv_readout << "]" << endl;  
+
 
  //--------------------------------------------------------------------
  // remove the full path name and keep only last part without numbering
@@ -41,83 +46,39 @@ UserClass::UserClass(TString name) {
  //--------------------------------------------------------------------
  mSignalList = new TObjArray();
 
- if( chdiv_readout ){ //========================= HERE STARTS CHARGE DIVISION READOUT
- //--------------------------------------------------------------------
- // create canvas to display Pulse High
- c = new TCanvas("c", "...::: Charge Division readout :::...", 1100, 450);
- c->Divide(8,5);
- c->SetWindowPosition(200, 200);
- gStyle->SetOptStat(0);
+ c = new TCanvas("c", "c", 1000, 640);
+ c->SetWindowPosition(100, 300);
 
- //--------------------------------------------------------------------
- //create puls high histograms
- for(Int_t i = 0; i < 8; i++){
-    char name[100];
-    char title[100];
-    sprintf(name, "Wires Cassete_%d",i);
-    sprintf(title, "PH Wires Casette_%d",i);
-    pHW[i] = new TH1F(name,title,300, 0, 6000);
-    //pHW[i]->SetMaximum(300);
-    pHW[i]->SetFillColor(2);
-   
-    sprintf(name, "Strips Cassete_%d",i);
-    sprintf(title, "PH Strips Casette_%d",i);
-    pHS[i] = new TH1F(name,title,300, 0, 6000);
-    //pHS[i]->SetMaximum(300);
-    pHS[i]->SetFillColor(2);
+ if(chdiv_readout){
+   DrawCdivCanvas();
+  }
+ else{
+   DrawIndCanvas();
+   }
 
-    }
+//-------------------------------------------------------------------------
+//Update canvas (reuired by ROOT)
 
- //--------------------------------------------------------------------
- //create position histograms
- for(Int_t i = 0; i < 8; i++){
-    char name[100];
-    char title[100];
-    sprintf(name, "Wires Pos Cassete_%d",i);
-    sprintf(title, "Position Wires Casette_%d",i);
-    posW[i] = new TH1F(name,title,300, 0, 1);
-//    posW[i]->SetFillColor(2); 
+}
 
-    sprintf(name, "Strips Pos Cassete_%d",i);
-    sprintf(title, "Position Strips Casette_%d",i);
-    posS[i] = new TH1F(name,title,300, 0, 1);
-//    posS[i]->SetFillColor(2); 
-
-    }
-
- //--------------------------------------------------------------------
- //create position histograms for all casettes
- posAll = new TH1F("AllCasettes","AllCasettes", 8*posW[0]->GetNbinsX(), 0, 8); 
- 
-
-//-----------------------------------------------------------------------
-// Draw all histograms on one canvas
- for(Int_t i = 0; i < 8; i++){
-    c->cd(i+1); 
-    pHW[i]->Draw();
-    c->cd(i+9);
-    pHS[i]->Draw();
-    c->cd(i+17);
-    posW[i]->Draw();
-    c->cd(i+25);
-    posS[i]->Draw();
-    }
-    c->cd(40);
-    posAll->Draw();
- } 
- else { //====================== HERE STRARTS INDYVIDUAL READOUT ============
-
- c = new TCanvas("c", "...::: Individual readout :::...", 1000, 640);
- c->Divide(3,3);
- c->SetWindowPosition(200, 200);
- gStyle->SetOptStat(0);
+//============================================================
+  void UserClass::DrawIndCanvas(){
+     chdiv_readout = 0;
+     //cout << "Individual readout[" << chdiv_readout << "], delete and create histograms..." << endl;  
+     c->SetTitle("...::: Individual readout :::..");
+     mSignalList->Delete();
+     c->Clear();
+     c->Divide(3,3);
+     gStyle->SetOptStat(0);
 
  posIND = new TH1F("","",330,0,33);
+ mSignalList->Add(posIND);
 
  for(Int_t i = 0; i < 32; i++){
     char name[100];
     sprintf(name, "phIND__%d",i);
     phIND[i] = new TH1F(name,name,250, 0, 6000);
+    mSignalList->Add(phIND[i]);
     }
 
  c->cd(1);
@@ -159,19 +120,89 @@ UserClass::UserClass(TString name) {
  c->cd(9);
  posIND->Draw();
  
- }
-//-------------------------------------------------------------------------
-//Update canvas (reuired by ROOT)
  c->cd();
  c->Modified();
  c->Update();
+  }
+//============================================================
+  void UserClass::DrawCdivCanvas(){
+    chdiv_readout = 1;
+    //cout << "Charge division readout[" << chdiv_readout << "], delete and create histograms..." << endl;  
+ // create canvas to display Pulse High
+     mSignalList->Delete();
+     c->Clear();
+     c->SetTitle("...::: Charge Division readout :::...");
+     gStyle->SetOptStat(0);
+     c->Divide(8,5,0.0001,0.0001);
 
-}
+ //--------------------------------------------------------------------
+ //create puls high histograms
+ for(Int_t i = 0; i < 8; i++){
+    char name[100];
+    char title[100];
+    sprintf(name, "Wires Cassete_%d",i);
+    sprintf(title, "PH Wires Casette_%d",i);
+    pHW[i] = new TH1F(name,title,300, 0, 6000);
+    mSignalList->Add(pHW[i]);
+    //pHW[i]->SetMaximum(300);
+    pHW[i]->SetFillColor(2);
+   
+    sprintf(name, "Strips Cassete_%d",i);
+    sprintf(title, "PH Strips Casette_%d",i);
+    pHS[i] = new TH1F(name,title,300, 0, 6000);
+    mSignalList->Add(pHS[i]);
+    //pHS[i]->SetMaximum(300);
+    pHS[i]->SetFillColor(2);
 
+    }
+
+ //--------------------------------------------------------------------
+ //create position histograms
+ for(Int_t i = 0; i < 8; i++){
+    char name[100];
+    char title[100];
+    sprintf(name, "Wires Pos Cassete_%d",i);
+    sprintf(title, "Position Wires Casette_%d",i);
+    posW[i] = new TH1F(name,title,300, 0, 1);
+    mSignalList->Add(posW[i]);
+//    posW[i]->SetFillColor(2); 
+
+    sprintf(name, "Strips Pos Cassete_%d",i);
+    sprintf(title, "Position Strips Casette_%d",i);
+    posS[i] = new TH1F(name,title,300, 0, 1);
+    mSignalList->Add(posS[i]);
+//    posS[i]->SetFillColor(2); 
+
+    }
+
+ //--------------------------------------------------------------------
+ //create position histograms for all casettes
+ posAll = new TH1F("AllCasettes","AllCasettes", 8*posW[0]->GetNbinsX(), 0, 8); 
+ mSignalList->Add(posAll); 
+
+//-----------------------------------------------------------------------
+// Draw all histograms on one canvas
+ for(Int_t i = 0; i < 8; i++){
+    c->cd(i+1); 
+    pHW[i]->Draw();
+    c->cd(i+9);
+    pHS[i]->Draw();
+    c->cd(i+17);
+    posW[i]->Draw();
+    c->cd(i+25);
+    posS[i]->Draw();
+    }
+    c->cd(40);
+    posAll->Draw();
+  
+ c->cd();
+ c->Modified();
+ c->Update();
+  }
 //============================================================
 
 UserClass::~UserClass() {
-   cout << " ((((((( destruktor )))))))" << endl;
+   //cout << " ((((((( destruktor )))))))" << endl;
    delete mSignalList;
 }
 
@@ -184,11 +215,13 @@ void UserClass::SignalProcessing(AEvent &aEvent){
 
 //============================================================
 
-void UserClass::DoAnalysis(AEvent &aEvent) {
-
-   if(chdiv_readout) 
-      ChargeDiviReadout(aEvent);
-   else
+void UserClass::DoAnalysis(AEvent &aEvent, int _mMode) {
+  
+   mMode = _mMode;
+   
+   if(chdiv_readout)              // 1 - Charge division readout
+      ChargeDiviReadout(aEvent);  // 0 - Indyvidual readout
+   else                       
       IndyvidualReadout(aEvent);
 
 }
@@ -197,6 +230,7 @@ void UserClass::DoAnalysis(AEvent &aEvent) {
 
 void UserClass::IndyvidualReadout(AEvent &aEvent){
 
+    //cout << "Individual readout[" << chdiv_readout << "], filling histograms..." << endl;  
   static int iref = 0;
   ++iref;
 
@@ -241,7 +275,7 @@ void UserClass::IndyvidualReadout(AEvent &aEvent){
 //calculate maximum of each signal using FindPeakBin (calculating [p,q] of the quadratic function)
 //this is a "MAX algorythm" - takes maximum of each signal
 //
-     Int_t minWindow = 130, maxWindow = 500;
+     Int_t minWindow = baseline*1.05, maxWindow = aSignal[0]->GetNbinsX()*0.95;
      Double_t x[nrTrack];
      for(Int_t i = 0; i < nrTrack; i++){
         aSignal[i]->FindPeakBin(x[i], mMaximumIND[ mChannel[i] ], minWindow, maxWindow);
@@ -357,6 +391,7 @@ void UserClass::IndyvidualReadout(AEvent &aEvent){
 //========================================================================
 
 void UserClass::ChargeDiviReadout(AEvent &aEvent){
+    //cout << "Charge division readout[" << chdiv_readout << "], filling histograms..." << endl;  
   
   static int iref = 0;
   iref++;
