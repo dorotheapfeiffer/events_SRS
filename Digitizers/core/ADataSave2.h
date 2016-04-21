@@ -31,6 +31,10 @@ private:
 	UInt_t		aFileNr;
 	UInt_t		aMaxFiles;
 	UInt_t		aMaxFileSize;
+	Int_t		mSaveTimeout;
+
+	TTimer 		*aTimer;
+
 	ofstream	fout;	
 
         ADataSave2( const ADataSave2& );	// Disable copy constructor
@@ -46,7 +50,7 @@ public:
 	void		 DeleteDataSave();
 	void		 EmptyBuffer();
 	char*		 GetBuffer()		{ return aBuffer; }	
-
+	Bool_t		 TimerDone()
 
 ClassDef(ADataSave2, 0)				// ADataSave2 class
 };

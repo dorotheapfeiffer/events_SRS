@@ -277,6 +277,7 @@ void ControlAcq::Run(){
     //if(Online)  DoOnlineAnalysis;
     //if(Display) DisplayEvent;
     //if(gnuplot) Gnuplot;
+    aDataSave.EmptyBuffer();
  StopAllCards();
  aManager->SetFileNr(0);
  
@@ -316,7 +317,6 @@ bool ControlAcq::LoopCondition(Int_t mode){
      } 
    }
 
-//cout << "Dupa jas 4" << endl;
 //cout << "aManager->GetMaxFiles(): " << aManager->GetMaxFiles() << "\taManager->GetFileNr(): " << aManager->GetFileNr() << endl;
  if( aManager->GetMaxFiles() ){					// return 0 when user define max number of files
    //cout << "aManager->GetMaxFiles(): " << aManager->GetMaxFiles() << "\taManager->GetFileNr(): " << aManager->GetFileNr() << endl;

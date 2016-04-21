@@ -92,7 +92,7 @@ void AEvent::AddTrack(ATrack* aTrack){
 void AEvent::Write2F(ofstream& fout){
 
 /********* zapisywanie binarne	
-*/
+
 Int_t aEventHeader = 0xFFFFFFFF;
 
 aExtraDataSize = 0;
@@ -109,18 +109,21 @@ fout.write( reinterpret_cast<const char*>(&aExtraDataSize), sizeof(Int_t) );
    for(it = aTrackVector.begin(); it != aTrackVector.end(); ++it){
      (*it)->Write2F(fout);
      }
-/*koniec zapisu binarnego*******/
+*koniec zapisu binarnego*******/
 
 //zapis txt
-/*
+
 Int_t aEventStamp = 0xFFFFFFFF;
-fout << " -- Event Stamp:  0x" << hex << aEventStamp << dec << endl;
-fout << "  - Event number: " << aEventNr << endl;
-fout << "  - Nr of Track: " << aTrackVector.size() << endl;
+// temporary comented fout << " -- Event Stamp:  0x" << hex << aEventStamp << dec << endl;
+// temporary comented fout << "  - Event number: " << aEventNr << endl;
+// temporary comented fout << "  - Nr of Track: " << aTrackVector.size() << endl;
    for(it = aTrackVector.begin(); it != aTrackVector.end(); ++it){
-     (*it)->Write2F(fout);
+     //fout << (*it)->GetChannelNr() << " " ;
+     if( (*it)->GetChannelNr() >= 9 && (*it)->GetChannelNr() <= 21)
+         (*it)->Write2F(fout);
+     //else fout << endl;
      }
-*/
+
 
 }
 
@@ -194,13 +197,22 @@ void AEvent::ClearEvent(){
 //===============================================================================
 
 void AEvent::EventShow(){
- cout << "Event ID = " << aEventNr << endl;
- for(UInt_t i = 0; i < aTrackVector.size(); i++){ 
-    cout << "-+ Track nr = " << i << endl;
-       UShort_t* ptr = aTrackVector.at(i)->GetData();
+ Int_t nrTracks = GetNrTracks();
+ cout << "Event ID = " << aEventNr << " NrChannels = " << nrTracks << endl;
+ 
+ for(UInt_t i = 0; i < nrTracks; i++){ 
+     UShort_t *data = GetTrack(i)->GetData();
+     //for(UInt_t j = 0; j < GetTrack(i)->GetDataSize(); j++){
+     for(UInt_t j = 0; j < 5; j++){
+         cout << data[j] << " ";
+         }
+     }
+  cout << endl;
+
+/*
        cout << ptr[0]  << " " << ptr[1]  << " " << ptr[2]  << " " << ptr[3]  << " " 
             << ptr[4]  << " " << ptr[5]  << " " << ptr[6]  << " " << ptr[7]  << " " << endl;
        cout << ptr[8]  << " " << ptr[9]  << " " << ptr[10] << " " << ptr[11] << " " 
             << ptr[12] << " " << ptr[13] << " " << ptr[14] << " " << ptr[15] << " " << endl;
-    }
+*/
 }

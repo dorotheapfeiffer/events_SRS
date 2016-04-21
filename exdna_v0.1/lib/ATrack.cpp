@@ -95,6 +95,7 @@ ATrack::ATrack(const ATrack& from){
 void ATrack::Write2F(ofstream& fout){
 
  //****************************  zapisywanie binarne       
+ /*
  UInt_t aHeader = 0xEEEEEEEE;
  UInt_t extraDataSize = 0x0;
 
@@ -116,20 +117,23 @@ void ATrack::Write2F(ofstream& fout){
 
  fout.write( reinterpret_cast<const char*>(aData), aDataSize*sizeof(UShort_t));
 
- /************************* koniec zapisywania binarnego */
+ ************************* koniec zapisywania binarnego */
 
  // zapisywanie txt
-  /*
+  
+ 
  Int_t aTrackStamp = 0x00000000;
  //fout << " --- Track stamp : 0x" << hex << aTrackStamp << dec << endl;
  //fout << "  -- Card number : " << aCardNr <<"\t Channel number: " << aChannelNr << endl;
  //fout << "  -- Sampling    : " << aSampling << endl;
  //fout << "  -- Data: " << endl;
- for(Int_t i = 0; i < aDataSize; i++){
-    //if( (i < 10) || (i > aDataSize - 10) ) 
-       fout << "    " << i << " " << aData[i] << endl;
+ for(UInt_t i = 0; i < aDataSize; i++){
+    //if( (i < 10) || (i > aDataSize - 10) ){ 
+       //fout << "    " << i << " " << aData[i] << endl;
+       fout << aData[i] << " " ;
+    //   }
     }
-*/
+ fout << endl;
 
  //koniec zapisu txt     
 }

@@ -196,6 +196,7 @@ void MainWindow::AnalyseData(){
      fEventNumber->SetNumber(i);
      UpdateProgressBar((char*)"analysing");
      DisplayEvent(i-1);
+    gApplication->Terminate(); 
 
 } 
 //============================================================

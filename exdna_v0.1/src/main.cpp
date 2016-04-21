@@ -110,7 +110,7 @@ int main( int argc, char *argv[] )
 		}
 	//else if () // for net, not implemented yet
 	//else       // just in case
-
+	mMainWindow.DoStart();
 	theApp.Run();
 	return EXIT_SUCCESS;
 }

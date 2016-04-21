@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -77,6 +78,14 @@ ReadDataFile::ReadDataFile(const std::string& filename) {
    //Char_t aTitle[30];
    //
 
+      char txtname[500];
+      std::string str = filename;
+      std::size_t found = str.find_last_of("/");
+      strcpy(txtname, (char*)"output/");
+      strcpy(txtname + strlen(txtname), str.substr(found+1).c_str());
+      strcpy(txtname + strlen(txtname) - 4, (char*)".txt");   
+      cout << "txtname: "<< txtname << endl;
+
    while( fread(&eHEADER, sizeof(eHEADER), 1, fin) ){
         if(eHEADER.extraData > 0){ 		//printf("There is extra data, must be read...\n"); 
           Short_t extraDataEvent[eHEADER.extraData];
@@ -102,6 +111,9 @@ ReadDataFile::ReadDataFile(const std::string& filename) {
             }
 	allEvents.push_back( aEvent );	
 
+       ofstream fout(txtname, std::ofstream::out | std::ofstream::app);
+       aEvent->Write2F( fout);
+       fout.close(); 
     nrEvents++;
     }
 

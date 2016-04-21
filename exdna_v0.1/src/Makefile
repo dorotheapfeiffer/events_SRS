@@ -4,10 +4,10 @@ include ../Makefile.mk
 
 CFLAGS  += -I$(USERAPP) -I ../lib
 
-SRCCPP  := exdnaDict.cpp MainWindow.cpp main.cpp UserBase.cpp 
+SRCCPP  := exdnaDict.cpp MainWindow.cpp main.cpp  
 
 OBJECTS := $(SRCCPP:.cpp=.o)
-HEADERS := MainWindow.h $(USERAPP)/UserClass.h UserBase.h 
+HEADERS := MainWindow.h $(USERAPP)/UserClass.h 
 DICT    := exdnaDict.cpp
 
 all: $(DICT) $(OBJECTS) 

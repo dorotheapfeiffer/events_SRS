@@ -57,7 +57,7 @@ ADataSave2::ADataSave2(bool a)
   aEventCounter	= 0;
   aFileNr	= 0;
   aEmptyBuffer  = 0;
-
+  mSaveTimeout = 0;
 
   // a log file for the aquisition
 
@@ -73,7 +73,9 @@ ADataSave2::ADataSave2(bool a)
     }
    
 
-  
+ aTimer = new TTimer();
+ aTimer->Connect("Timeout()", "DataSave2", this, "TimerDone()");
+ aTimer->Start(aManager->GetFileTime * 1000);  
 }
 
 //===============================================================================
@@ -84,6 +86,10 @@ ADataSave2::~ADataSave2(){
    #endif
   delete [] aBuffer; 
   aManager = 0;
+
+  aTimer->Disconnect("Timeout()");
+  delete aTimer;
+
 }
 
 
@@ -103,7 +109,7 @@ void ADataSave2::OpenNewFile(){
       fout.close();
       }
 
-  if(aFileNr < aMaxFiles || aMaxFiles == 0){
+  if(aFileNr < aMaxFiles || aMaxFiles == 0 || mSaveTimeout){
 
      sprintf(charNr, "_%03d.dat", aFileNr++);
      aFileName = aManager->GetDataFileName() + charNr;
@@ -173,10 +179,11 @@ UInt_t ADataSave2::SaveInBuffer(AEvent &aEvent){
 
    //cout << "DEBUG [ADataSave2::SaveInBuffer] aBufferPos = " << aBufferPos << " aMaxFileSize = " << aMaxFileSize << endl;
    aBufferPos += aEvent.SaveInBuffer(aBuffer + aBufferPos);
-   if( (aBufferPos > aMaxFileSize) ){
+   if( (aBufferPos > aMaxFileSize || mSaveTimeout) ){
       OpenNewFile(); 
       aBufferCounter = 0;
       aBufferPos = 0;
+      mSaveTimeout = 0;
       cout << "DEBUG [ADataSave2::SaveInBuffer] Buffer save to file, aBufferPos = " << aBufferPos << endl;
       }
  
@@ -200,7 +207,34 @@ return 0;
 //==========================================================================
 void ADataSave2::EmptyBuffer(){
 
-         TThread::Printf(" Empty buffer is not implemented yet, some data could not be stored....");	
+  char charNr[10];
+  TString aFileName;
+  TDatime t;
+
+  sprintf(charNr, "_%03d.dat", aFileNr++);
+  aFileName = aManager->GetDataFileName() + charNr;
+//  cout << "aFileName: "<< aFileName << " aBufferPos: " << aBufferPos << endl;
+
+
+     fout.open(aFileName, ios::out);
+     if(!fout.is_open()) {
+       cout << "could not open file... " << aFileName << endl;
+       }
+     else{
+       fout.write((char *) aBuffer, aBufferPos);
+       fout.close();
+       cout << "New file (" << aFileNr << "/" << aMaxFiles << ")   [" << aFileName << "] was created on " << t.AsString() << endl;
+       }
+
+}
+
+
+//==========================================================================
+Bool_t DataSave2::TimerDone(){
+
+  //aTimer->TurnOff();
+  mSaveTimeout = 1;
+return kTRUE;
 }
 
 //==========================================================================
