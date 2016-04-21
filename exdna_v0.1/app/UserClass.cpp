@@ -38,7 +38,8 @@ UserClass::UserClass(TString name, int mAlgorythm) {
  // needed for output file, e.g. 
  // "/home/dlab/Desktop/SF/18Feb2016/cdiv/V1350_2_006.dat" -> "V1350_2"
 
- name = name.Remove(name.Length()-8);
+// name = name.Remove(name.Length()-8);
+ name = name.Remove(name.Length()-4);
  Int_t n = name.Last('/');
  name = name.Remove(0, n+1);
  mName = name;
@@ -247,7 +248,8 @@ void UserClass::IndyvidualReadout(AEvent &aEvent){
 //write timestamp to the last element of the tables
 //each tracks in the same event have the same timestamp
 
-  mMaximumIND[32] = aEvent.GetTrack(0)->GetTimeStamp();
+  //mMaximumIND[32] = aEvent.GetTrack(0)->GetTimeStamp();
+  mMaximumIND[32] = ((UInt_t)aEvent.GetTrack(0)->GetTimeStamp() & 0x7FFFFFFF);
 
 
 //--------------------------------------------------------------------
@@ -267,7 +269,7 @@ void UserClass::IndyvidualReadout(AEvent &aEvent){
      Int_t baseline = 128;
      for(Int_t i = 0; i < nrTrack; i++){
         aSignal[i]->BaseLineCorrection( baseline ); 
-        for(Int_t j = 510; j <= aSignal[i]->GetNbinsX(); j++) 
+        for(Int_t j = aSignal[i]->GetNbinsX()-10; j <= aSignal[i]->GetNbinsX(); j++) 
            aSignal[i]->SetBinContent(j, 0.);
         }
 
@@ -378,7 +380,7 @@ void UserClass::IndyvidualReadout(AEvent &aEvent){
         }
      fout << endl;
   fout.close();
-
+  
 //-----------------------------------------------------------------------
 // cleaning some stuff
 //
@@ -424,7 +426,8 @@ void UserClass::ChargeDiviReadout(AEvent &aEvent){
 //write timestamp to the last element of the tables
 //each tracks in the same event have the same timestamp
 
-    mMaximumMAX[32] = mMaximumSUM[32] = aEvent.GetTrack(0)->GetTimeStamp();
+    mMaximumMAX[32] = mMaximumSUM[32] = ((UInt_t)aEvent.GetTrack(0)->GetTimeStamp() & 0x7FFFFFFF);
+    //mMaximumMAX[32] = mMaximumSUM[32] = aEvent.GetTrack(0)->GetTimeStamp();
 
 //----------------------------------------------------------------------
 //restoring the baseline for each signals
@@ -432,7 +435,7 @@ void UserClass::ChargeDiviReadout(AEvent &aEvent){
     Int_t baseline = 128;
     for(Int_t i = 0; i < nrTrack; i++){
         aSignal[i]->BaseLineCorrection( baseline ); 
-        for(Int_t j = 510; j <= aSignal[i]->GetNbinsX(); j++) 
+        for(Int_t j = aSignal[i]->GetNbinsX()-10; j <= aSignal[i]->GetNbinsX(); j++) 
            aSignal[i]->SetBinContent(j, 0.);
         }
 

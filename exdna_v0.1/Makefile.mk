@@ -2,7 +2,7 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-APPPATH	     := /home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking/
+APPPATH	     := /home/dlab/dg_epool/Digitizers/exdna_v0.1
 USERAPP	     := $(APPPATH)/app
 
 CC = g++ -std=c++11 -g  

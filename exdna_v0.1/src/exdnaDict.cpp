@@ -39,8 +39,7 @@ namespace std {} using namespace std;
 
 // Header files passed as explicit arguments
 #include "MainWindow.h"
-#include "/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking//app/UserClass.h"
-#include "UserBase.h"
+#include "/home/dlab/dg_epool/Digitizers/exdna_v0.1/app/UserClass.h"
 
 // Header files passed via #pragma extra_include
 
@@ -106,36 +105,6 @@ namespace ROOT {
    }
    // Static variable to force the class initialization
    static ::ROOT::TGenericClassInfo *_R__UNIQUE_(Init) = GenerateInitInstanceLocal((const ::UserClass*)0x0); R__UseDummy(_R__UNIQUE_(Init));
-} // end of namespace ROOT
-
-namespace ROOT {
-   static void delete_UserBase(void *p);
-   static void deleteArray_UserBase(void *p);
-   static void destruct_UserBase(void *p);
-   static void streamer_UserBase(TBuffer &buf, void *obj);
-
-   // Function generating the singleton type initializer
-   static TGenericClassInfo *GenerateInitInstanceLocal(const ::UserBase*)
-   {
-      ::UserBase *ptr = 0;
-      static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::UserBase >(0);
-      static ::ROOT::TGenericClassInfo 
-         instance("UserBase", ::UserBase::Class_Version(), "UserBase.h", 11,
-                  typeid(::UserBase), ::ROOT::Internal::DefineBehavior(ptr, ptr),
-                  &::UserBase::Dictionary, isa_proxy, 16,
-                  sizeof(::UserBase) );
-      instance.SetDelete(&delete_UserBase);
-      instance.SetDeleteArray(&deleteArray_UserBase);
-      instance.SetDestructor(&destruct_UserBase);
-      instance.SetStreamerFunc(&streamer_UserBase);
-      return &instance;
-   }
-   TGenericClassInfo *GenerateInitInstance(const ::UserBase*)
-   {
-      return GenerateInitInstanceLocal((::UserBase*)0);
-   }
-   // Static variable to force the class initialization
-   static ::ROOT::TGenericClassInfo *_R__UNIQUE_(Init) = GenerateInitInstanceLocal((const ::UserBase*)0x0); R__UseDummy(_R__UNIQUE_(Init));
 } // end of namespace ROOT
 
 //______________________________________________________________________________
@@ -209,41 +178,6 @@ TClass *UserClass::Class()
 }
 
 //______________________________________________________________________________
-atomic_TClass_ptr UserBase::fgIsA(0);  // static to hold class pointer
-
-//______________________________________________________________________________
-const char *UserBase::Class_Name()
-{
-   return "UserBase";
-}
-
-//______________________________________________________________________________
-const char *UserBase::ImplFileName()
-{
-   return ::ROOT::GenerateInitInstanceLocal((const ::UserBase*)0x0)->GetImplFileName();
-}
-
-//______________________________________________________________________________
-int UserBase::ImplFileLine()
-{
-   return ::ROOT::GenerateInitInstanceLocal((const ::UserBase*)0x0)->GetImplFileLine();
-}
-
-//______________________________________________________________________________
-TClass *UserBase::Dictionary()
-{
-   fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::UserBase*)0x0)->GetClass();
-   return fgIsA;
-}
-
-//______________________________________________________________________________
-TClass *UserBase::Class()
-{
-   if (!fgIsA.load()) { R__LOCKGUARD2(gInterpreterMutex); fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::UserBase*)0x0)->GetClass(); }
-   return fgIsA;
-}
-
-//______________________________________________________________________________
 void MainWindow::Streamer(TBuffer &R__b)
 {
    // Stream an object of class MainWindow.
@@ -302,43 +236,16 @@ namespace ROOT {
    }
 } // end of namespace ROOT for class ::UserClass
 
-//______________________________________________________________________________
-void UserBase::Streamer(TBuffer &R__b)
-{
-   // Stream an object of class UserBase.
-
-   TObject::Streamer(R__b);
-}
-
-namespace ROOT {
-   // Wrapper around operator delete
-   static void delete_UserBase(void *p) {
-      delete ((::UserBase*)p);
-   }
-   static void deleteArray_UserBase(void *p) {
-      delete [] ((::UserBase*)p);
-   }
-   static void destruct_UserBase(void *p) {
-      typedef ::UserBase current_t;
-      ((current_t*)p)->~current_t();
-   }
-   // Wrapper around a custom streamer member function.
-   static void streamer_UserBase(TBuffer &buf, void *obj) {
-      ((::UserBase*)obj)->::UserBase::Streamer(buf);
-   }
-} // end of namespace ROOT for class ::UserBase
-
 namespace {
   void TriggerDictionaryInitialization_exdnaDict_Impl() {
     static const char* headers[] = {
 "MainWindow.h",
-"/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking//app/UserClass.h",
-"UserBase.h",
+"/home/dlab/dg_epool/Digitizers/exdna_v0.1/app/UserClass.h",
 0
     };
     static const char* includePaths[] = {
 "/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking/src/",
+"/home/dlab/dg_epool/Digitizers/exdna_v0.1/src/",
 0
     };
     static const char* fwdDeclCode = 
@@ -348,8 +255,7 @@ R"DICTFWDDCLS(
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 extern int __Cling_Autoloading_Map;
 class __attribute__((annotate("$clingAutoload$MainWindow.h")))  MainWindow;
-class __attribute__((annotate("$clingAutoload$/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking//app/UserClass.h")))  UserClass;
-class __attribute__((annotate("$clingAutoload$UserBase.h")))  UserBase;
+class __attribute__((annotate("$clingAutoload$/home/dlab/dg_epool/Digitizers/exdna_v0.1/app/UserClass.h")))  UserClass;
 )DICTFWDDCLS";
     static const char* payloadCode = R"DICTPAYLOAD(
 
@@ -359,14 +265,12 @@ class __attribute__((annotate("$clingAutoload$UserBase.h")))  UserBase;
 
 #define _BACKWARD_BACKWARD_WARNING_H
 #include "MainWindow.h"
-#include "/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking//app/UserClass.h"
-#include "UserBase.h"
+#include "/home/dlab/dg_epool/Digitizers/exdna_v0.1/app/UserClass.h"
 
 #undef  _BACKWARD_BACKWARD_WARNING_H
 )DICTPAYLOAD";
     static const char* classesHeaders[]={
 "MainWindow", payloadCode, "@",
-"UserBase", payloadCode, "@",
 "UserClass", payloadCode, "@",
 nullptr};
 

@@ -755,7 +755,7 @@ namespace {
     };
     static const char* includePaths[] = {
 "/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/Documents/programC/backup/exdna.dev.07Mar2016_noworking/lib/",
+"/home/dlab/dg_epool/Digitizers/exdna_v0.1/lib/",
 0
     };
     static const char* fwdDeclCode = 

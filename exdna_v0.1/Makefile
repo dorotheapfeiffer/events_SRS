@@ -15,7 +15,7 @@ $(LIB) $(USERAPP) $(SRC):
 $(EXE): $(LIB) $(USERAPP) $(SRC)
 	 $(CC) $(CFLAGS) $(LFLAGS) -o$@ $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS)\
  $(USERAPP)/UserClass.o $(APPPATH)/src/MainWindow.o $(APPPATH)/src/exdnaDict.o\
- $(APPPATH)/src/main.o $(APPPATH)src/UserBase.o -L$(LIB) -lData
+ $(APPPATH)/src/main.o -L$(LIB) -lData
 
 clean:
 	@ for d in $(LIB) $(USERAPP) $(SRC) ;  \
