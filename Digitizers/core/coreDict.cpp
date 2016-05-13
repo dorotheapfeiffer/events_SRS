@@ -1210,12 +1210,12 @@ namespace {
     };
     static const char* includePaths[] = {
 "../gui",
-"/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/dg_epool/Digitizers/core/",
+"/usr/include/root",
+"/home/admin/dg_epool/Digitizers/core/",
 0
     };
-    static const char* fwdDeclCode = 
-R"DICTFWDDCLS(
+    static const char* fwdDeclCode = R"DICTFWDDCLS(
+#line 1 "coreDict dictionary forward declarations' payload"
 #pragma clang diagnostic ignored "-Wkeyword-compat"
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
@@ -1233,6 +1233,7 @@ class __attribute__((annotate(R"ATTRDUMP(Help Text Viewer)ATTRDUMP"))) __attribu
 class __attribute__((annotate("$clingAutoload$AManager.h")))  OnlineServer;
 )DICTFWDDCLS";
     static const char* payloadCode = R"DICTPAYLOAD(
+#line 1 "coreDict dictionary payload"
 
 #ifndef G__VECTOR_HAS_CLASS_ITERATOR
   #define G__VECTOR_HAS_CLASS_ITERATOR 1

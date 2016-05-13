@@ -75,7 +75,7 @@ ADataSave2::ADataSave2(bool a)
 
  aTimer = new TTimer();
  aTimer->Connect("Timeout()", "DataSave2", this, "TimerDone()");
- aTimer->Start(aManager->GetFileTime * 1000);  
+ aTimer->Start(aManager->GetFileTime() * 1000);  
 }
 
 //===============================================================================
@@ -230,7 +230,7 @@ void ADataSave2::EmptyBuffer(){
 
 
 //==========================================================================
-Bool_t DataSave2::TimerDone(){
+Bool_t ADataSave2::TimerDone(){
 
   //aTimer->TurnOff();
   mSaveTimeout = 1;
