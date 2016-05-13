@@ -50,7 +50,7 @@ public:
 	void		 DeleteDataSave();
 	void		 EmptyBuffer();
 	char*		 GetBuffer()		{ return aBuffer; }	
-	Bool_t		 TimerDone()
+	Bool_t		 TimerDone();
 
 ClassDef(ADataSave2, 0)				// ADataSave2 class
 };
