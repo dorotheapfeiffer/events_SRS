@@ -1210,8 +1210,8 @@ namespace {
     };
     static const char* includePaths[] = {
 "../gui",
-"/usr/include/root",
-"/home/admin/dg_epool/Digitizers/core/",
+"/home/frame/root/include",
+"/media/psf/Home/Code/dg_epool/Digitizers/core/",
 0
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(
