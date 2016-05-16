@@ -244,12 +244,12 @@ namespace {
     static const char* includePaths[] = {
 "./",
 "../../core",
-"/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/dg_epool/Digitizers/digitizer/CAEN5740/",
+"/home/frame/root/include",
+"/media/psf/Home/Code/dg_epool/Digitizers/digitizer/CAEN5740/",
 0
     };
-    static const char* fwdDeclCode = 
-R"DICTFWDDCLS(
+    static const char* fwdDeclCode = R"DICTFWDDCLS(
+#line 1 "CAEN5740Dict dictionary forward declarations' payload"
 #pragma clang diagnostic ignored "-Wkeyword-compat"
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
@@ -258,6 +258,7 @@ class __attribute__((annotate("$clingAutoload$CAEN5740.h")))  CAEN5740;
 class __attribute__((annotate("$clingAutoload$CAEN5740.h")))  CAEN5740Dlg;
 )DICTFWDDCLS";
     static const char* payloadCode = R"DICTPAYLOAD(
+#line 1 "CAEN5740Dict dictionary payload"
 
 #ifndef G__VECTOR_HAS_CLASS_ITERATOR
   #define G__VECTOR_HAS_CLASS_ITERATOR 1

@@ -62,7 +62,10 @@ AManager::AManager() {
         for(UInt_t i = 0; i < mFindDev.size(); i++) {  
              if( 
                  !mFindDev.at(i).find(string("SIM")) || 
-                 !mFindDev.at(i).find(string("CAEN5740")) 
+                !mFindDev.at(i).find(string("CAEN5740")) ||
+            //--FraMe: try to implement the VME modules
+                !mFindDev.at(i).find(string("CAENV1718"))||
+                !mFindDev.at(i).find(string("VX1751C"))
               )
                {
                #ifdef DEBUG
@@ -123,17 +126,20 @@ void AManager::FindDevices() {
    usb_init();
    usb_find_busses();
    usb_find_devices();
-   for(bus = usb_busses; bus; bus = bus->next){
+   for(bus = usb_busses; bus; bus = bus->next){ // looks at any usb bus and check the connected idVendor if matches with a CAEN one...
       for(dev = bus->devices; dev; dev = dev->next){
 
           if(dev->descriptor.idVendor == 0x21e1){
  
-              mFindDev.push_back(string("CAEN5740"));
+              mFindDev.push_back(string("CAEN5740")); //CAEN 5740 Desktop Digitiser
 
 		//printf("Trying devices %s %s \n", bus->dirname, dev->filename); 
 		//printf("\tID_VENDOR  = 0x%04x\n", dev->descriptor.idVendor); 
 		//printf("\tID_PRODUCT = 0x%04x\n", dev->descriptor.idProduct); 
  	    }
+        //--FraMe:
+          if(dev->descriptor.idVendor == 0x0547)mFindDev.push_back(string("CAENV1718")); //CAEN V1718 USBtoVME adapter
+          
          }
       }
    
