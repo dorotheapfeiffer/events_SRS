@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
-using namespace std;
 
 /// Root Includes
 #include <TROOT.h>
@@ -19,10 +18,9 @@ using namespace std;
 #include "ASignal.h"
 
 
+using namespace std;
+
 ClassImp(UserClass)
-
-
-
 
 UserClass::UserClass(TString name, int mAlgorythm) {
 
