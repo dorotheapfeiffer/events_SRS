@@ -1,0 +1,2 @@
+Thu May 26 21:21:43 2016 new DGMultiGrid
+Set ACQ loop to 0 sec
