@@ -492,9 +492,11 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
       flag = 1;
       fMultiGrid->ReadVME();
       fMultiGrid->m_AcqStatusEntry2 = fMultiGrid->fDMadc32->GetNrEvents(); 
-      if( fMultiGrid->m_Display )
+     // if( fMultiGrid->m_Display )
           fMultiGrid->ShowData(fGDisplay);
-   
+ 
+         
+ 
       if( fMultiGrid->m_DataSave )
           fMultiGrid->DataSave();
 

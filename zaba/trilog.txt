@@ -1,3 +1,6 @@
-Thu May 26 23:08:14 2016 new DGMultiGrid
+Thu Jun  9 17:11:15 2016 new DGMultiGrid
 Set ACQ loop to 0 sec
-Thu May 26 23:08:19 2016........
+Thu Jun  9 17:11:17 2016........
+Thu Jun  9 17:11:17 2016........debug Mesytec GUI
+
+Thu Jun  9 17:11:28 2016........program RUN 

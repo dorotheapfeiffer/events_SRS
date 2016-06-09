@@ -125,7 +125,7 @@
   
   //DMadc32 *dMadc32 = (DMadc32 *) fModule;
   //dMadc32->dGMadc32 = 0;
-  std::cout <<"destroying DGMhexadc32" << std::endl;
+  std::cout <<"destroying DGMadc32" << std::endl;
   delete fL0;
 
 }
@@ -136,23 +136,17 @@
 
  std::cout << " DGMadc32 refresh button status " << std::endl;
   for (Int_t i = 0; i < 32; i++) {
-    if(dMadc32-> m_ThresholdOn[i]){ 
-       fThresholdValue[i]->SetState(EButtonState(1));
-       fThresholdValue[i]->SetHexNumber(dMadc32->m_ThresholdValue[i]);
-       }
-    else{ 
-       fThresholdValue[i]->SetState(EButtonState(0));
-       fThresholdValue[i]->SetHexNumber(0x1FFF);
-       }
-
-   // if(dMadc32->m_IgnoreThreshold){
-   //   fThresholdValue[i]->SetHexNumber(0L);
-   //   }
-   // else{
-   //   fThresholdValue[i]->SetHexNumber(dMadc32->m_ThresholdValue[i]);
-   //   }
-  
-}
+    if(dMadc32->m_IgnoreThreshold == 0 && dMadc32->m_ThresholdOn[i] == 1){
+      //std::cout << " dMadc32->m_IgnoreThreshold:" << dMadc32->m_IgnoreThreshold << " dMadc32->m_ThresholdOn["<<i<<"]: " << dMadc32->m_ThresholdOn[i] << " state(1) "<< std::endl;
+      fThresholdValue[i]->SetState(EButtonState(1));
+      fThresholdOn[i]->SetState(EButtonState(1));
+      }
+    else{
+      //std::cout << " dMadc32->m_IgnoreThreshold:" << dMadc32->m_IgnoreThreshold << " dMadc32->m_ThresholdOn["<<i<<"]: " << dMadc32->m_ThresholdOn[i] << " state(0) "<< std::endl;
+      fThresholdValue[i]->SetState(EButtonState(0));
+      fThresholdOn[i]->SetState(EButtonState(0));
+      }
+  }
 
 
   DoRedraw();
@@ -187,24 +181,15 @@
       switch (parm1) {
       case eIgnoreThreshold:
         dMadc32->m_IgnoreThreshold = (Int_t)fIgnoreThreshold->GetState(); 
-         
         std::cout << "m_IgnoreThreshold; " << dMadc32->m_IgnoreThreshold << std::endl;   
         if(dMadc32->m_IgnoreThreshold){ 
-          for(Int_t i = 0; i < 32; i++){
-             if(dMadc32->m_ThresholdOn[i]){
-                dMadc32->m_ThresholdCache[i] = dMadc32->m_ThresholdValue[i]; 
-                dMadc32->m_ThresholdValue[i] = 0;
-                } 
-              }
+          for(Int_t i = 0; i < 32; i++)
+             dMadc32->m_ThresholdOn[i] = 0;
           }
         else{
-          for(Int_t i = 0; i < 32; i++){
-             if(dMadc32->m_ThresholdOn[i]){
-                dMadc32->m_ThresholdValue[i] = dMadc32->m_ThresholdCache[i];
-                }  
-             //dMadc32->m_ThresholdOn[i] = 1;
-           }   
-         }
+          for(Int_t i = 0; i < 32; i++)
+             dMadc32->m_ThresholdOn[i] = 1;
+          }
       break;
       case eGateGenerator:
         dMadc32->m_GateGenerator = (Int_t)fGateGenerator->GetState(); 
@@ -217,17 +202,9 @@
       default:
         if(parm1 >= 100 && parm1 < 132){
            //std::cout << " (Int_t)fThresholdOn[i]->GetState() " << (Int_t)fThresholdOn[parm1 - 100]->GetState()  << std::endl;   
-           dMadc32-> m_ThresholdOn[parm1 - 100] = (Int_t)fThresholdOn[parm1-100]->GetState();
-           if(dMadc32-> m_ThresholdOn[parm1 - 100]){ 
-              dMadc32-> m_ThresholdValue[parm1 - 100] = dMadc32-> m_ThresholdCache[parm1 - 100];
-              std::cout <<"z cache" << std::endl;
-              }
-           else{ 
-              dMadc32-> m_ThresholdValue[parm1 - 100] =  0x1FFF;
-              std::cout << "0x1FFF" << std::endl;
-              }    
-           }
-
+           dMadc32-> m_ThresholdOn[parm1 - 100] = (Int_t)fThresholdOn[parm1-100]->GetState(); 
+           //std::cout << " m_ThresholdOn[parm1 - 100]: " << dMadc32->m_ThresholdOn[parm1 - 100] << std::endl;   
+          }
         //else if (parm1 == eGateDelay )
         //    dMadc32->m_GateDelay = fGateDelay->GetNumber();                               
         //else if(parm1 == eGateWidth )
@@ -274,7 +251,6 @@
     break;
   }
  Refresh();
- dMadc32->InitModule();
  dMadc32->ShowSettings(); 
   return kTRUE;
 }
