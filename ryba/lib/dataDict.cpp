@@ -667,8 +667,8 @@ namespace {
 0
     };
     static const char* includePaths[] = {
-"/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/Documents/programC/ryba/lib/",
+"/opt/root/include",
+"/home/admin/dg_epool/ryba/lib/",
 0
     };
     static const char* fwdDeclCode = 

@@ -432,7 +432,7 @@ if( VME_CRATE ){ // to test puropse only....
 
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
   ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-  //printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
+  printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
   for(UInt_t i = 0; i < m_dataSizeByte/4; i++){
      
@@ -635,16 +635,16 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    gCurrentTimeADC = gGetLongTimeADC() / 1000;              // check the current time
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
-   memcpy(m_Buffer + m_BufferPos, m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   memcpy((char*)m_Buffer + m_BufferPos, (char*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
                                                                   // for one module it is not necessary, it matter when you have more then one module
    m_BufferPos += m_dataSizeByte;                                 // move the position of the buffer
-    
+   std:: cout << "m_BufferPos = " << m_BufferPos << std::endl;
    static int k = 0;
-   /*std::cout << "----------this is from saving file, number of loop ----" << k << "m_BufferPos = "<< m_BufferPos << std::endl;
+   //std::cout << "----------this is from saving file, number of loop ----" << k << "m_BufferPos = "<< m_BufferPos << std::endl;
    
-    for(Int_t i = 0; i < m_BufferPos/4; i++){
-       std::cout << std::hex << "0x"<<((m_Buffer[i] & 0x7FFFFFFF)>>29) << std::dec << " " << m_Buffer[i] << " " << m_BufferPos << std::endl;
-       }
+    //for(Int_t i = 0; i < m_BufferPos/4; i++){
+    //   std::cout << std::hex << "0x"<<((m_Buffer[i] & 0x7FFFFFFF)>>29) << std::dec << " " << m_Buffer[i] << " " << m_BufferPos << std::endl;
+    //   }
   // check of the buffer position (size) reach the maximum file size, multiply by 1024*1024 to have it in MB
    if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
@@ -660,7 +660,7 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
            m_saveAfterTime = kTRUE;  
           }
      }
-*/
+
 //--- writing bufer to file if one of the two condition are fulfill---
   if( m_saveAfterSize || m_saveAfterTime ){
     char filename[256];
