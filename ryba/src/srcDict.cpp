@@ -39,7 +39,7 @@ namespace std {} using namespace std;
 
 // Header files passed as explicit arguments
 #include "MainWindow.h"
-#include "/home/dlab/Documents/programC/ryba/app/UserClass.h"
+#include "/home/admin/dg_epool/ryba/app/UserClass.h"
 
 // Header files passed via #pragma extra_include
 
@@ -251,12 +251,12 @@ namespace {
   void TriggerDictionaryInitialization_srcDict_Impl() {
     static const char* headers[] = {
 "MainWindow.h",
-"/home/dlab/Documents/programC/ryba/app/UserClass.h",
+"/home/admin/dg_epool/ryba/app/UserClass.h",
 0
     };
     static const char* includePaths[] = {
-"/home/dlab/Downloads/root-6.05.02/include",
-"/home/dlab/Documents/programC/ryba/src/",
+"/opt/root/include",
+"/home/admin/dg_epool/ryba/src/",
 0
     };
     static const char* fwdDeclCode = 
@@ -266,7 +266,7 @@ R"DICTFWDDCLS(
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 extern int __Cling_Autoloading_Map;
 class __attribute__((annotate("$clingAutoload$MainWindow.h")))  MainWindow;
-class __attribute__((annotate("$clingAutoload$/home/dlab/Documents/programC/ryba/app/UserClass.h")))  UserClass;
+class __attribute__((annotate("$clingAutoload$/home/admin/dg_epool/ryba/app/UserClass.h")))  UserClass;
 )DICTFWDDCLS";
     static const char* payloadCode = R"DICTPAYLOAD(
 
@@ -276,7 +276,7 @@ class __attribute__((annotate("$clingAutoload$/home/dlab/Documents/programC/ryba
 
 #define _BACKWARD_BACKWARD_WARNING_H
 #include "MainWindow.h"
-#include "/home/dlab/Documents/programC/ryba/app/UserClass.h"
+#include "/home/admin/dg_epool/ryba/app/UserClass.h"
 
 #undef  _BACKWARD_BACKWARD_WARNING_H
 )DICTPAYLOAD";

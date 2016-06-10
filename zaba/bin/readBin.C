@@ -105,9 +105,10 @@ void readBin() {
 
    //Bool_t DEBUG = kTRUE;
    Bool_t DEBUG = kFALSE;
+   Int_t wrong = 0;
 
-   char filename[] = "/home/dlab/Documents/programC/zaba/data/14Apr2016/14Apr2016_test1_009.bin";
-   // open the binary waveform file
+   char filename[] = "/home/admin/dg_epool/zaba/data/test2_000.bin";
+   printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {
       printf("Cannot find file \'%s\'\n", filename);
@@ -142,9 +143,9 @@ void readBin() {
                                                                         m_DataWord.overflow, m_DataWord.adc_data); 
            }
         fread(&m_Footer, sizeof(m_Footer), 1, f);
-        m_value_adc[ m_DataWord.channel ] = m_EndOfEvent.counter_tts; 
+        m_value_adc[32 ] = m_EndOfEvent.counter_tts; 
         
-        //printf( "%d, %d\n",  i, value33 );  
+        printf( "tts = %d\n", m_value_adc[32] );  
 
         if(m_value_adc[0] > 300 && m_value_adc[2] < 300){
            Int_t dupa = adc2pos( m_value_adc[1]);
@@ -165,7 +166,9 @@ void readBin() {
        
        //timestamp->SetBinContent(i, value33 );
        }
-
+       else{
+         cout << "something is wrong there is no header signal "<< wrong++ << endl;
+       }
        //break;
   
      i++;  

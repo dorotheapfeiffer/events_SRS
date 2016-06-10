@@ -22,7 +22,7 @@ private:
  UInt_t			m_Buffer[1024*1024*810]; //810MB max buffer
  UInt_t			m_localBuffer[1024*1024*10]; //810MB max buffer
  UInt_t			m_BufferPos;
- Int_t			m_BufferSize;
+ UInt_t			m_BufferSize;
 
  Int_t			m_dataSizeByte;
  UInt_t			m_Events;
