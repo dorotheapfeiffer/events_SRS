@@ -1302,8 +1302,8 @@ namespace {
 0
     };
     static const char* includePaths[] = {
-"/opt/root/include",
-"/home/admin/dg_epool/zaba/",
+"/home/dlab/Downloads/root-6.05.02/include",
+"/home/dlab/dg_epool/zaba/",
 0
     };
     static const char* fwdDeclCode = 

@@ -99,15 +99,15 @@ void readBin() {
    TH1F *positionW  = new TH1F("positionW", "positionW", 2000, 0, 4000);
    TH1F *amplitudeG = new TH1F("amplitudeG", "amplitudeG", 2000, 0, 4000);
    TH1F *positionG  = new TH1F("positionG", "positionG", 2000, 0, 4000);
-   //TH1F *timestamp  = new TH1F("timestamp", "timestamp", 1200000, 0, 1200000);
+   TH1F *timestamp  = new TH1F("timestamp", "timestamp", 1200000, 0, 1200000);
    TH1F *pos  = new TH1F("pos", "pos", 3500, 0, 3500);
    TGraph *gr       = new TGraph(65, tabx, taby); 
 
-   //Bool_t DEBUG = kTRUE;
-   Bool_t DEBUG = kFALSE;
+   Bool_t DEBUG = kTRUE;
+   //Bool_t DEBUG = kFALSE;
    Int_t wrong = 0;
 
-   char filename[] = "/home/admin/dg_epool/zaba/data/test2_000.bin";
+   char filename[] = "/home/dlab/dg_epool/zaba/data/test4_000.bin";
    printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {
@@ -128,14 +128,10 @@ void readBin() {
            printf("	adc_res	  : %d\n", m_EventHeader.adc_res    ); 
            printf("	n_words	  : %d\n", m_EventHeader.n_words    ); 
           }
-        Int_t m_value_adc[33];;
+        UInt_t m_value_adc[33];;
         Int_t pos1;
         for(Int_t n = 0; n < m_EventHeader.n_words-1; n++){
             fread(&m_Word, sizeof(m_Word), 1, f);
-            //if(m_DataWord.channel == 0)  m_value_adc = m_DataWord.adc_data;
-            //if(m_DataWord.channel == 1)  m_value_adc = m_DataWord.adc_data; 
-            //if(m_DataWord.channel == 2)  m_value_adc = m_DataWord.adc_data;
-            //if(m_DataWord.channel == 3)  m_value_adc = m_DataWord.adc_data;
 
             m_value_adc[ m_DataWord.channel ] = m_DataWord.adc_data;
 
@@ -164,7 +160,7 @@ void readBin() {
           // positionG->Fill(value4); 
            }
        
-       //timestamp->SetBinContent(i, value33 );
+       timestamp->SetBinContent(i, m_EndOfEvent.counter_tts );
        }
        else{
          cout << "something is wrong there is no header signal "<< wrong++ << endl;
@@ -178,6 +174,7 @@ void readBin() {
   fclose(f); 
 
   TCanvas *c = new TCanvas("c","c",800, 600);
+  TCanvas *c1 = new TCanvas("c1","c1",800, 600);
   c->Divide(3,1);
   //...............
   c->cd(1);
@@ -200,6 +197,9 @@ void readBin() {
   //gr->Draw("ac*");
   //timestamp->Draw();
   c->cd();
+  c1->cd();
+  timestamp->Draw();
+  
 //////////////////////////////////////////////////////////////////
 // pos = 22mV/bin + 460(fixed_offset_adc) + 355*address;
 //////////////////////////////////////////////////////////////////
