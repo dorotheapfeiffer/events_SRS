@@ -304,7 +304,7 @@ if( VME_CRATE ){ // to test puropse only....
  address = m_BaseAddress + 0x606C;
  data = 0x1;
  printf("CAENVME_WriteCycle: NIM_fc_reset\n");
- ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_GateWidth, cvA32_U_DATA, cvD16) );
+ ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
   // set threshold 
@@ -432,7 +432,7 @@ if( VME_CRATE ){ // to test puropse only....
 
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
   ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-  printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
+  //printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
   for(UInt_t i = 0; i < m_dataSizeByte/4; i++){
      
@@ -450,6 +450,7 @@ if( VME_CRATE ){ // to test puropse only....
            case 3:
                //printf("FOOTER, m_localbuffer[%ld], tts: %u\n", i, m_localBuffer[i] & 0xCFFFFFFF);
                //printf("%ld\n"  , m_localBuffer[i] & 0xCFFFFFFF);
+               printf("%ld\n"  , m_localBuffer[i] & 0x3FFFFFFF);
            break;
            default:
              //printf("ERROR buffer[%d]\n", i);
@@ -537,7 +538,7 @@ void DMadc32::StopAcq(){
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
       m_Header = m_localBuffer[i];
       if(m_EventHeader.header_sig == 0x1){ // looking for a header word, return if not found
-         printf("is data header:\n  dsig: %d, m_EventHeader.n_words = %d \n", m_EventHeader.header_sig, m_EventHeader.n_words);
+         //printf("is data header:\n  dsig: %d, m_EventHeader.n_words = %d \n", m_EventHeader.header_sig, m_EventHeader.n_words);
         }
       else{
         //printf("no data header: \n");
@@ -550,7 +551,7 @@ void DMadc32::StopAcq(){
       for(n = 0; n < m_EventHeader.n_words-1; n++){
           m_Word = m_localBuffer[i+n+1];
           value[m_DataWord.channel] = m_DataWord.adc_data;
-          printf("  dsig: %d, chn: %d, over: %d, adc: %d\n",m_DataWord.data_sig, m_DataWord.channel, m_DataWord.overflow, m_DataWord.adc_data);
+          //printf("  dsig: %d, chn: %d, over: %d, adc: %d\n",m_DataWord.data_sig, m_DataWord.channel, m_DataWord.overflow, m_DataWord.adc_data);
           /*if(m_DataWord.channel == 0x0){   
              value[n] = m_DataWord.adc_data;
              printf("n = %d, value[%d] = %d\n", n, n, value[n]);
@@ -566,11 +567,11 @@ void DMadc32::StopAcq(){
 
       if(m_EndOfEvent.end_event == 0x3){  
          tts = m_EndOfEvent.counter_tts;
-         printf("  dsig1: %d, tts: %ld, n = %d, i = %d, (n+i+1) = %d\n",m_EndOfEvent.end_event, tts, n, i, n+i+1);
+         //printf("  dsig1: %d, tts: %ld, n = %d, i = %d, (n+i+1) = %d\n",m_EndOfEvent.end_event, tts, n, i, n+i+1);
          //printf("tts %ld\n", tts);
          }   
       else{
-         printf("  dsig2: %d, tts: %d, n = %d, i = %d, (i+n+1) = %d\n",m_EndOfEvent.end_event, m_EndOfEvent.counter_tts, n, i, i+n+1);
+         //printf("  dsig2: %d, tts: %d, n = %d, i = %d, (i+n+1) = %d\n",m_EndOfEvent.end_event, m_EndOfEvent.counter_tts, n, i, i+n+1);
       } 
 
    //printf("--------\n");
@@ -636,14 +637,36 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
    memcpy((char*)m_Buffer + m_BufferPos, (char*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+
+
                                                                   // for one module it is not necessary, it matter when you have more then one module
+  TString aDupaTxt = "dupa4.txt";
+  TString readStr;
+  std::ofstream DataDupa(aDupaTxt, std::ofstream::out | std::ofstream::app);
+  if(!DataDupa.is_open()) {
+     std::cout << "ERROR could not open the file... " << aDupaTxt << std::endl;
+    }
+  else{
+  static int uu = 0; 
+  for(Int_t i = 0; i < m_dataSizeByte; i++){
+     readStr = Dec2BinStr(((m_Buffer[i]+m_BufferPos) & 0xFF000000) >> 24) + std::string("") +
+               Dec2BinStr(((m_Buffer[i]+m_BufferPos) & 0xFF0000)   >> 16) + std::string("") + 
+               Dec2BinStr(((m_Buffer[i]+m_BufferPos) & 0x0000FF00) >> 8 ) + std::string("") + 
+               Dec2BinStr(((m_Buffer[i]+m_BufferPos) & 0x0000FF));
+     DataDupa << uu << " " << readStr << std::endl;    
+     uu++;
+     }
+  } 
+ 
+ DataDupa.close();
+
    m_BufferPos += m_dataSizeByte;                                 // move the position of the buffer
-   std:: cout << "m_BufferPos = " << m_BufferPos << std::endl;
+   //std:: cout << "m_BufferPos = " << m_BufferPos << std::endl;
    static int k = 0;
    //std::cout << "----------this is from saving file, number of loop ----" << k << "m_BufferPos = "<< m_BufferPos << std::endl;
    
     //for(Int_t i = 0; i < m_BufferPos/4; i++){
-    //   std::cout << std::hex << "0x"<<((m_Buffer[i] & 0x7FFFFFFF)>>29) << std::dec << " " << m_Buffer[i] << " " << m_BufferPos << std::endl;
+    //   std::cout << std::hex << "0x"<<((m_Buffer[i] & 0x3FFFFFFF)) << std::dec << " " << m_Buffer[i] << " " << m_BufferPos << std::endl;
     //   }
   // check of the buffer position (size) reach the maximum file size, multiply by 1024*1024 to have it in MB
    if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {

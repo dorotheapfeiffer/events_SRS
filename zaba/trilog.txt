@@ -1,9 +1,9 @@
-Fri Jun 10 15:09:16 2016 new DGMultiGrid
+Tue Jun 14 17:42:03 2016 new DGMultiGrid
 Set ACQ loop to 0 sec
-Fri Jun 10 15:09:18 2016........
-Fri Jun 10 15:09:19 2016........debug Mesytec GUI
+Tue Jun 14 17:42:26 2016........
+Tue Jun 14 17:42:26 2016........debug Mesytec GUI
 
-Fri Jun 10 15:09:30 2016........Set SaveFileSize parameter after [...] file size
+Tue Jun 14 17:42:48 2016........Set SaveFileSize parameter after [...] file size
  
-Fri Jun 10 15:09:40 2016........Acqisition START 
-Fri Jun 10 15:10:12 2016........Acqisition STOP 
+Tue Jun 14 17:42:52 2016........Acqisition START 
+Tue Jun 14 17:44:53 2016........Acqisition STOP 

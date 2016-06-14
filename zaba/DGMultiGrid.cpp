@@ -496,7 +496,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
       //fMultiGrid->ShowData(fGDisplay);
  
          
-      std::cout << fMultiGrid->m_DataSave << std::endl;
+      //std::cout << fMultiGrid->m_DataSave << std::endl;
       if( fMultiGrid->m_DataSave )
           fMultiGrid->DataSave();
 
