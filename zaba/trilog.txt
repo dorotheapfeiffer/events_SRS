@@ -1,5 +1,0 @@
-Fri Jun 17 11:34:34 2016 new DGMultiGrid
-Set ACQ loop to 0 sec
-Fri Jun 17 11:34:46 2016........
-Fri Jun 17 11:34:47 2016........debug Mesytec GUI
-
