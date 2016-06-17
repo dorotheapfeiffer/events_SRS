@@ -1,0 +1,3 @@
+b MainWindow.cpp:160
+run ../../../Desktop/CAEN_Digit/C1_1300V/test_000.dat
+

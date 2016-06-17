@@ -1,0 +1,25 @@
+/* XPM */
+static char *ed_execute[] = {
+/* columns rows colors chars-per-pixel */
+"16 16 3 1",
+"  c #00C700",
+". c #C0C0C0",
+"X c None",
+/* pixels */
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XXXX  XXXXXXXXXX",
+"XXXX    XXXXXXXX",
+"XXXX      XXXXXX",
+"XXXX        XXXX",
+"XXXX         XXX",
+"XXXX        XXXX",
+"XXXX      XXXXXX",
+"XXXX    XXXXXXXX",
+"XXXX  XXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX"
+};
