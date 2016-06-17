@@ -113,3 +113,22 @@ void ShowBuffer(char * buffer, int nchar) {
   Access((char*)"w", adoff, 2, &temp);
 }
 //*****************************************************************************
+std::string DModule::Trim(std::string const& source, char const* delims )
+{
+ std::string result(source);
+ std::string::size_type index = result.find_last_not_of(delims);
+ if(index != std::string::npos)
+    result.erase(++index);
+
+  index = result.find_first_not_of(delims);
+  if(index != std::string::npos)
+    result.erase(0, index);
+  else
+    result.erase();
+  return result;
+}
+
+
+
+
+

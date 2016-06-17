@@ -107,7 +107,7 @@ void readBin() {
    //Bool_t DEBUG = kFALSE;
    Int_t wrong = 0;
 
-   char filename[] = "/home/dlab/dg_epool/zaba/data/test4_000.bin";
+   char filename[] = "/home/dlab/dg_epool/zaba/data/test1_000.bin";
    printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {
@@ -171,6 +171,7 @@ void readBin() {
     //if( !(i % 1000)) printf("read %d words\n", i);
     }
 
+  printf("read %d words\n", i);
   fclose(f); 
 
   TCanvas *c = new TCanvas("c","c",800, 600);

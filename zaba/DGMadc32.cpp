@@ -117,7 +117,7 @@
  std::cout << "constructing DGMadc32 done!" << std::endl;
  dMadc32->ShowSettings(); 
 
- LowerWindow();
+ RaiseWindow();
 }
 
 //-----------------------------------------------------------------------------
@@ -137,23 +137,28 @@
  std::cout << " DGMadc32 refresh button status " << std::endl;
   for (Int_t i = 0; i < 32; i++) {
     if(dMadc32-> m_ThresholdOn[i]){ 
+       fThresholdOn[i]->SetState(EButtonState(1));
        fThresholdValue[i]->SetState(EButtonState(1));
        fThresholdValue[i]->SetHexNumber(dMadc32->m_ThresholdValue[i]);
        }
     else{ 
+       fThresholdOn[i]->SetState(EButtonState(0));
        fThresholdValue[i]->SetState(EButtonState(0));
        fThresholdValue[i]->SetHexNumber(0x1FFF);
        }
+    
 
-   // if(dMadc32->m_IgnoreThreshold){
    //   fThresholdValue[i]->SetHexNumber(0L);
    //   }
    // else{
    //   fThresholdValue[i]->SetHexNumber(dMadc32->m_ThresholdValue[i]);
    //   }
   
-}
-
+ }
+  
+ (dMadc32->m_IgnoreThreshold) ? fIgnoreThreshold->SetState(EButtonState(1)) : fIgnoreThreshold->SetState(EButtonState(0)); 
+ (dMadc32->m_GateOutput)      ? fGateOutput->SetState(EButtonState(1))      : fGateOutput->SetState(EButtonState(0)); 
+ (dMadc32->m_GateGenerator)   ? fGateGenerator->SetState(EButtonState(1))   : fGateGenerator->SetState(EButtonState(0)); 
 
   DoRedraw();
 
@@ -188,7 +193,7 @@
       case eIgnoreThreshold:
         dMadc32->m_IgnoreThreshold = (Int_t)fIgnoreThreshold->GetState(); 
          
-        std::cout << "m_IgnoreThreshold; " << dMadc32->m_IgnoreThreshold << std::endl;   
+        std::cout << "++++++++++++++++++++++++++++++++ProccessMessage::m_IgnoreThreshold; " << dMadc32->m_IgnoreThreshold << " " << kCM_CHECKBUTTON << " " << parm1 << std::endl;   
         if(dMadc32->m_IgnoreThreshold){ 
           for(Int_t i = 0; i < 32; i++){
              if(dMadc32->m_ThresholdOn[i]){

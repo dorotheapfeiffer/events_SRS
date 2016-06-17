@@ -126,7 +126,7 @@ namespace ROOT {
       ::DModule *ptr = 0;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::DModule >(0);
       static ::ROOT::TGenericClassInfo 
-         instance("DModule", ::DModule::Class_Version(), "DModule.h", 23,
+         instance("DModule", ::DModule::Class_Version(), "DModule.h", 24,
                   typeid(::DModule), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::DModule::Dictionary, isa_proxy, 16,
                   sizeof(::DModule) );
@@ -160,7 +160,7 @@ namespace ROOT {
       ::DMultiGrid *ptr = 0;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::DMultiGrid >(0);
       static ::ROOT::TGenericClassInfo 
-         instance("DMultiGrid", ::DMultiGrid::Class_Version(), "DMultiGrid.h", 14,
+         instance("DMultiGrid", ::DMultiGrid::Class_Version(), "DMultiGrid.h", 17,
                   typeid(::DMultiGrid), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::DMultiGrid::Dictionary, isa_proxy, 16,
                   sizeof(::DMultiGrid) );
@@ -258,7 +258,7 @@ namespace ROOT {
       ::DMadc32 *ptr = 0;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::DMadc32 >(0);
       static ::ROOT::TGenericClassInfo 
-         instance("DMadc32", ::DMadc32::Class_Version(), "DMadc32.h", 10,
+         instance("DMadc32", ::DMadc32::Class_Version(), "DMadc32.h", 11,
                   typeid(::DMadc32), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::DMadc32::Dictionary, isa_proxy, 16,
                   sizeof(::DMadc32) );
@@ -1078,6 +1078,7 @@ void DMadc32::Streamer(TBuffer &R__b)
       R__b >> m_BufferSize;
       R__b >> m_dataSizeByte;
       R__b >> m_Events;
+      R__b >> m_IRQ;
       R__b >> m_IgnoreThreshold;
       R__b.ReadStaticArray((int*)m_ThresholdOn);
       R__b.ReadStaticArray((int*)m_ThresholdValue);
@@ -1103,6 +1104,7 @@ void DMadc32::Streamer(TBuffer &R__b)
       R__b << m_BufferSize;
       R__b << m_dataSizeByte;
       R__b << m_Events;
+      R__b << m_IRQ;
       R__b << m_IgnoreThreshold;
       R__b.WriteArray(m_ThresholdOn, 32);
       R__b.WriteArray(m_ThresholdValue, 32);

@@ -200,15 +200,18 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   
   // 2. Stop Acquisition after time
 
-    fStopAfterSecCB    = new TGCheckButton(fStopAfterFrame1, "Nr Seconds",    eStopAfterSecCB);    //20902
-    fStopAfterFileCB   = new TGCheckButton(fStopAfterFrame1, "Nr Files",  eStopAfterFileCB);  //20902
-    fStopAfterEventsCB = new TGCheckButton(fStopAfterFrame2, "Nr Events", eStopAfterEventsCB); //20902
-    fStopAfterSecEntry    = new TGNumberEntry(fStopAfterFrame1, 0, 9, eStopAfterSecEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
-    fStopAfterFileEntry   = new TGNumberEntry(fStopAfterFrame1, 0, 9, eStopAfterFileEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
-    fStopAfterEventsEntry = new TGNumberEntry(fStopAfterFrame2, 0, 9, eStopAfterEventsEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
-    fStopAfterSecEntry->SetState(kFALSE);    
-    fStopAfterFileEntry->SetState(kFALSE);   
-    fStopAfterEventsEntry->SetState(kFALSE);
+    fStopAfterSecCB    = new TGCheckButton(fStopAfterFrame1, "Nr Seconds",    eStopAfterSecCB);
+    fStopAfterFileCB   = new TGCheckButton(fStopAfterFrame1, "Nr Files",  eStopAfterFileCB);  
+    fStopAfterEventsCB = new TGCheckButton(fStopAfterFrame2, "Nr Events", eStopAfterEventsCB); 
+    fStopAfterSecEntry    = new TGNumberEntry(fStopAfterFrame1, fMultiGrid->m_StopAfterSecEntry, 9, eStopAfterSecEntry, 
+                                TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
+    fStopAfterFileEntry   = new TGNumberEntry(fStopAfterFrame1, fMultiGrid->m_StopAfterFileEntry, 9, eStopAfterFileEntry, 
+                                TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
+    fStopAfterEventsEntry = new TGNumberEntry(fStopAfterFrame2, fMultiGrid->m_StopAfterEventsEntry, 9, eStopAfterEventsEntry, 
+                                TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMin, 0  ); 
+    (fMultiGrid->m_StopAfterSecEntry)    ? fStopAfterSecEntry->SetState(kTRUE)     : fStopAfterSecEntry->SetState(kFALSE);    
+    (fMultiGrid->m_StopAfterFileEntry)   ? fStopAfterFileEntry->SetState(kTRUE)    : fStopAfterFileEntry->SetState(kFALSE);   
+    (fMultiGrid->m_StopAfterEventsEntry) ? fStopAfterEventsEntry->SetState(kTRUE) : fStopAfterEventsEntry->SetState(kFALSE);
 
     // I use connect instead Associate(this) because I couldnt understand how the TGNumberEntry works.....
     fStopAfterSecEntry->Connect("ValueSet(Long_t)", "DGMultiGrid", this, "DoValueSet()");
@@ -234,17 +237,18 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   // 3. Save file after/or
  
     fSaveSizeCB       = new TGCheckButton(fSaveFrame1, "Size [MB]",    eSaveFileSizeCB);    //20902
-    fSaveSizeEntry    = new TGNumberEntry(fSaveFrame1, 0, 9, eSaveFileSizeEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, 
+    fSaveSizeEntry    = new TGNumberEntry(fSaveFrame1, fMultiGrid->m_SaveFileSizeEntry, 9, eSaveFileSizeEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, 
                             TGNumberFormat::kNELLimitMinMax, 1, 500  ); 
     fSaveLabel        = new TGLabel(fSaveFrame1, new TGString("OR") );
     fSaveTimeCB    = new TGCheckButton(fSaveFrame1, "Nr Seconds",    eSaveFileTimeCB);    //20902
-    fSaveTimeEntry = new TGNumberEntry(fSaveFrame1, 0, 9, eSaveFileTimeEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, 
+    fSaveTimeEntry = new TGNumberEntry(fSaveFrame1, fMultiGrid->m_SaveFileTimeEntry, 9, eSaveFileTimeEntry, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, 
                             TGNumberFormat::kNELLimitMin, 1  ); 
     fSaveSizeEntry->SetNumber( fMultiGrid->m_SaveFileSizeEntry );
     fSaveTimeEntry->SetNumber( fMultiGrid->m_SaveFileTimeEntry );
 
     fSaveSizeEntry->SetState(kFALSE);
     fSaveTimeEntry->SetState(kFALSE);
+
     fSaveFrame1->AddFrame(fSaveSizeCB,       fL5);         
     fSaveFrame1->AddFrame(fSaveSizeEntry  ,  fL10); 
     fSaveFrame1->AddFrame(fSaveLabel      ,  fL210); 
@@ -617,14 +621,14 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
       case eLoadSetup:
 	// load setup
 	new TGFileDialog(fClient->GetRoot(), this, kFDOpen,&fi);
-	if (fi.fFilename) fMultiGrid->Load(fi.fFilename);
+	if (fi.fFilename) fMultiGrid->LoadConfig(fi.fFilename);
 	*fLog << "load setup from " << fi.fFilename;
 	std::cout << "load setup from " << fi.fFilename;
 	break;
       case eSaveSetup:
 	// save setup
 	new TGFileDialog(fClient->GetRoot(), this, kFDSave,&fi);
-	if (fi.fFilename) fMultiGrid->Save(fi.fFilename);
+	if (fi.fFilename) fMultiGrid->SaveConfig(fi.fFilename);
 	*fLog << "save setup to   " << fi.fFilename;
 	std::cout << "save setup to   " << fi.fFilename;
 	break;

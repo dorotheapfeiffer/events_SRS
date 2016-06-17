@@ -1,6 +1,9 @@
 #ifndef DMADC32_H 
 #define DMADC32_H
 
+#include <ostream>
+#include <string>
+
 #include <TObject.h>
 #include <TObjArray.h>
 
@@ -54,8 +57,8 @@ public:
   virtual ~DMultiGrid();
   void ResetModules();                   // Call ResetModule() for each VME module
   void InitModules();                    // Load the fixed part of the settings
-  void Load(char *filename);             // Load the variable part of settings from file
-  void Save(char *filename);             // Save the variable part of settings to file
+  void LoadConfig(char *filename);             // Load the variable part of settings from file
+  void SaveConfig(char *filename);             // Save the variable part of settings to file
   void ResetHistograms(){}
 
   void StartAcq();
@@ -65,7 +68,7 @@ public:
   void ShowData(DGDisplay *);            // do online analysis and fill histograms 
   void DataSave();                       // save data to file
   void SetFileName(char* filename) { strcpy(m_FileName, filename); }
- 
+  std::string Trim(std::string const& source, char const* delims = " \t\r\n" ); 
 
   ClassDef(DMultiGrid,1)  		// MultiGrid readout 
 };

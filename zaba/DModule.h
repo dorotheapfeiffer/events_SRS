@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <ostream>
 #include <stdlib.h>
 #include <string.h>
 
@@ -43,6 +44,7 @@ public:
   Int_t   Access(Char_t *flag, Int_t adoff, Int_t len, void *buf);
   Int_t   BitAccess(Int_t adoff, Int_t bioff);
   void    BitAccess(Int_t adoff, Int_t bioff, Int_t val);
+  std::string  Trim(std::string const& source, char const* delims = " \t\r\n");
   virtual void ReadVME()          		{ std::cout << this << " ReadVME called\n";         }
   virtual void ResetModule()      		{ std::cout << this << " ResetModule called\n";     }
   virtual void InitModule()       		{ std::cout << this << " InitModule called\n";      }
@@ -51,6 +53,8 @@ public:
   virtual void ConfigureModule()  		{ std::cout << this << " ConfigureModule called\n"; }
   virtual void StartAcq()	  		{ std::cout << this << " StartAcq called\n"; }
   virtual void StopAcq()	  		{ std::cout << this << " StopAcq called\n"; }
+  virtual void SaveConfig(std::ofstream &) 		{ std::cout << this << " StopAcq called\n"; }
+  virtual void LoadConfig(std::ifstream &) 		{ std::cout << this << " StopAcq called\n"; }
 
   ClassDef(DModule,1)               // Parent to all VME module classes
 

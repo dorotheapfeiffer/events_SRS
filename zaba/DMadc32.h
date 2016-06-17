@@ -1,5 +1,6 @@
 #ifndef MADC32_H
 #define MADC32_H
+#include <ostream>
 
 #include "DModule.h"
 #include "CAENVMElib.h"
@@ -26,6 +27,7 @@ private:
 
  Int_t			m_dataSizeByte;
  UInt_t			m_Events;
+ Int_t			m_IRQ;
 
 public:
  Int_t			m_IgnoreThreshold;    // keep check button state of ignore threshold
@@ -44,6 +46,8 @@ public:
   virtual 	~DMadc32();
 
   void		InitModule();
+  void		SaveConfig(std::ofstream &);
+  void		LoadConfig(std::ifstream &);
   void		StartAcq();
   void		StopAcq();
   void		ConfigureModule();
