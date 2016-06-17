@@ -1,1 +1,8 @@
 repository for keeping track of software for electronics
+There are presently 5 directories: 
+Digitizers  exdna_v0.1  Madc32  ryba  zaba
+Digitizers: Primary Contact: Tomasz Brys? Code for CAEN digitisers...?
+exdna_v0.1: ....??
+ryba: Primary Contact: Tomasz Brys. Code for ...?
+zaba: Primary Contact: Tomasz Brys. Code for Mesytech digitiser.
+Madc32: Primary Contact: Richard HW. Fork of Zaba code for Mesytech digitiser
