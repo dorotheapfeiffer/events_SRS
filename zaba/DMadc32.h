@@ -12,11 +12,6 @@ class DMadc32 : public DModule {
 
 private:
 
- CVBoardTypes		m_VMEBridge;
- Short_t         	m_Link;   
- Short_t         	m_Device;
- Int_t			m_Handle;
-
  Int_t			m_BaseAddress;
  Int_t			m_ModuleID;
 

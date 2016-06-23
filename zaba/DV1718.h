@@ -9,7 +9,8 @@ class DGDisplay;
 
 class DV1718 : public DModule {
 
-  Int_t		m_VMEBridge;
+//  CVBoardTypes  m_VMEBridge;
+//  Int_t		m_Handle;
 
 public:
   UInt_t	m_Input;
@@ -27,6 +28,10 @@ public:
   void		InitModule();
   void		ConfigureModule();
   void		ReadVME();
+  void		StartAcq();
+  void		StopAcq();
+  void		SaveConfig(std::ofstream &){}
+  void		LoadConfig(std::ifstream &){}
   void		ShowData(DGDisplay* );
   void		DataSave(DMultiGrid *);
   void		ResetModule();

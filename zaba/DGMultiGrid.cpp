@@ -122,8 +122,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
   // file menu 
 
-  fMenuFile->AddEntry("&Load setup",       eLoadSetup);  // 11
-  fMenuFile->AddEntry("&Save setup",       eSaveSetup);  // 12
+  fMenuFile->AddEntry("&Load config",       eLoadSetup);  // 11
+  fMenuFile->AddEntry("&Save config",       eSaveSetup);  // 12
   fMenuFile->AddEntry("&Save histograms",  eSaveData);   // 13
   fMenuFile->AddEntry("&Exit",             eExit);       // 14 
 
@@ -497,7 +497,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
       fMultiGrid->ReadVME();
       fMultiGrid->m_AcqStatusEntry2 = fMultiGrid->fDMadc32->GetNrEvents(); 
      
-      //fMultiGrid->ShowData(fGDisplay);
+      fMultiGrid->ShowData(fGDisplay);
  
          
       //std::cout << fMultiGrid->m_DataSave << std::endl;
@@ -598,7 +598,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 //-----------------------------------------------------------------------------
  Bool_t DGMultiGrid::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
 
-  std::cout << "msg " << msg << ", parm1 "<< parm1 << ", parm2 "<< parm2 << std::endl;
+  //std::cout << "msg " << msg << ", parm1 "<< parm1 << ", parm2 "<< parm2 << std::endl;
 
   TGFileInfo fi;
   TGFileInfo dfi; 
@@ -653,13 +653,13 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 	break;
       case eMesytecAdc32:
 	new DGMadc32(fMultiGrid->fDMadc32);
-	*fLog << "debug Mesytec GUI\n";
-	std::cout << "debug Mesytec GUI\n";
+	*fLog << "open GUI for Mesytec\n";
+	std::cout << "open GUI for Mesytec\n";
 	break;
       case eCAENBridgeV1718:
 	new DGV1718(fMultiGrid->fDV1718);
-	*fLog << "debug CAEN Bridge\n";
-	std::cout << "debug CAEN Bridge GUI\n";
+	*fLog << "open GUI for CAEN Bridge\n";
+	std::cout << "open GUI for CAEN Bridge\n";
 	break;
       case eHelp:
 	new DGHelp((char*)"./help.hlp");
@@ -704,23 +704,25 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
       }
     case kCM_BUTTON:
-      std::cout << "kCMBUTTON:" << kCM_BUTTON << " parm1: "<< parm1 << " parm2: " << parm1 << std::endl;
+      //std::cout << "kCMBUTTON:" << kCM_BUTTON << " parm1: "<< parm1 << " parm2: " << parm1 << std::endl;
       switch (parm1){
         case eRunButton:
            fMultiGrid->m_DataSave = 0;
            if(fMultiGrid->m_Status == 0){
               fMultiGrid->m_Status = 1;
               fTick = 0;
+              fMultiGrid->StartAcq();
               fTimer->TurnOn();
 	      *fLog << "program RUN ";
-	      std::cout << "program RUN " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "program RUN " << fMultiGrid->m_Status << fDatime->AsString() << std::endl;
               }
            else{              
               fMultiGrid->m_Status = 0;
+              fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
 	      *fLog << "program STOP ";
-	      std::cout << "program STOP " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "program STOP " << fMultiGrid->m_Status << fDatime->AsString() << std::endl;
              }
 
         break;
@@ -730,21 +732,24 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
            if(fMultiGrid->m_Status == 0 || fMultiGrid->m_Status == 1){
 	      new TGFileDialog(fClient->GetRoot(), this, kFDSave, &dfi);
 	      if (dfi.fFilename) fMultiGrid->SetFileName(dfi.fFilename);
+              else return 0; 
               fMultiGrid->m_NrOfSavedFiles = 0;
               fMultiGrid->m_DataSave = 1;
               fMultiGrid->m_Status = 2;
               fTick = 0;
+              fMultiGrid->StartAcq();
               fTimer->TurnOn();
 	      *fLog << "Acqisition START ";
-	      std::cout << "Acqisition START " << std::endl;
+	      std::cout << "Acqisition START " << fDatime->AsString() << std::endl;
               }
            else{ 
               fMultiGrid->m_DataSave = 0;
               fMultiGrid->m_Status = 0;
+              fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
 	      *fLog << "Acqisition STOP ";
-	      std::cout << "Acqisition STOP " << std::endl;
+	      std::cout << "Acqisition STOP " << fDatime->AsString() << std::endl;
               } 
         break;
 
@@ -752,7 +757,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
            if(fMultiGrid->m_Display == 1) { fMultiGrid->m_Display = 0; fDisplayButton->SetText("DISPLAY OFF");}
            else { fMultiGrid->m_Display = 1; fDisplayButton->SetText("DISPLAY ON");}
 	   *fLog << "Display ON/OFF";
-	   std::cout << "Display ON/OFF" << std::endl;
+	   std::cout << "Display ON/OFF" << fDatime->AsString() << std::endl;
         break;
 
         case eResetButton:
@@ -763,7 +768,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fGDisplay->Reset();
  
 	    *fLog << "Reset all histograms ";
-	    std::cout << "Reset all histograms " << std::endl;
+	    std::cout << "Reset all histograms " << fDatime->AsString() << std::endl;
         break;
 
         default:

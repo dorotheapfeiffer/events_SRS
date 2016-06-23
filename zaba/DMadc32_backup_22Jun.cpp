@@ -126,18 +126,17 @@ return strBin;
  
  std::cout<< "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
 
-  if( VME_CRATE ){ // to test puropse only....
-     CAENVME_SystemReset(m_VMEBridge);
-     CAENVME_IRQEnable(m_VMEBridge, 7);
-  
+  CAENVME_SystemReset(m_VMEBridge);
+  CAENVME_IRQEnable(m_VMEBridge, 7);
 
-     // Set the module ID
-     Int_t address = m_BaseAddress + m_ModuleID;
-     Int_t data = 1;
-     printf("CAENVME_WriteCycle: Set Module Id = 1\n");
-     Int_t ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
-     if(ret) return;
-   }
+
+ // Set the module ID
+ Int_t address = m_BaseAddress + m_ModuleID;
+ Int_t data = 1;
+ printf("CAENVME_WriteCycle: Set Module Id = 1\n");
+ Int_t ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
+ if(ret) return;
+
 
 
 
@@ -232,9 +231,10 @@ if( VME_CRATE ){ // to test puropse only....
 
  // ignore threshold
  address = m_BaseAddress + 0x604C;
- if (m_IgnoreThreshold) printf("CAENVME_WriteCycle: Ignore thresholds\n");
- else                   printf("CAENVME_WriteCycle: Thresholds will be set individualy\n");
- ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_IgnoreThreshold, cvA32_U_DATA, cvD16) );
+ data = 1;
+ if (data == 1) printf("CAENVME_WriteCycle: Ignore thresholds\n");
+ if (data == 1) printf("CAENVME_WriteCycle: Thresholds will be set individualy\n");
+ ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
  // ADC resolution
@@ -288,28 +288,31 @@ if( VME_CRATE ){ // to test puropse only....
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
-/*
-// ts_source
- address = m_BaseAddress + 0x6096;
- data = 0x2; // frequency source VME, enable reset
- printf("CAENVME_WriteCycle: Enable ts_source from VME and enable reset\n");
- ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
- if(ret) return;
-
-// ts_divisor
- address = m_BaseAddress + 0x6098;
- data = 0x0; // 0 means division by 65536 
- printf("CAENVME_WriteCycle: Set Divisor to the TTS\n");
- ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
- if(ret) return;
-*/
-
   // set threshold 
 address = m_BaseAddress + 0x4000;
-int th;
  for(Int_t i = 0; i < 32; i++){
+     printf("CAENVME_WriteCycle: Set threshold ch [%d]=%d,  to: %d\n", i, m_ThresholdOn[i], m_ThresholdValue[i]);
      ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address + 2*i, &m_ThresholdValue[i], cvA32_U_DATA, cvD16) );
+       
     }
+
+/*
+ address = m_BaseAddress + 0x4000;
+ data = 0;
+ for(Int_t i = 0; i < 32; i++){
+    if(i >= 0 && i<=15 ){ 
+       printf("CAENVME_WriteCycle: Set threshold ch %d,  to: %d\n", i, data);
+       ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address + 2*i, &data, cvA32_U_DATA, cvD16) );
+       }
+    else{
+       data = 0x1FFF;
+       printf("CAENVME_WriteCycle: Set threshold ch %d,  to: 0x%X\n", i, data);
+       ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address + 2*i, &data, cvA32_U_DATA, cvD16) );
+    }
+    //printf("ret = %d\n", ret);
+    if(ret) return;
+    }
+*/
 
  // buffer initialization, reset
  address = m_BaseAddress + 0x603C;
@@ -355,6 +358,15 @@ int th;
 
 if( VME_CRATE ){ // to test puropse only....
 
+ ret = CheckError( CAENVME_ReadRegister(m_VMEBridge, cvScaler1, &data2) );
+ total += data2;
+ ret = CheckError( CAENVME_ResetScalerCount(m_VMEBridge) ); 
+ if ( !(i%1000)){ 
+    //printf("scaler counts = %d\n", total);
+    total = 0;
+    }
+
+
  // printf("%s\n", CAENVME_DecodeError( CAENVME_IRQWait(m_VMEBridge, 1, 5)));
  // printf("%s\n", CAENVME_DecodeError( CAENVME_IRQCheck(m_VMEBridge, &mask)));
  
@@ -370,48 +382,57 @@ if( VME_CRATE ){ // to test puropse only....
        //printf("is IRQ n1\n"); 
        }
     else {
-       printf("ERROR in IRQ\n"); // some other IRQ
+       //printf("ERROR in IRQ\n"); // some other IRQ
        nn_IRQ++;
-       return;
        }
     }
 
+ 
+  // check how many events are converted in buffer_data_length 0x6030 
+  UChar_t data1;
+  ret = CAENVME_ReadCycle(m_VMEBridge, 0x6030, &data1, cvA32_U_DATA, cvD16);
+  //printf("read form buffer_data_length = %d, to be read = %d, ret = %d\n", data1, (data1 + 1)*4, ret);  
+ 
   bytesToRead = 255;
 
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
   ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-  printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
-
-  bool DEBUG_READ_DATA = 0;
+  //printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
      UInt_t id = (m_localBuffer[i] >> 30) & 0x3;
      switch(id)
            {
            case 0: 
-             if(DEBUG_READ_DATA) printf("DATA,   m_localbuffer[%d], chn: %ld, value: %u\n", i, (m_localBuffer[i]>>16) & 0x1F, m_localBuffer[i] & 0x1FFF);
+             //printf("DATA,   m_localbuffer[%d], chn: %ld, value: %u\n", i, (m_localBuffer[i]>>16) & 0x1F, m_localBuffer[i] & 0x1FFF);
            break; 
-
            case 1:
-             if(DEBUG_READ_DATA) printf("HEADER, m_localbuffer[%ld], nr_of_words: %u\n", i, m_localBuffer[i] & 0xFF);
+             //printf("HEADER, m_localbuffer[%ld], nr_of_words: %u\n", i, m_localBuffer[i] & 0xFF);
              m_Events++;
            break;
-
            case 3:
-               if(DEBUG_READ_DATA) printf("FOOTER, m_localbuffer[%ld], tts: %u\n", i, m_localBuffer[i] & 0xCFFFFFFF);
-           break;
+                {
+               //printf("FOOTER, m_localbuffer[%ld], tts: %u\n", i, m_localBuffer[i] & 0xCFFFFFFF);
+                } 
 
+           break;
            default:
-             if(DEBUG_READ_DATA) printf("ERROR buffer[%d]\n", i);
+             //printf("ERROR buffer[%d]\n", i);
            break;
            }
      }
+
+  m_BufferSize = m_dataSizeByte; 
 
   //reset IRQ and Berr
   address = m_BaseAddress + 0x6034; // 0x0 - begining of FIFO buffer;
   data = 0;
   ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
+  //if(DEBUG) printf("ReadVME done!\n"); 
 
+  //m_Events += m_dataSizeByte/4/6; //divided by 4 bytes per word and 6 words in one event
+
+    //}
   } // end of VME_CRATE
 
  if( !VME_CRATE ){
@@ -420,51 +441,44 @@ if( VME_CRATE ){ // to test puropse only....
  // Int_t nr = (Int_t)(100*m_random.Rndm());
  //std::cout << "hello 1" << std::endl; 
 
-  Int_t m_BufferPos1 = 0;
  for(Int_t inr = 0; inr < 1000; inr++){
      m_EventHeader.header_sig = 0x1;
      m_EventHeader.sub_header = 0;
      m_EventHeader.module_id  = 1;
      m_EventHeader.out_format = 0;
      m_EventHeader.adc_res    = 1;
-     //m_EventHeader.n_words    = (Int_t)(4 * m_random.Rndm()+2) ;
-     m_EventHeader.n_words    = 9; 
+     m_EventHeader.n_words    = (Int_t)(4 * m_random.Rndm()+2) ;
 
-     m_localBuffer[ m_BufferPos1 + 0] = m_Header;
+     m_Buffer[ m_BufferPos + 0] = m_Header;
 
-     for(Int_t i = 0; i < m_EventHeader.n_words-1 ; i++){
+     for(Int_t i = 1; i < m_EventHeader.n_words ; i++){
          m_DataWord.data_sig = 0;    
          m_DataWord.fix      = 0x20;    
-         m_DataWord.channel  = i;
+         m_DataWord.channel  = i-1;
          m_DataWord.nop      = 0;
          m_DataWord.overflow = 0;
          m_DataWord.adc_data = 100*m_random.Gaus(3);
-         m_localBuffer[ m_BufferPos1 + i + 1] = m_Word;
+         m_Buffer[ m_BufferPos + i] = m_Word;
      } 
 
      static int tts = 0;
      m_EndOfEvent.end_event = 0x3;
      m_EndOfEvent.counter_tts = tts++;
 
-     m_localBuffer[ m_BufferPos1 + m_EventHeader.n_words] = m_Footer; 
+     m_Buffer[ m_BufferPos + m_EventHeader.n_words ] = m_Footer; 
 
      m_Events++;
-     m_BufferPos1 += (m_EventHeader.n_words + 1);
+     m_BufferPos += (m_EventHeader.n_words + 1);
   }
-  m_dataSizeByte += 4 + m_EventHeader.n_words * 4; // header 4bytes, nwords each 4bytes + tts also 4bytes
-  //cout << "Simulation data: m_dataSizeByte = " << m_dataSizeByte << endl;
- }//end of VME_CRATE
+
+
+ }
 
 
 }
 
 //-----------------------------------------------------------------------------
 void DMadc32::StartAcq(){
-
- 
- cout << "DMadc32::StartAcq()" << endl;
- ShowSettings();
- InitModule(); 
 
  unsigned int address = m_BaseAddress + 0x603A;
  unsigned int data = 0x1;
@@ -477,7 +491,7 @@ void DMadc32::StartAcq(){
 
 //-----------------------------------------------------------------------------
 void DMadc32::StopAcq(){
- cout << "DMadc32::StopAcq()" << endl;
+
  unsigned int address = m_BaseAddress + 0x603A;
  unsigned data = 0x0;
  if( VME_CRATE ){
@@ -488,9 +502,6 @@ void DMadc32::StopAcq(){
 }
 //-----------------------------------------------------------------------------
  void DMadc32::ShowData(DGDisplay *fDisplay) {
-
-  bool DEBUG_SHOW_DATA = 0;
-
   Int_t value[33];
   for(Int_t i = 0; i < 32; i++) value[32] = 0;
 
@@ -499,10 +510,10 @@ void DMadc32::StopAcq(){
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
       m_Header = m_localBuffer[i];
       if(m_EventHeader.header_sig == 0x1){ // looking for a header word, return if not found
-         if(DEBUG_SHOW_DATA) printf("is data header:\n  dsig: %d, m_EventHeader.n_words = %d \n", m_EventHeader.header_sig, m_EventHeader.n_words);
+         //printf("is data header:\n  dsig: %d, m_EventHeader.n_words = %d \n", m_EventHeader.header_sig, m_EventHeader.n_words);
         }
       else{
-         if(DEBUG_SHOW_DATA) printf("no data header: \n");
+        //printf("no data header: \n");
        continue; 
         }
 
@@ -512,52 +523,89 @@ void DMadc32::StopAcq(){
       for(n = 0; n < m_EventHeader.n_words-1; n++){
           m_Word = m_localBuffer[i+n+1];
           value[m_DataWord.channel] = m_DataWord.adc_data;
-          if(DEBUG_SHOW_DATA) printf("  dsig: %d, chn: %d, over: %d, adc: %d\n",m_DataWord.data_sig, m_DataWord.channel, m_DataWord.overflow, m_DataWord.adc_data);
+          //printf("  dsig: %d, chn: %d, over: %d, adc: %d\n",m_DataWord.data_sig, m_DataWord.channel, m_DataWord.overflow, m_DataWord.adc_data);
+          /*if(m_DataWord.channel == 0x0){   
+             value[n] = m_DataWord.adc_data;
+             printf("n = %d, value[%d] = %d\n", n, n, value[n]);
+             }
+          else if(m_DataWord.channel == 0x1){   
+             value[n] = m_DataWord.adc_data;
+             printf("n = %d, value[%d] = %d\n", n, n, value[n]);
+             }
+*/
           }
 
       m_Footer = m_localBuffer[i+n+1]; // here check! if this is OK
 
       if(m_EndOfEvent.end_event == 0x3){  
          tts = m_EndOfEvent.counter_tts;
-         if(DEBUG_SHOW_DATA) printf("  dsig: %d, tts: %u, n = %d, i = %d, (n+i+1) = %d\n",m_EndOfEvent.end_event, tts, n, i, n+i+1);
-         if(DEBUG_SHOW_DATA) printf("tts %u\n", tts);
+         //printf("  dsig1: %d, tts: %ld, n = %d, i = %d, (n+i+1) = %d\n",m_EndOfEvent.end_event, tts, n, i, n+i+1);
+         //printf("tts %ld\n", tts);
          }   
       else{
          //printf("  dsig2: %d, tts: %d, n = %d, i = %d, (i+n+1) = %d\n",m_EndOfEvent.end_event, m_EndOfEvent.counter_tts, n, i, i+n+1);
       } 
 
-   if(DEBUG_SHOW_DATA) printf("--------\n");
+   //printf("--------\n");
 
   
    // fill histograms
    
-   fDisplay->hPh[0]->Fill(value[0]);
-   fDisplay->hPosition[0]->Fill(value[1]);
-
-   fDisplay->hPh[1]->Fill(value[2]);
-   fDisplay->hPosition[1]->Fill(value[3]);
-   
-   fDisplay->hPh[2]->Fill(value[4]);
-   fDisplay->hPosition[2]->Fill(value[5]);
-
-   fDisplay->hPh[3]->Fill(value[6]);
-   fDisplay->hPosition[3]->Fill(value[7]);
-
-   fDisplay->hTTS->Fill(tts);
+   //fDisplay->hPh->Fill(value[0]);
+   //fDisplay->hPosition->Fill(value[1]);
    }
+
+
+ // std::string readStr; 
+ // TString name("data4_07Apr2016");
+
+  
+/*
+  TString aFileTxt = name + ".txt";
+  std::ofstream DataFileTxt(aFileTxt, std::ofstream::out | std::ofstream::app);
+  if(!DataFileTxt.is_open()) {
+     std::cout << "ERROR could not open the file... " << aFileTxt << std::endl;
+    }
+  else{
+    DataFileTxt << m_Buffer[1] << " " << m_Buffer[2] << " " << m_Buffer[33] << std::endl;
+    DataFileTxt.close();
+    }
+*/
+/*
+  //printf("%d %d %d\n", 0xCFF & m_Buffer[1], 0xCFF & m_Buffer[2], 0x3FFFFFFF & m_Buffer[33]);
+  for(Int_t i = 0; i < m_BufferSize/4; i++){
+     //if(i == 33 ) printf("%d %d\n", i, (0x00FFFFFF & m_Buffer[i])); 
+     //else printf("%d %d\n", i, m_Buffer[i]); 
+     //printf("%d 0x%X\n", i, m_Buffer[0]); 
+     //if(i == 0){
+     readStr = Dec2BinStr((m_Buffer[i] & 0xFF000000) >> 24) + std::string("'") + Dec2BinStr((m_Buffer[i] & 0xFF0000) >> 16) + std::string("'") 
+             + Dec2BinStr((m_Buffer[i] & 0x0000FF00) >> 8 ) + std::string("'") + Dec2BinStr((m_Buffer[i] & 0x0000FF));
+     std::cout << i << " " << readStr << std::endl;    
+     //}
+     }
+*/
+
+/*
+  TString aFile = name + ".bin";
+  std::ofstream DataFile(aFile, std::ofstream::out | std::ofstream::app);
+  if(!DataFile.is_open()) {
+     std::cout << "ERROR could not open the file... " << aFile << std::endl;
+    }
+  else{
+    DataFile.write((char *) m_Buffer, m_BufferSize);
+    DataFile.close();
+    }
+*/
 
  }
 
 //-----------------------------------------------------------------------------
 void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 
-   bool DEBUG_DATA_SAVE = 0;
-
    // write data to buffer only wnhen the IRQ happend, otherwise return 
-   // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
-   // If you want to simulate events you have to comment this line.
+   // CHECK IF THIS IS NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
    if(!m_IRQ) return;
-      m_IRQ = 0;
+   m_IRQ = 0;
 
    Bool_t m_saveAfterSize = kFALSE; // variable to check if the buffer size reach the max size 
    Bool_t m_saveAfterTime = kFALSE; // variable to check if the time elapsed to save file every sec/min/hour
@@ -565,19 +613,49 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    gCurrentTimeADC = gGetLongTimeADC() / 1000;              // check the current time
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
-   memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
-   m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
+   //std:: cout << "m_BufferPos = " << m_BufferPos << " " << m_dataSizeByte << " " << m_dataSizeByte/4 << std::endl;
+   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
+      m_Buffer[i + m_BufferPos] = m_localBuffer[i]; 
+    
+      //TString readStr;
+      //readStr = Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0xFF000000) >> 24) + std::string("'") +
+      //          Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x00FF0000) >> 16) + std::string("'") + 
+      //          Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x0000FF00) >> 8 ) + std::string("'") + 
+      //          Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x000000FF));
+      //cout << i << " " << i + m_BufferPos << " " << readStr << std::endl;    
+      }
+   //memcpy((char*)m_Buffer + m_BufferPos, (char*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
 
-   // ==========================================================================
+
+  /*                                                                // for one module it is not necessary, it matter when you have more then one module
+  TString aDupaTxt = "dupa4.txt";
+  TString readStr;
+  std::ofstream DataDupa(aDupaTxt, std::ofstream::out | std::ofstream::app);
+  if(!DataDupa.is_open()) {
+     std::cout << "ERROR could not open the file... " << aDupaTxt << std::endl;
+    }
+  else{
+  static int uu = 0; 
+  for(Int_t i = 0; i < m_dataSizeByte/4; i++){
+     readStr = Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0xFF000000) >> 24) + std::string("'") +
+               Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x00FF0000) >> 16) + std::string("'") + 
+               Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x0000FF00) >> 8 ) + std::string("'") + 
+               Dec2BinStr(((m_Buffer[i+m_BufferPos]) & 0x000000FF));
+     DataDupa << uu << " " << readStr << std::endl;    
+     uu++;
+     }
+  } 
+ 
+ DataDupa.close();
+ */
+   m_BufferPos += (m_dataSizeByte/4);                                 // move the position of the buffer
+
    // check if the buffer is full and need to be writen to file
    if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
-       printf("ZAPISYWANIE SIZE!!!!!");
        }
 
-  // ===========================================================================
   // check the elapsed time
-  cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fMultiGrid->m_SaveFileTimeEntry << endl;
    if( gElapsedTimeADC > (ULong_t)fMultiGrid->m_SaveFileTimeEntry){
        if( gPrevRateTimeADC == 0) {
            m_saveAfterTime = kFALSE;
@@ -585,11 +663,9 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
            }
        else { 
            m_saveAfterTime = kTRUE;  
-           printf("ZAPISYWANIE TIME!!!!!");
           }
      }
 
-  // =============================================================================
   // writing bufer to file if one of the two condition are fulfill
   if( m_saveAfterSize || m_saveAfterTime ){
     char filename[256];
@@ -601,11 +677,10 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
        std::cout << "ERROR could not open the file... " << filename << std::endl;
        }
     else {
-       DataFile.write((char*)m_Buffer, m_BufferPos); 
+       DataFile.write((char*)m_Buffer, m_BufferPos*4);
        DataFile.close();
       }
  
- // ===============================================================================
  // some cleaning after saving and writing message to the std output
     m_BufferPos = 0;
     fMultiGrid->m_NrOfSavedFiles++;
@@ -741,9 +816,11 @@ void DMadc32::ShowSettings() {
          }
        else if( name == string("GateDelay") ){
          temp = atoi( value.c_str() );
+         cout << "LoadConf::temp = " << temp << endl; 
          if(temp <= 0) m_GateDelay = 0;
          else if (temp > 255) m_GateDelay = 255; 
          else m_GateDelay = temp;
+         cout << "LoadConf::GateDelay = " << m_GateDelay << endl; 
          }
        else if( name == string("GateWidth") ){
          temp = atoi( value.c_str() );
@@ -766,7 +843,7 @@ void DMadc32::ShowSettings() {
        else if( name.substr(0,3) == string("ch[")){
          line.erase(0,3);
          line.erase( line.find("]", 0), 1);
-         int chNr = 0, chOn = 0, chVal = 0; // channel number; channel on/off; channel threshold value;
+         int chNr = 0, chOn = 0, chVal = 0; 
          sscanf(line.c_str(), "%d %d %d", &chNr, &chOn, &chVal);  
          if( chOn) { 
              if(m_IgnoreThreshold){
