@@ -6,29 +6,34 @@
 #include "sys/time.h"
 #include "TRandom.h"
 
-
- static Int_t VME_CRATE = 0;
+extern Int_t VME_CRATE;
 
 ClassImp(DV1718)
 
 //*****************************************************************************
  DV1718::DV1718(Char_t *mdesc, UInt_t addr) : 
-       DModule((char*)"Pulse sensitive digitizer",(char*)"Mesytec Madc-32",mdesc,addr) {
+       DModule((char*)"VME Bridge",(char*)"CAEN V1718",mdesc,addr) {
 	       std::cout<<"constructing DV1718\n";
 
 
-  m_VMEBridge   = cvV1718;
+  //m_VMEBridge   = cvV1718;
   m_Value	= 0;
   m_Input	= 0;
   m_EndCounts	= 0;
   m_CountOutput = 0;
+  //m_Handle	= -1;
 
+  std::cout<<"VME_CRATE: " << VME_CRATE << " m_VMEBridge: "<< m_VMEBridge << " m_Handle: " << m_Handle << "\n";
   if( VME_CRATE ){ // to test puropse only.... (test without crate)
-      CAENVME_SystemReset(m_VMEBridge);
-
- } // end of VME_CRATE
-
-
+  if (CAENVME_Init( m_VMEBridge, 0, 0, &m_Handle) != cvSuccess) {
+     printf("Error opening the device!!! Crate is down\n");
+     exit(1);
+     }
+  else {
+     printf("CAEN V1718 Opened, Crate is OK\n");
+     printf("           Handle = %d\n", m_Handle);
+    }
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -36,6 +41,23 @@ ClassImp(DV1718)
   std::cout<<"destroying DV1718\n";
 
  } // end of VME_CRATE
+
+//-----------------------------------------------------------------------------
+ void DV1718::StartAcq() {
+ 
+if( VME_CRATE ){ // to test puropse only....
+  CAENVME_DecodeError( CAENVME_ResetScalerCount(m_VMEBridge) );
+  }
+ }
+
+//-----------------------------------------------------------------------------
+ void DV1718::StopAcq() {
+ 
+if( VME_CRATE ){ // to test puropse only....
+  CAENVME_DecodeError( CAENVME_ResetScalerCount(m_VMEBridge) );
+  }
+ }
+
 //-----------------------------------------------------------------------------
  void DV1718::ConfigureModule() {
 
@@ -46,10 +68,19 @@ ClassImp(DV1718)
 
 
 if( VME_CRATE ){ // to test puropse only....
- CAENVME_SystemReset(m_VMEBridge);
 
- CAENVME_SetScalerConf(m_VMEBridge, 1023, 0, cvInputSrc0, cvManualSW, cvManualSW) ;
- CAENVME_EnableScalerGate(m_VMEBridge) ;
+  //unsigned int ret;
+
+  CAENVME_SystemReset(m_VMEBridge);
+
+  ///this is for scaler
+  //scaler enable
+  printf("Initialization Scaler in VME Bridge!\n");
+  CAENVME_DecodeError( CAENVME_SetScalerConf(m_VMEBridge, 1023, 0, cvInputSrc0, cvManualSW, cvManualSW) );
+  //printf("configuration ret = %d\n", ret);
+  CAENVME_DecodeError( CAENVME_EnableScalerGate(m_VMEBridge) );
+  //printf("Enalbe scaler ret = %d\n", ret);
+ // if(ret) return;
  
  } // end of VME_CRATE
 
@@ -60,20 +91,15 @@ if( VME_CRATE ){ // to test puropse only....
 //-----------------------------------------------------------------------------
  void DV1718::ReadVME() {
 
- Int_t ret;
+ //Int_t ret;
  
  UInt_t data2;
 
 if( VME_CRATE ){ // to test puropse only....
 
- CAENVME_ReadRegister(m_VMEBridge, cvScaler1, &data2) ;
+ CAENVME_DecodeError( CAENVME_ReadRegister(m_VMEBridge, cvScaler1, &data2) );
  m_Value += data2;
- CAENVME_ResetScalerCount(m_VMEBridge) ; 
- //if ( !(i%1000)){ 
- //   printf("scaler counts = %d\n", total);
- //   total = 0;
- //   }
-
+ CAENVME_DecodeError( CAENVME_ResetScalerCount(m_VMEBridge) );
 
   } // end of VME_CRATE
 
@@ -81,7 +107,9 @@ if( VME_CRATE ){ // to test puropse only....
 
 //-----------------------------------------------------------------------------
  void DV1718::ShowData(DGDisplay *fDisplay) {
-
+    
+    //printf("Scaler value = %d\n", m_Value);
+    //m_Value = 0;
  }
 
 //-----------------------------------------------------------------------------
@@ -92,8 +120,9 @@ void DV1718::DataSave(DMultiGrid *fMultiGrid){
 //-----------------------------------------------------------------------------
  void DV1718::ResetModule() {
 
- m_Value = 0;
- if(VME_CRATE){
+  if(VME_CRATE){
+    CAENVME_SystemReset(m_VMEBridge);
+    m_Value = 0;
     CAENVME_ResetScalerCount(m_VMEBridge) ; 
    }
 }

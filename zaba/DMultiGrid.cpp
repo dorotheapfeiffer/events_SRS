@@ -3,6 +3,7 @@
 ClassImp(DMultiGrid)
 
 using namespace std;
+extern std::string g_Path;
 
 //*****************************************************************************
  DMultiGrid::DMultiGrid() : TObject() {
@@ -13,8 +14,8 @@ using namespace std;
   
   fModuleList = new TObjArray();
 
-  fModuleList->Add(fDMadc32  = new DMadc32((char*)"MultiGrid",   0xd0000000));
   fModuleList->Add(fDV1718  = new DV1718((char*)"VME_USB_Bridge",   0x00000000));
+  fModuleList->Add(fDMadc32  = new DMadc32((char*)"MultiGrid",   0xd0000000));
 
   m_Status 		= 0;
   m_Timerout 		= 1;
@@ -43,15 +44,21 @@ using namespace std;
   m_PrevAcqTime		= 0;
   m_NrOfSavedFiles	= 0;
 
-  LoadConfig("zabarc");
-  SaveConfig("zabarc");
+  //std::size_t found = g_Path.find_last_of("/");
+  //m_ConfigPath = g_Path.substr(0,found) + string("/zabarc"); 
+  m_ConfigPath = g_Path + string("/zabarc"); 
+  cout << "DMultiGrid::Path:       " << g_Path << endl;
+  cout << "DMultiGrid::ConfigPath: " << m_ConfigPath << endl;
+
+  LoadConfig((char*)m_ConfigPath.c_str());
+  SaveConfig((char*)m_ConfigPath.c_str());
 
   printf("%d modules\n",fModuleList->GetLast()+1);
 }
 //-----------------------------------------------------------------------------
    DMultiGrid::~DMultiGrid() {
     std::cout<<"destroying DMultiGrid\n";
-    SaveConfig("zabarc");
+    SaveConfig((char*)m_ConfigPath.c_str());
     fModuleList->Delete();
     delete fModuleList;
     exit(0);
@@ -126,6 +133,7 @@ void DMultiGrid::StopAcq(){
     return;
   }
 
+  cout << "Load general configuration " << filename << endl;
   Int_t temp;
   string line;
   string name;
@@ -168,8 +176,10 @@ void DMultiGrid::StopAcq(){
          }
        else if( name == string("SaveFileSize") ){
          temp = atoi( value.c_str() );
-         if(temp <= 0) m_SaveFileSizeEntry = 100;
+         cout << " temp:" << temp << " name:" << name << " value: " << value << endl;
+         if(temp <= 0) m_SaveFileSizeEntry = 99;
          else m_SaveFileSizeEntry = temp;
+         cout << "DMultiGrid::config::m_SaveFileSizeEntry" << m_SaveFileSizeEntry << " temp:" << temp << endl;
          }
        else if( name == string("SaveFileTime") ){
          temp = atoi( value.c_str() );

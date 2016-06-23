@@ -3,6 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "DModule.h"
+#include "CAENVMElib.h"
 
   ClassImp(DModule)
 
@@ -13,6 +14,10 @@
   strcpy(fGenTypeDescription, gtdesc);
   strcpy(fActTypeDescription, atdesc);
   strcpy(fModuleDescription,  mdesc);
+
+  m_VMEBridge = cvV1718;
+  m_Handle = -1;
+
 }
 //-----------------------------------------------------------------------------
  DModule::~DModule() {

@@ -11,42 +11,52 @@
   fMultiGrid = multigrid;
   fCanvas = canvas;
 
-  gStyle->SetOptDate(0);
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(kFALSE);
-  gStyle->SetPalette(1);
+  //gStyle->SetOptDate(0);
+  //gStyle->SetOptStat(0);
+  //gStyle->SetOptTitle(kFALSE);
+  //gStyle->SetPalette(1);
 
   fHistogramList = new TObjArray();
 
-  fPadFullImage	 = new TPad("fPadFullImage" , "fPadFullImage",  .0, .0, .5, 1.);
-  fPadFrontImage = new TPad("fPadFrontImage", "fPadFrontImage", .5, .0, .7, 1.);
-  fPadPh	 = new TPad("fPadPh",         "fPadPh",         .7, .5, 1., 1);
-  fPadPosition	 = new TPad("fPadPosition",   "fPadPosition",   .7, .0, 1., .5);
-
+  fCanvas->Divide(5,2,0,0);
   fCanvas->cd();
-  fPadFullImage->Draw();	
-  fPadFrontImage->Draw(); 
-  fPadPh->Draw(); 	
-  fPadPosition->Draw(); 	
-
-  fHistogramList->Add( hFullImage	= new TH2F("FullImage", "FullImage", 128, 0, 128, 96, 0, 96));
-  fHistogramList->Add( hFrontImage	= new TH2F("FrontImage","FrontImage",8,   0,   8, 96, 0, 96));
-  fHistogramList->Add( hPh		= new TH1F("Ph",        "Ph",       4000, 0, 4000));
-  fHistogramList->Add( hPosition	= new TH1F("Position",  "Position", 4000, 0, 4000));
-
-  fPadFullImage->cd();
-  hFullImage->Draw();
-
-  fPadFrontImage->cd();	
-  hFrontImage->Draw();
  
-  fPadPh->cd();	
-  fPadPh->SetLogy();
-  hPh->Draw();	
-  	
-  fPadPosition->cd();	
-  fPadPosition->SetLogy();
-  hPosition->Draw();	
+  m_NrPads = 10;
+  hPh = new TH1F* [m_NrPads];
+  hPosition = new TH1F* [m_NrPads];
+
+  // creating histograms to visualise on gui spectra from chanel 1 to 8
+  char name[100];
+  for(Int_t i = 0; i < 8; i++){
+     sprintf(name,"hPh%d",i+1);
+     hPh[i] = new TH1F(name, name, 4000, 0, 4000);
+     sprintf(name,"hPosition%d",i);
+     hPosition[i] = new TH1F(name, name, 4000, 0, 4000);
+     fHistogramList->Add(hPh[i]);
+     fHistogramList->Add(hPosition[i]);
+     }
+ 
+
+  hTTS = new TH1F("TTS", "TTS", 120000, 0, 120000);
+  hEmpty = new TH1F("hE", "hE", 120000, 0, 120000);
+
+  fHistogramList->Add( hTTS );
+  fHistogramList->Add( hEmpty );
+
+// Draw histograms for puls high and position  
+  for(Int_t i = 0; i < 4; i++){
+     fCanvas->cd(i+1);
+     hPh[i]->Draw();
+     fCanvas->cd(i+6);
+     hPosition[i]->Draw();
+     }     
+
+// Draw histogram for Trigger Time Stamp, end hEmpty
+  fCanvas->cd(5);
+  hTTS->Draw();
+  fCanvas->cd(10);
+  hEmpty->Draw();
+ 
 
   fCanvas->Modified();
   fCanvas->Update();
@@ -57,12 +67,8 @@
  
  fHistogramList->Delete();
  delete fHistogramList; 
-
- delete fPadFullImage;	
- delete fPadFrontImage; 
- delete fPadPh;	        
- delete fPadPosition;	
-
+ delete [] hPh;
+ delete [] hPosition; 
 }
 //-----------------------------------------------------------------------------
  void DGDisplay::Reset() {
@@ -74,19 +80,9 @@
  }
 //-----------------------------------------------------------------------------
  void DGDisplay::Refresh() {
-  fPadFullImage->Modified();
-  fPadFullImage->Update();
-  
-  fPadPh->Modified();
-  fPadPh->Update();
-  
-  fPadFrontImage->Modified();
-  fPadFrontImage->Update();
-  
-  fPadPosition->Modified();
-  fPadPosition->Update();
-  
-  fCanvas->Modified();
+  for(Int_t i = 0; i < 9; i++)
+      fCanvas->cd(i+1)->Modified();
+
   fCanvas->Update();
   fCanvas->cd();
 }

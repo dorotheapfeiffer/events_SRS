@@ -103,11 +103,11 @@ void readBin() {
    TH1F *pos  = new TH1F("pos", "pos", 3500, 0, 3500);
    TGraph *gr       = new TGraph(65, tabx, taby); 
 
-   Bool_t DEBUG = kTRUE;
-   //Bool_t DEBUG = kFALSE;
+   //Bool_t DEBUG = kTRUE;
+   Bool_t DEBUG = kFALSE;
    Int_t wrong = 0;
 
-   char filename[] = "/home/dlab/dg_epool/zaba/data/test1_000.bin";
+   char filename[] = "/home/dlab/dg_epool/zaba/data/test_000.bin";
    printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {

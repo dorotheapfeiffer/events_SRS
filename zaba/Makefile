@@ -3,6 +3,7 @@ ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
 TARGET	:= zaba
+TARGET2	:= szaba
 DICT	:= zabaDict.cpp
 
 CC	:= g++ -std=c++11 -Wall -fPIC 
@@ -18,7 +19,7 @@ OBJECTS = $(SRCCPP:.cpp=.o)
 
 HEADERS = DGHelp.h DGModule.h DModule.h DGMultiGrid.h DMultiGrid.h DMadc32.h DGMadc32.h DV1718.h DGV1718.h DGDisplay.h DDataSave.h
 
-all:  $(DICT) $(OBJECTS) $(TARGET)
+all:  $(DICT) $(OBJECTS) $(TARGET) $(TARGET2)
 
 $(DICT): $(HEADERS) zabaLinkDef.h
 	echo "Generating builder root dictionary $@..."
@@ -30,6 +31,10 @@ $(DICT): $(HEADERS) zabaLinkDef.h
 
 $(TARGET):$(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
+
+$(TARGET2):$(OBJECTS)
+
+#	$(CC) $(CFLAGS) $(OBJECTS) $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
 
 clean:
 	rm -f *.o *Dict* $(TARGET)

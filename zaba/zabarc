@@ -1,12 +1,12 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.6.17	11:35:28
+# the file was created:  2016.6.23	12:20:15
 # Line starts with a '#' is a comment line
 #
 #
 [GENERAL SETTINGS]
 # Stop acquisition after certain number of seconds, default 0 means acq will runn forever
 # Keep in mind that from StopAfterSec, StopAfterFile, StopAfterEvents ONLY ONE CAN BE DIFFERENT THAN 0!
-StopAfterSec 0
+StopAfterSec 100
  
 # Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
 StopAfterFile 0
@@ -15,16 +15,17 @@ StopAfterFile 0
 StopAfterEvents 0
  
 # Save each file after reach the file size
-SaveFileSize 5
+SaveFileSize 6
  
 # Save each file after certain number of seconds
-SaveFileTime 20
+SaveFileTime 10
  
 # Instrument properties: 
 # Keep in mind that there are only few parameters which user can change or modified.
 # There are much more but for the standard using they are not neccesary to set.
-# The parameters below are only these which you can change in the GUI. Setting another parameters 
-# usualy require writing some code and recompile. The
+# The parameters below are only these which you can change in the GUI.
+# Settings another parameters require adding some code and recompile. The simplest way is to edit DMadc.32.cpp
+# and in the function InitModule either uncomment or write which register and value you wan to set. Similar to what is already there.
 # For details of other settings see the documentation.
 [Mesytec Madc-32]
 BaseAddress 0
@@ -34,10 +35,10 @@ ModuleID 1
 IgnoreThresholds 0
 
 #Channel configuration. Turn channel on/off, can be only 0 - 1, value of threshold from 0 - 0x1FFF (8191)
-ch[0] 0 8191
-ch[1] 0 8191
-ch[2] 0 8191
-ch[3] 0 8191
+ch[0] 1 0
+ch[1] 1 0
+ch[2] 1 0
+ch[3] 1 0
 ch[4] 0 8191
 ch[5] 0 8191
 ch[6] 0 8191
@@ -65,7 +66,7 @@ ch[27] 0 8191
 ch[28] 0 8191
 ch[29] 0 8191
 ch[30] 0 8191
-ch[31] 1 8191
+ch[31] 0 8191
 
 #Activate gate generator, values 0 or 1
 GateGenerator 1

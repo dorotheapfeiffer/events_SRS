@@ -19,17 +19,12 @@ public:
   DMultiGrid	*fMultiGrid;                // pointer to DMultiGrid to be monitored
   TCanvas	*fCanvas;
   TObjArray	*fHistogramList;
- 
-  TPad		*fPadFrontImage;
-  TPad		*fPadFullImage;
-  TPad		*fPadPh;
-  TPad		*fPadPosition;
 
-  TH2F		*hFrontImage;
-  TH2F		*hFullImage;
-  TH1F		*hPh;
-  TH1F		*hPosition;
-  
+  Int_t 	m_NrPads; 
+  TH1F		**hPh;
+  TH1F		**hPosition;
+  TH1F		*hTTS;
+  TH1F		*hEmpty; // for future use....
 
 public:
   DGDisplay(){}

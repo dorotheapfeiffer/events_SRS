@@ -51,7 +51,8 @@ public:
 
   DMadc32		*fDMadc32;		// Mesytec pulse sensitive ADC
   DV1718		*fDV1718;		// Bridge VME_USB
- 
+  std::string		m_Path;
+  std::string		m_ConfigPath; 
 public:
   DMultiGrid();
   virtual ~DMultiGrid();
