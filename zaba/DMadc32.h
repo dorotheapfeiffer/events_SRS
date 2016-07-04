@@ -51,7 +51,7 @@ public:
   void		DataSave(DMultiGrid *);
   void		ResetModule();
   UInt_t	GetNrEvents() { return m_Events;}
-  UInt_t	GetDataSize() { return m_Events;}
+  UInt_t	GetDataSize() { return m_dataSizeByte;}
   void		ShowSettings();
 
   ClassDef(DMadc32,1)       // Mesytec Pulse Sensitive Digitizer MADC-32

@@ -42,7 +42,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
   std::cout << "constructing DGMultiGrid...\n";
 
-  fMultiGrid = aDMultiGrid;;
+  fMultiGrid = aDMultiGrid;
 
   //gClient->GetColorByName("green", color);
   gClient->GetColorByName("#00CC00", color);
@@ -496,6 +496,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
       flag = 1;
       fMultiGrid->ReadVME();
       fMultiGrid->m_AcqStatusEntry2 = fMultiGrid->fDMadc32->GetNrEvents(); 
+      fMultiGrid->m_AcqStatusEntry4 = fMultiGrid->fDMadc32->GetDataSize(); 
      
       fMultiGrid->ShowData(fGDisplay);
  
@@ -731,7 +732,15 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
            if(fMultiGrid->m_Status == 0 || fMultiGrid->m_Status == 1){
 	      new TGFileDialog(fClient->GetRoot(), this, kFDSave, &dfi);
-	      if (dfi.fFilename) fMultiGrid->SetFileName(dfi.fFilename);
+              std::string s1(dfi.fFilename);
+	      if (s1.length()) {
+                  std::cout << " ======== s1: " << s1 << std::endl;
+                  std::size_t found  = s1.find_last_of("/\\");
+                  fMultiGrid->SetFileName(s1.substr(found+1) );
+                  fMultiGrid->SetDataPath(s1.substr(0,found) );
+                  std::cout << s1.substr(0, found) << std::endl;
+                  std::cout << s1.substr(found+1) << std::endl;
+                  }
               else return 0; 
               fMultiGrid->m_NrOfSavedFiles = 0;
               fMultiGrid->m_DataSave = 1;

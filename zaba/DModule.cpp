@@ -111,11 +111,11 @@ void ShowBuffer(char * buffer, int nchar) {
   // bioff  - bit address (0-15) 
   // val    - value to which the bit should be set
 
-  UShort_t temp;
+  //UShort_t temp;
 
-  Access((char*)"r", adoff, 2, &temp);
-  setbit(&temp, bioff, val);
-  Access((char*)"w", adoff, 2, &temp);
+  //Access((char*)"r", adoff, 2, &temp);
+  //setbit(&temp, bioff, val);
+  //Access((char*)"w", adoff, 2, &temp);
 }
 //*****************************************************************************
 std::string DModule::Trim(std::string const& source, char const* delims )

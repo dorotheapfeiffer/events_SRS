@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.6.23	12:20:15
+# the file was created:  2016.7.4	10:4:26
 # Line starts with a '#' is a comment line
 #
 #
@@ -15,10 +15,16 @@ StopAfterFile 0
 StopAfterEvents 0
  
 # Save each file after reach the file size
-SaveFileSize 6
+SaveFileSize 500
  
 # Save each file after certain number of seconds
-SaveFileTime 10
+SaveFileTime 5
+ 
+# Default path where the data is stored, if you do not set this parameter the path will be ./data
+DataPath /home/dlab/dg_epool/zaba/data
+ 
+# Default file name, in the GUI version program will ask the user to set correct file name
+FileName data
  
 # Instrument properties: 
 # Keep in mind that there are only few parameters which user can change or modified.
@@ -39,10 +45,10 @@ ch[0] 1 0
 ch[1] 1 0
 ch[2] 1 0
 ch[3] 1 0
-ch[4] 0 8191
-ch[5] 0 8191
-ch[6] 0 8191
-ch[7] 0 8191
+ch[4] 1 0
+ch[5] 1 0
+ch[6] 1 0
+ch[7] 1 0
 ch[8] 0 8191
 ch[9] 0 8191
 ch[10] 0 8191
