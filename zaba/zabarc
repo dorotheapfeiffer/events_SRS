@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.7.4	10:4:26
+# the file was created:  2016.7.4	17:51:17
 # Line starts with a '#' is a comment line
 #
 #
@@ -18,7 +18,7 @@ StopAfterEvents 0
 SaveFileSize 500
  
 # Save each file after certain number of seconds
-SaveFileTime 5
+SaveFileTime 50
  
 # Default path where the data is stored, if you do not set this parameter the path will be ./data
 DataPath /home/dlab/dg_epool/zaba/data
@@ -81,11 +81,11 @@ GateGenerator 1
 GateDelay 0
 
 #Set the Gate Width, values between 0 - 255, multiple of 50ns
-GateWidth 222
+GateWidth 50
 
 #Set the Gate Output
 GateOutput 1
 
 #Set the ADC Resolution
-ADCResolution 2
+ADCResolution 4
 

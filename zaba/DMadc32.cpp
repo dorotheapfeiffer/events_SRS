@@ -60,7 +60,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 }
 //===========================================================
 
-extern Int_t VME_CRATE ; //this is for test only, if you want to change the value, change it in main.cpp
+extern int  VME_CRATE; //this is for test only, if you want to change the value, change it in main.cpp
 TRandom m_random;
 
 using namespace std;
@@ -123,8 +123,11 @@ return strBin;
   m_GateDelay		= 0;
   m_GateWidth		= 0;
   m_GateOutput		= 0;
- 
- std::cout<< "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
+
+  VME_CRATE = 1;
+ std::cout << "VME_CRATE (0)- simulation (1) - real instrument, VME_CRATE = " << VME_CRATE << endl; 
+ std::cout << "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay 
+           << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
 
   if( VME_CRATE ){ // to test puropse only....
      CAENVME_SystemReset(m_VMEBridge);
@@ -140,7 +143,7 @@ return strBin;
    }
 
 
-
+std::cout << "end of constructor\n";
 }
 //-----------------------------------------------------------------------------
  DMadc32::~DMadc32() {
@@ -374,12 +377,12 @@ if( VME_CRATE ){ // to test puropse only....
     }
 
   bytesToRead = 255;
+  bool DEBUG_READ_DATA = 0;
 
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
   ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-  printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
+  if(DEBUG_READ_DATA) printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
-  bool DEBUG_READ_DATA = 0;
 
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
      UInt_t id = (m_localBuffer[i] >> 30) & 0x3;
