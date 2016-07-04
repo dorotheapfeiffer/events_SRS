@@ -26,15 +26,17 @@ using namespace std;
 
 std::string g_Path; // global path of working directory
 
-Int_t VME_CRATE = 0; 
+Int_t VME_CRATE = 1; 
 
 int main(int argc, char **argv) {
 
 g_Path = exec((char*)"pwd");
 
-DMultiGrid *dMultiGrid = new DMultiGrid();
+DMultiGrid	*dMultiGrid = new DMultiGrid();
+//DV1718		*dV1718 = new DV1718();	
+//DMadc32		*dMadc32 = new DMadc32();	
 
-dMultiGrid->LoadConfig((char*)"zabarc");
+//dMultiGrid->LoadConfig((char*)"zabarc");
 
 dMultiGrid->StartAcq();
 
@@ -86,8 +88,8 @@ void ShowData(DMultiGrid *dMultiGrid){
    }
 
  ElapsedTime = CurrentTime - PrevRateTime;
- Nb = dMultiGrid->fDMadc32->GetDataSize();
- Ne = dMultiGrid->fDMadc32->GetNrEvents();;
+ Nb += dMultiGrid->fDMadc32->GetDataSize();
+ Ne  = dMultiGrid->fDMadc32->GetNrEvents();
 
  //cout << "Nb: "<< Nb << " Ne: " << Ne << endl;
 
@@ -97,7 +99,7 @@ void ShowData(DMultiGrid *dMultiGrid){
  if (!Nb) 
     printf("No data...\n");
  else
-    printf("Reading at %.2f MB/s (Trg Rate: %.2f Hz)\n", (float)(Nb-prevNb)/((float)ElapsedTime*1048.576f), (float)(Ne-prevNe)*1000.0f/(float)ElapsedTime);
+    printf("Reading at %.5f MB/s (Trg Rate: %.2f Hz)\n", (float)(Nb-prevNb)/((float)ElapsedTime*1048.576f), (float)(Ne-prevNe)*1000.0f/(float)ElapsedTime);
 
  cout << "Acq time: " << (CurrentTime - StartTime) / 1000 << "s\tnr of Events:" << Ne << endl; 
  prevNe = Ne;
