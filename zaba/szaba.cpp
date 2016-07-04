@@ -7,39 +7,36 @@
 #include <stdlib.h> 
 #include <unistd.h> 
 #include <stdio.h> 
-#include <string.h> 
-#include <DMadc32.h>
-#include <DV1718.h>
-#include <DMadc32.h>
+#include "DMultiGrid.h"
 
 
 static struct termios g_old_kbd_mode;
 
-void		ShowData();
+void		ShowData(DMultiGrid *);
 int		CheckKeyboard();
 static long 	get_time();
 static void 	cooked(void);
 static void 	raw(void);
 int 		kbhit();
 int 		getch(void);
+std::string exec(char*);
 
 
 using namespace std;
 
+std::string g_Path; // global path of working directory
+
+Int_t VME_CRATE = 0; 
 
 int main(int argc, char **argv) {
 
+g_Path = exec((char*)"pwd");
 
-DMadc32 dMadc32((char*)"MultiGrid",   0xd0000000);
-DV1718  dV1718((char*)"VME_USB_Bridge",   0x00000000);
+DMultiGrid *dMultiGrid = new DMultiGrid();
 
-dMadc32.InitModule();
+dMultiGrid->LoadConfig((char*)"zabarc");
 
-dMadc32.LoadConfig();
-
-dMadc32.StartAcq();
-dV1718.StartAcq();
- 
+dMultiGrid->StartAcq();
 
 std::time_t result = std::time(0);
 cout << "Acquisition start " << std::asctime(std::localtime(&result)) << endl;
@@ -47,16 +44,15 @@ cout << "Acquisition start " << std::asctime(std::localtime(&result)) << endl;
 
 while( CheckKeyboard() ){
 
-   dMadc32.ReadVME() 
-   dV1718.ReadVME();
-
-   dMadc32.SaveData();
+   dMultiGrid->ReadVME(); 
+   dMultiGrid->DataSave();
    
-   ShowData();
-   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+   ShowData( dMultiGrid );
+   std::this_thread::sleep_for(std::chrono::milliseconds(80));
 
 }
 
+delete dMultiGrid;
 result = std::time(0);
 cout << "Acquisition stop " << std::asctime(std::localtime(&result)) << endl;
 
@@ -78,17 +74,34 @@ int CheckKeyboard(){
 }
 
 //===============================================================================
-void ShowData(){
+void ShowData(DMultiGrid *dMultiGrid){
 
- static uint64_t CurrentTime, PrevRateTime, ElapsedTime;
+ static uint64_t CurrentTime, PrevRateTime, ElapsedTime, StartTime;
+ static uint64_t Nb, Ne, prevNe, prevNb;
+ static unsigned int firstTime = 0;
+
  CurrentTime = get_time();
+ if(!firstTime){  // time when the acq starts to know how long its run
+   StartTime = CurrentTime; firstTime = 1;
+   }
+
  ElapsedTime = CurrentTime - PrevRateTime;
+ Nb = dMultiGrid->fDMadc32->GetDataSize();
+ Ne = dMultiGrid->fDMadc32->GetNrEvents();;
+
+ //cout << "Nb: "<< Nb << " Ne: " << Ne << endl;
 
  if (ElapsedTime < 1000)
  return; 
  
- cout << "Tu se bede cos wypisywal" << endl; 
+ if (!Nb) 
+    printf("No data...\n");
+ else
+    printf("Reading at %.2f MB/s (Trg Rate: %.2f Hz)\n", (float)(Nb-prevNb)/((float)ElapsedTime*1048.576f), (float)(Ne-prevNe)*1000.0f/(float)ElapsedTime);
 
+ cout << "Acq time: " << (CurrentTime - StartTime) / 1000 << "s\tnr of Events:" << Ne << endl; 
+ prevNe = Ne;
+ prevNb = Nb;
  PrevRateTime = CurrentTime;
 
 }
@@ -159,6 +172,23 @@ static void raw(void) {
 
         init = 1;
 }
+//=============================================================================
+std::string exec(char* cmd){
+   FILE* pipe = popen(cmd, "r");
+   if(!pipe) return "ERROR";
+
+   char buffer[128];
+   std::string result = "";
+   while(!feof(pipe)){
+       if(fgets(buffer, 128, pipe) != NULL)
+         result += buffer;
+       }
+   pclose(pipe);
+   result = result.substr(0, result.length()-1);
+   return result;
+}
+
+
 
 
 

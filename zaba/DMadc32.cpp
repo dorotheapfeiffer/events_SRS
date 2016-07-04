@@ -306,7 +306,6 @@ if( VME_CRATE ){ // to test puropse only....
 
   // set threshold 
 address = m_BaseAddress + 0x4000;
-int th;
  for(Int_t i = 0; i < 32; i++){
      ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address + 2*i, &m_ThresholdValue[i], cvA32_U_DATA, cvD16) );
     }
@@ -346,8 +345,6 @@ int th;
  static UInt_t n0_IRQ = 0;
 
 
- static UInt_t total = 0;
- UInt_t data2;
  static int i = 0;
  i++;
 
@@ -389,16 +386,16 @@ if( VME_CRATE ){ // to test puropse only....
      switch(id)
            {
            case 0: 
-             if(DEBUG_READ_DATA) printf("DATA,   m_localbuffer[%d], chn: %ld, value: %u\n", i, (m_localBuffer[i]>>16) & 0x1F, m_localBuffer[i] & 0x1FFF);
+             if(DEBUG_READ_DATA) printf("DATA,   m_localbuffer[%d], chn: %u, value: %u\n", i, (m_localBuffer[i]>>16) & 0x1F, m_localBuffer[i] & 0x1FFF);
            break; 
 
            case 1:
-             if(DEBUG_READ_DATA) printf("HEADER, m_localbuffer[%ld], nr_of_words: %u\n", i, m_localBuffer[i] & 0xFF);
+             if(DEBUG_READ_DATA) printf("HEADER, m_localbuffer[%d], nr_of_words: %u\n", i, m_localBuffer[i] & 0xFF);
              m_Events++;
            break;
 
            case 3:
-               if(DEBUG_READ_DATA) printf("FOOTER, m_localbuffer[%ld], tts: %u\n", i, m_localBuffer[i] & 0xCFFFFFFF);
+               if(DEBUG_READ_DATA) printf("FOOTER, m_localbuffer[%d], tts: %u\n", i, m_localBuffer[i] & 0xCFFFFFFF);
            break;
 
            default:
@@ -421,6 +418,7 @@ if( VME_CRATE ){ // to test puropse only....
  //std::cout << "hello 1" << std::endl; 
 
   Int_t m_BufferPos1 = 0;
+  m_dataSizeByte = 0;
  for(Int_t inr = 0; inr < 1000; inr++){
      m_EventHeader.header_sig = 0x1;
      m_EventHeader.sub_header = 0;
@@ -428,7 +426,7 @@ if( VME_CRATE ){ // to test puropse only....
      m_EventHeader.out_format = 0;
      m_EventHeader.adc_res    = 1;
      //m_EventHeader.n_words    = (Int_t)(4 * m_random.Rndm()+2) ;
-     m_EventHeader.n_words    = 9; 
+     m_EventHeader.n_words    = 9; // 8ch + 1tts
 
      m_localBuffer[ m_BufferPos1 + 0] = m_Header;
 
@@ -450,8 +448,9 @@ if( VME_CRATE ){ // to test puropse only....
 
      m_Events++;
      m_BufferPos1 += (m_EventHeader.n_words + 1);
+     m_dataSizeByte += 4 + m_EventHeader.n_words * 4; // header 4bytes, nwords each 4bytes + tts also 4bytes
+     //cout << "m_BufferPos1 " << m_BufferPos1 << ",  m_dataSizeByte " << m_dataSizeByte << endl;
   }
-  m_dataSizeByte += 4 + m_EventHeader.n_words * 4; // header 4bytes, nwords each 4bytes + tts also 4bytes
   //cout << "Simulation data: m_dataSizeByte = " << m_dataSizeByte << endl;
  }//end of VME_CRATE
 
@@ -551,11 +550,10 @@ void DMadc32::StopAcq(){
 //-----------------------------------------------------------------------------
 void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 
-   bool DEBUG_DATA_SAVE = 0;
-
    // write data to buffer only wnhen the IRQ happend, otherwise return 
    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
-   // If you want to simulate events you have to comment this line.
+   // If you want to simulate events you have to comment this line, m_IRQ = 1;
+   if( !VME_CRATE ) m_IRQ = 1; 
    if(!m_IRQ) return;
       m_IRQ = 0;
 
@@ -572,12 +570,11 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    // check if the buffer is full and need to be writen to file
    if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
-       printf("ZAPISYWANIE SIZE!!!!!");
        }
 
   // ===========================================================================
   // check the elapsed time
-  cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fMultiGrid->m_SaveFileTimeEntry << endl;
+  // cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fMultiGrid->m_SaveFileTimeEntry << endl;
    if( gElapsedTimeADC > (ULong_t)fMultiGrid->m_SaveFileTimeEntry){
        if( gPrevRateTimeADC == 0) {
            m_saveAfterTime = kFALSE;
@@ -585,18 +582,18 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
            }
        else { 
            m_saveAfterTime = kTRUE;  
-           printf("ZAPISYWANIE TIME!!!!!");
           }
      }
-
   // =============================================================================
   // writing bufer to file if one of the two condition are fulfill
   if( m_saveAfterSize || m_saveAfterTime ){
-    char filename[256];
-    sprintf(filename, "%s_%03d.bin", fMultiGrid->m_FileName, fMultiGrid->m_NrOfSavedFiles);
-    
+    char nr[256];
+    sprintf(nr, "%03d", fMultiGrid->m_NrOfSavedFiles);
 
-    std::ofstream DataFile(filename, std::ofstream::out);
+    string filename = fMultiGrid->m_DataPath + string("/") + fMultiGrid->m_FileName + string("_") + 
+                       string(nr) + string(".bin");    
+ 
+    std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
     if(!DataFile.is_open()) {
        std::cout << "ERROR could not open the file... " << filename << std::endl;
        }
@@ -611,6 +608,7 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
     fMultiGrid->m_NrOfSavedFiles++;
     gPrevRateTimeADC = gCurrentTimeADC;
     std::cout << "[MESSAGE] data file [" << filename << "] has saved " << std::endl;
+    std::cout << "          Nr Events= " << m_Events << std::endl;
     }
 
 }

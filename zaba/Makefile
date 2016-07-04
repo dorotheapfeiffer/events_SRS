@@ -15,7 +15,10 @@ LFLAGS	:= -lCAENVME -lm
 SRCCPP  = main.cpp DGHelp.cpp DGModule.cpp DModule.cpp DGMultiGrid.cpp DMultiGrid.cpp DGMadc32.cpp DMadc32.cpp\
  DGV1718.cpp DV1718.cpp DGDisplay.cpp DDataSave.cpp zabaDict.cpp  
  
-OBJECTS = $(SRCCPP:.cpp=.o)
+SRCCPP2 = szaba.cpp DMadc32.cpp
+ 
+OBJECTS  = $(SRCCPP:.cpp=.o)
+OBJECTS2 = $(SRCCPP2:.cpp=.o)
 
 HEADERS = DGHelp.h DGModule.h DModule.h DGMultiGrid.h DMultiGrid.h DMadc32.h DGMadc32.h DV1718.h DGV1718.h DGDisplay.h DDataSave.h
 
@@ -32,9 +35,10 @@ $(DICT): $(HEADERS) zabaLinkDef.h
 $(TARGET):$(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
 
-$(TARGET2):$(OBJECTS)
+$(TARGET2):$(OBJECTS2)
 
-#	$(CC) $(CFLAGS) $(OBJECTS) $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
+	$(CC) $(CFLAGS) $(OBJECTS2) DMultiGrid.o DModule.o DV1718.o DDataSave.o DGHelp.o DGModule.o DGMultiGrid.o DGMadc32.o DGV1718.cpp DGDisplay.o zabaDict.o\
+ $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
 
 clean:
 	rm -f *.o *Dict* $(TARGET)

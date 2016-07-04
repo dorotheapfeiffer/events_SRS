@@ -44,16 +44,19 @@ extern std::string g_Path;
   m_PrevAcqTime		= 0;
   m_NrOfSavedFiles	= 0;
 
-  //std::size_t found = g_Path.find_last_of("/");
-  //m_ConfigPath = g_Path.substr(0,found) + string("/zabarc"); 
+  m_FileName = string("data");
+  m_Path = g_Path;
+  m_DataPath = m_Path + string("/data");
   m_ConfigPath = g_Path + string("/zabarc"); 
-  cout << "DMultiGrid::Path:       " << g_Path << endl;
-  cout << "DMultiGrid::ConfigPath: " << m_ConfigPath << endl;
 
   LoadConfig((char*)m_ConfigPath.c_str());
   SaveConfig((char*)m_ConfigPath.c_str());
 
-  printf("%d modules\n",fModuleList->GetLast()+1);
+  cout << "DMultiGrid::Path:       " << g_Path       << endl;
+  cout << "DMultiGrid::ConfigPath: " << m_ConfigPath << endl;
+  cout << "DMultiGrid::DataPath:   " << m_DataPath   << endl;
+  cout << "DMultiGrid::FileName:   " << m_FileName   << endl;
+  cout << "Nr of Mudule(s) instaled" << fModuleList->GetLast()+1 << endl;
 }
 //-----------------------------------------------------------------------------
    DMultiGrid::~DMultiGrid() {
@@ -176,15 +179,19 @@ void DMultiGrid::StopAcq(){
          }
        else if( name == string("SaveFileSize") ){
          temp = atoi( value.c_str() );
-         cout << " temp:" << temp << " name:" << name << " value: " << value << endl;
          if(temp <= 0) m_SaveFileSizeEntry = 99;
          else m_SaveFileSizeEntry = temp;
-         cout << "DMultiGrid::config::m_SaveFileSizeEntry" << m_SaveFileSizeEntry << " temp:" << temp << endl;
          }
        else if( name == string("SaveFileTime") ){
          temp = atoi( value.c_str() );
          if(temp <= 0) m_SaveFileTimeEntry = 3600;
          else m_SaveFileTimeEntry = temp;
+         }
+       else if( name == string("DataPath") ){
+         if(value.length()) SetDataPath(value);
+         }
+       else if( name == string("FileName") ){
+         if(value.length()) SetFileName(value);
          }
 
      }
@@ -240,6 +247,14 @@ inpfile.close();
   fout << " " << std::endl;
   fout << "# Save each file after certain number of seconds" << std::endl;
   fout << "SaveFileTime " << m_SaveFileTimeEntry << std::endl;
+  fout << " " << std::endl;
+
+  fout << "# Default path where the data is stored, if you do not set this parameter the path will be ./data" << std::endl;
+  fout << "DataPath " << m_DataPath << std::endl;
+  fout << " " << std::endl;
+
+  fout << "# Default file name, in the GUI version program will ask the user to set correct file name" << std::endl;
+  fout << "FileName " << m_FileName << std::endl;
   fout << " " << std::endl;
 
   TObject   *elem;

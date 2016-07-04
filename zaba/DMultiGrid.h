@@ -46,15 +46,17 @@ public:
   UInt_t		m_ElapsedAcqTime;
   UInt_t		m_PrevAcqTime;
   Int_t			m_NrOfSavedFiles;
-  Char_t		m_FileName[256];
 
 
   DMadc32		*fDMadc32;		// Mesytec pulse sensitive ADC
   DV1718		*fDV1718;		// Bridge VME_USB
+  std::string		m_FileName;
   std::string		m_Path;
   std::string		m_ConfigPath; 
+  std::string		m_DataPath; 
 public:
   DMultiGrid();
+  //DMultiGrid(bool);
   virtual ~DMultiGrid();
   void ResetModules();                   // Call ResetModule() for each VME module
   void InitModules();                    // Load the fixed part of the settings
@@ -68,7 +70,8 @@ public:
   void ReadVME();                        // read VME data from module to the class objects
   void ShowData(DGDisplay *);            // do online analysis and fill histograms 
   void DataSave();                       // save data to file
-  void SetFileName(char* filename) { strcpy(m_FileName, filename); }
+  void SetFileName(std::string filename) { m_FileName = filename; }
+  void SetDataPath(std::string datapath) { m_DataPath = datapath; }
   std::string Trim(std::string const& source, char const* delims = " \t\r\n" ); 
 
   ClassDef(DMultiGrid,1)  		// MultiGrid readout 
