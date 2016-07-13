@@ -107,7 +107,7 @@ void readBin() {
    Bool_t DEBUG = kFALSE;
    Int_t wrong = 0;
 
-   char filename[] = "/home/dlab/dg_epool/zaba/data/data_000.bin";
+   char filename[] = "/home/dlab/dg_epool/zaba/data/2016_07_05_110000_data1_000.bin";
    printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {
@@ -141,7 +141,7 @@ void readBin() {
         fread(&m_Footer, sizeof(m_Footer), 1, f);
         m_value_adc[32 ] = m_EndOfEvent.counter_tts; 
         
-        printf( "tts = %d\n", m_value_adc[32] );  
+        //printf( "tts = %d\n", m_value_adc[32] );  
 
         if(m_value_adc[0] > 300 && m_value_adc[2] < 300){
            Int_t dupa = adc2pos( m_value_adc[1]);

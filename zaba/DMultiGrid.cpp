@@ -75,6 +75,7 @@ extern std::string g_Path;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ResetModule();
+  delete iter;
 }
 //-----------------------------------------------------------------------------
  void DMultiGrid::InitModules() {
@@ -87,6 +88,7 @@ extern std::string g_Path;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->InitModule();
  
+  delete iter;
 }
 //-----------------------------------------------------------------------------
 
@@ -97,6 +99,7 @@ extern std::string g_Path;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ShowData(d);
  
+  delete iter;
 }
 
 //-----------------------------------------------------------------------------
@@ -106,6 +109,7 @@ void DMultiGrid::StartAcq(){
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StartAcq();
  
+  delete iter;
 }
 //-----------------------------------------------------------------------------
 void DMultiGrid::StopAcq(){
@@ -114,6 +118,7 @@ void DMultiGrid::StopAcq(){
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StopAcq();
  
+  delete iter;
 }
 //-----------------------------------------------------------------------------
 
@@ -123,7 +128,8 @@ void DMultiGrid::StopAcq(){
   TIterator *iter;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->DataSave(this);
- 
+
+  delete iter; 
 }
 
 //-----------------------------------------------------------------------------
@@ -210,6 +216,7 @@ inpfile.seekg (0);
        inpfile.seekg (0);
        }
 
+  delete iter;
 inpfile.close();
 
 }
@@ -262,6 +269,7 @@ inpfile.close();
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->SaveConfig(fout);
 
+  delete iter;
 fout.close();
 
 
@@ -275,6 +283,8 @@ fout.close();
   TIterator *iter;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ReadVME();
+
+  delete iter;
 }
 //*****************************************************************************
 

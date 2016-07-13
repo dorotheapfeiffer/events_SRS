@@ -195,7 +195,7 @@ if( VME_CRATE ){ // to test puropse only....
 
  // Initialize IRQ - emit irq when more than 20 words in FIFO
  address = m_BaseAddress + 0x6018;
- data = 20;
+ data = 10;
  printf("CAENVME_WriteCycle: Initialize IRQ, emit irq when more than %d words in FIFO\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
@@ -203,7 +203,7 @@ if( VME_CRATE ){ // to test puropse only....
  
  // max transfer data
  address = m_BaseAddress + 0x601A;
- data = 255;
+ data = 1000;
  printf("CAENVME_WriteCycle: Max transfer data to %d\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
@@ -256,7 +256,7 @@ if( VME_CRATE ){ // to test puropse only....
  if(ret) return;
 */
 
- std::cout<< "INIT m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
+ //std::cout<< "INIT m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
  // Gate generator output at busy output
  address = m_BaseAddress + 0x606E;
  printf("CAENVME_WriteCycle: Gate generator output monitoring at the NIM_busy %d\n", m_GateOutput);
@@ -376,14 +376,37 @@ if( VME_CRATE ){ // to test puropse only....
        }
     }
 
-  bytesToRead = 255;
+  bytesToRead = 256; 
   bool DEBUG_READ_DATA = 0;
 
+  UInt_t offset = 0;
+  UInt_t nn = 0;
+
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
-  ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
+
+  //UInt_t buffer_length = 0;
+  //ret = CAENVME_ReadCycle(m_VMEBridge, 0x6030, &buffer_length, cvA32_U_DATA, cvD32) ;
+  //ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
+  //printf("buffer length = %u, check ret value after BLTReadCycle = %d, read: %d bytes\n", 0x0000FFFF & buffer_length, ret, m_dataSizeByte);
+  
+  UInt_t *a = m_localBuffer;
+  UInt_t buffer_length = 0;
+  ret = CAENVME_ReadCycle(m_VMEBridge, 0x6030, &buffer_length, cvA32_U_DATA, cvD32) ;
+  while(nn < 25 && ret == 0){
+      ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer[ offset ], bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
+      //ret = CAENVME_BLTReadCycle(m_VMEBridge, address, a+offset, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
+      offset += m_dataSizeByte;
+      //printf("buffer length = %u, check ret value after BLTReadCycle = %d, read: %d bytes, nn = %d, offset = %d\n", 
+      //       0x0000FFFF & buffer_length, ret, m_dataSizeByte, nn, offset);
+      nn++;
+    }
+  
+
+
   if(DEBUG_READ_DATA) printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
 
+  m_dataSizeByte = offset;
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
      UInt_t id = (m_localBuffer[i] >> 30) & 0x3;
      switch(id)
@@ -407,6 +430,7 @@ if( VME_CRATE ){ // to test puropse only....
            }
      }
 
+  //printf("------------------------check ret value after BLTReadCycle = %d, read: %d bytes, nn = %d, Events: %d\n", ret, m_dataSizeByte, nn, m_Events);
   //reset IRQ and Berr
   address = m_BaseAddress + 0x6034; // 0x0 - begining of FIFO buffer;
   data = 0;
@@ -593,9 +617,18 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
     char nr[256];
     sprintf(nr, "%03d", fMultiGrid->m_NrOfSavedFiles);
 
-    string filename = fMultiGrid->m_DataPath + string("/") + fMultiGrid->m_FileName + string("_") + 
-                       string(nr) + string(".bin");    
- 
+
+
+    std::time_t t = std::time(NULL);
+    char mbstr[100];
+    if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M_", std::localtime(&t))) {
+        std::cout << mbstr << '\n';
+    }
+
+    string filename = fMultiGrid->m_DataPath + string("/") + string(mbstr) + fMultiGrid->m_FileName + string("_") + 
+                            string(nr) + string(".bin");    
+
+
     std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
     if(!DataFile.is_open()) {
        std::cout << "ERROR could not open the file... " << filename << std::endl;
@@ -737,7 +770,7 @@ void DMadc32::ShowSettings() {
 
        else if( name == string("GateGenerator") ){
          temp = atoi( value.c_str() );
-         if(temp < 0 || temp > 1) m_GateGenerator = 0;
+         if(temp <= 0) m_GateGenerator = 0;
          else m_GateGenerator = 1;
          }
        else if( name == string("GateDelay") ){
@@ -754,8 +787,8 @@ void DMadc32::ShowSettings() {
          }
        else if( name == string("GateOutput") ){
          temp = atoi( value.c_str() );
-         if(temp < 0 || temp > 1) m_GateOutput = 0;
-         else m_GateOutput = 1;
+         if(temp <= 0) m_GateOutput = 0;
+         else m_GateOutput = temp;
          }
        else if( name == string("ADCResolution") ){
          temp = atoi( value.c_str() );
