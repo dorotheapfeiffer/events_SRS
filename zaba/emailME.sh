@@ -1,6 +1,6 @@
 #!/bin/bash
-COUNT=0
-
+# run it from another terminal
+# change the email address to your address
 
 while true; do
         # search for the szaba process, return the process ID or 0 if do not exist
