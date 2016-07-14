@@ -104,6 +104,12 @@ extern std::string g_Path;
 
 //-----------------------------------------------------------------------------
 void DMultiGrid::StartAcq(){
+
+  std::time_t t = std::time(NULL);
+  char mbstr[100];
+  if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M", std::localtime(&t)) ) 
+  SetFileTime(string(mbstr));
+
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
@@ -197,8 +203,10 @@ void DMultiGrid::StopAcq(){
          if(value.length()) SetDataPath(value);
          }
        else if( name == string("FileName") ){
-         if(value.length()) SetFileName(value);
-         }
+         if(value.length()) SetFileName(value); 
+         else SetFileName(string("test"));
+	  
+        }
 
      }
 
@@ -261,6 +269,13 @@ inpfile.close();
   fout << " " << std::endl;
 
   fout << "# Default file name, in the GUI version program will ask the user to set correct file name" << std::endl;
+  fout << "# The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin" << std::endl;
+  fout << "# where xxxxxx is the file name and nr file number" << std::endl;
+  fout << "# if you put the field of FileName empty then by default the name will be test" << std::endl;
+  fout << "# e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1" << std::endl;
+  fout << "#     the file name will be: 2016_07_14_1956_measurement1_000.bin" << std::endl;
+  fout << "#     then only the number will be increased, so 001, 002, 003, 004" << std::endl;
+
   fout << "FileName " << m_FileName << std::endl;
   fout << " " << std::endl;
 
