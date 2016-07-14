@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.7.13	18:51:37
+# the file was created:  2016.7.14	19:0:0
 # Line starts with a '#' is a comment line
 #
 #
@@ -24,7 +24,13 @@ SaveFileTime 10
 DataPath /home/dlab/dg_epool/zaba/data
  
 # Default file name, in the GUI version program will ask the user to set correct file name
-FileName data
+# The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin
+# where xxxxxx is the file name and nr file number
+# if you put the field of FileName empty then by default the name will be test
+# e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1
+#     the file name will be: 2016_07_14_1956_measurement1_000.bin
+#     then only the number will be increased, so 001, 002, 003, 004
+FileName mes1
  
 # Instrument properties: 
 # Keep in mind that there are only few parameters which user can change or modified.

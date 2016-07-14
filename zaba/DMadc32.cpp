@@ -619,14 +619,14 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 
 
 
-    std::time_t t = std::time(NULL);
-    char mbstr[100];
-    if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M_", std::localtime(&t))) {
-        std::cout << mbstr << '\n';
-    }
+    //std::time_t t = std::time(NULL);
+    //char mbstr[100];
+    //if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M_", std::localtime(&t))) {
+    //    std::cout << mbstr << '\n';
+   // }
 
-    string filename = fMultiGrid->m_DataPath + string("/") + string(mbstr) + fMultiGrid->m_FileName + string("_") + 
-                            string(nr) + string(".bin");    
+    string filename = fMultiGrid->m_DataPath + string("/") + fMultiGrid->GetFileTime() 
+	   + string("_") + fMultiGrid->GetFileName() + string("_") + string(nr) + string(".bin");    
 
 
     std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);

@@ -51,6 +51,7 @@ public:
   DMadc32		*fDMadc32;		// Mesytec pulse sensitive ADC
   DV1718		*fDV1718;		// Bridge VME_USB
   std::string		m_FileName;
+  std::string		m_FileTime;
   std::string		m_Path;
   std::string		m_ConfigPath; 
   std::string		m_DataPath; 
@@ -71,7 +72,11 @@ public:
   void ShowData(DGDisplay *);            // do online analysis and fill histograms 
   void DataSave();                       // save data to file
   void SetFileName(std::string filename) { m_FileName = filename; }
+  void SetFileTime(std::string filename) { m_FileTime = filename; }
   void SetDataPath(std::string datapath) { m_DataPath = datapath; }
+
+  std::string GetFileName(){ return m_FileName; }
+  std::string GetFileTime(){ return m_FileTime; }
   std::string Trim(std::string const& source, char const* delims = " \t\r\n" ); 
 
   ClassDef(DMultiGrid,1)  		// MultiGrid readout 
