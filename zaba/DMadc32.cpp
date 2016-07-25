@@ -14,7 +14,7 @@ typedef struct {
    UInt_t       sub_header : 6;
    UInt_t       header_sig : 2;
 } EventHeader;
-
+  
 typedef struct {
    UInt_t       adc_data   : 14;
    UInt_t       overflow   : 1;

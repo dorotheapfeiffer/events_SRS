@@ -24,7 +24,7 @@
 
 //*****************************************************************************
 class DGMultiGrid : public TGMainFrame {
-
+  
 private:
 
 enum Widget{

@@ -575,7 +575,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
      case eStopAfterSecEntry:
         fMultiGrid->m_StopAfterSecEntry = (Int_t)te->GetNumber();
      break;
-
+   
      case eStopAfterFileEntry:
         fMultiGrid->m_StopAfterFileEntry = (Int_t)te->GetNumber();
      break;
