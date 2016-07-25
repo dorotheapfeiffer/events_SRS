@@ -41,8 +41,8 @@ DMultiGrid	*dMultiGrid = new DMultiGrid();
 
 dMultiGrid->StartAcq();
 
-std::time_t result = std::time(0);
-cout << "Acquisition start " << std::asctime(std::localtime(&result)) << endl;
+//std::time_t result = std::time(0);
+//cout << "Acquisition start " << std::asctime(std::localtime(&result)) << endl;
 
 
 while( CheckKeyboard() ){
@@ -56,9 +56,10 @@ while( CheckKeyboard() ){
 
 }
 
+dMultiGrid->StopAcq();
 delete dMultiGrid;
-result = std::time(0);
-cout << "Acquisition stop " << std::asctime(std::localtime(&result)) << endl;
+//result = std::time(0);
+//cout << "Acquisition stop " << std::asctime(std::localtime(&result)) << endl;
 
 return 0;
 }
