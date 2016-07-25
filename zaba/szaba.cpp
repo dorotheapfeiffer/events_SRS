@@ -36,7 +36,7 @@ DMultiGrid	*dMultiGrid = new DMultiGrid();
 
 //DV1718		*dV1718 = new DV1718();	
 //DMadc32		*dMadc32 = new DMadc32();	
-
+  
 //dMultiGrid->LoadConfig((char*)"zabarc");
 
 dMultiGrid->StartAcq();
