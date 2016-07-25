@@ -79,7 +79,7 @@ Int_t adc2pos(Int_t bin){
 //=====================================================================================================
 
 
-void readBin() {
+void readBin( char* filename) {
 
 //====================================================================================================
    const Int_t size = 65;
@@ -95,19 +95,20 @@ void readBin() {
        }
 
 
-   TH1F *amplitudeW = new TH1F("amplitudeW", "amplitudeW", 2000, 0, 4000);
-   TH1F *positionW  = new TH1F("positionW", "positionW", 2000, 0, 4000);
-   TH1F *amplitudeG = new TH1F("amplitudeG", "amplitudeG", 2000, 0, 4000);
-   TH1F *positionG  = new TH1F("positionG", "positionG", 2000, 0, 4000);
-   TH1F *timestamp  = new TH1F("timestamp", "timestamp", 1200000, 0, 1200000);
-   TH1F *pos  = new TH1F("pos", "pos", 3500, 0, 3500);
-   TGraph *gr       = new TGraph(65, tabx, taby); 
+   TH1F *adc1 = new TH1F("adc1", "adc1", 2000, 0, 4000);
+   TH1F *adc2 = new TH1F("adc2", "adc2", 2000, 0, 4000);
+   TH1F *adc3 = new TH1F("adc3", "adc3", 2000, 0, 4000);
+   TH1F *adc4 = new TH1F("adc4", "adc4", 2000, 0, 4000);
+   TH1F *adc5 = new TH1F("adc5", "adc5", 2000, 0, 4000);
+   TH1F *adc6 = new TH1F("adc6", "adc6", 2000, 0, 4000);
+   TH1F *adc7 = new TH1F("adc7", "adc7", 2000, 0, 4000);
+   TH1F *adc8 = new TH1F("adc8", "adc8", 2000, 0, 4000);
+   TH1F *tts  = new TH1F("tts", "pos", 1000000, 10, 1000000000);
 
    //Bool_t DEBUG = kTRUE;
    Bool_t DEBUG = kFALSE;
    Int_t wrong = 0;
 
-   char filename[] = "/home/dlab/dg_epool/zaba/data/2016_07_05_110000_data1_000.bin";
    printf("%s\n", filename);
    FILE *f = fopen(Form("%s", filename), "r");
    if (f == NULL) {
@@ -141,27 +142,20 @@ void readBin() {
         fread(&m_Footer, sizeof(m_Footer), 1, f);
         m_value_adc[32 ] = m_EndOfEvent.counter_tts; 
         
-        //printf( "tts = %d\n", m_value_adc[32] );  
+        adc1->Fill(m_value_adc[0]);  
+        adc2->Fill(m_value_adc[1]);  
+        adc3->Fill(m_value_adc[2]);  
+        adc4->Fill(m_value_adc[3]);  
+        adc5->Fill(m_value_adc[4]);  
+        adc6->Fill(m_value_adc[5]);  
+        adc7->Fill(m_value_adc[6]);  
+        adc8->Fill(m_value_adc[7]);  
 
-        if(m_value_adc[0] > 300 && m_value_adc[2] < 300){
-           Int_t dupa = adc2pos( m_value_adc[1]);
-           if( dupa == 39){
-              amplitudeW->Fill(m_value_adc[0]);
-              }
+        tts->Fill(m_value_adc[32]);  
 
-          // positionW->Fill(m_value_adc[1]);
-           pos->Fill( adc2pos(m_value_adc[1]) );
-           //printf( "acd[0] = %d\t adc[1] = %d pos = %d\n", m_value_adc[0], m_value_adc[1], adc2pos(m_value_adc[1]) );  
-  
-           //pos->Fill( value2Pos(tabx, m_value_adc[1]));
-          // positionW->Fill(value2); 
-
-          // amplitudeG->Fill(value3);
-          // positionG->Fill(value4); 
-           }
+        }
        
-       timestamp->SetBinContent(i, m_EndOfEvent.counter_tts );
-       }
+       
        else{
          cout << "something is wrong there is no header signal "<< wrong++ << endl;
        }
@@ -171,35 +165,25 @@ void readBin() {
     //if( !(i % 1000)) printf("read %d words\n", i);
     }
 
-  printf("read %d words\n", i);
+  printf("read %d words, wrong = %d\n", i, wrong);
   fclose(f); 
 
   TCanvas *c = new TCanvas("c","c",800, 600);
   TCanvas *c1 = new TCanvas("c1","c1",800, 600);
-  c->Divide(3,1);
+  c->Divide(4,2);
   //...............
-  c->cd(1);
-  amplitudeW->Draw();
-  gPad->SetLogy();
+  c->cd(1); adc1->Draw(); gPad->SetLogy();
+  c->cd(2); adc2->Draw(); gPad->SetLogy();
+  c->cd(3); adc3->Draw(); gPad->SetLogy();
+  c->cd(4); adc4->Draw(); gPad->SetLogy();
+  c->cd(5); adc5->Draw(); gPad->SetLogy();
+  c->cd(6); adc6->Draw(); gPad->SetLogy();
+  c->cd(7); adc7->Draw(); gPad->SetLogy();
+  c->cd(8); adc8->Draw(); gPad->SetLogy();
   //...............
-  c->cd(2);
-  pos->Draw();
-  gPad->SetLogy();
-  //...............
-  c->cd(3);
-  positionW->Draw();
-  gPad->SetLogy();
-  //................
-  //c->cd(4);
-  //positionG->Draw();
-  //gPad->SetLogy();
-  //...............
-  //c->cd(5);
-  //gr->Draw("ac*");
-  //timestamp->Draw();
   c->cd();
   c1->cd();
-  timestamp->Draw();
+  tts->Draw();
   
 //////////////////////////////////////////////////////////////////
 // pos = 22mV/bin + 460(fixed_offset_adc) + 355*address;

@@ -283,15 +283,6 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
    
   std::cout << "Set acq loop to " << fMultiGrid->m_Timerout << std::endl;
   fTimer = new TTimer(this, fMultiGrid->m_Timerout);
-  fDatime = new TDatime();
-
-  // logfile
-
-  fLog = new std::ofstream("trilog.txt", std::ios::out|std::ios::ate);
-  *fLog << fDatime->AsString() << " " << "new DGMultiGrid" << std::endl;
-  *fLog << "Set ACQ loop to " << (fMultiGrid->m_Timerout / 1000) << " sec"<< std::endl;
-
-  std::cout << "Creation done!" << std::endl;
 
   std::cout << "Initialization modules" << std::endl;
   fMultiGrid->InitModules();
@@ -317,10 +308,6 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   fTimer->TurnOff();
   //std::cout <<"destroying DGMultiGrid, timer delete" << std::endl;
   delete fTimer;
-  //std::cout <<"destroying DGMultiGrid, flog delete" << std::endl;
-  delete fLog;
-  //std::cout <<"destroying DGMultiGrid, fDatime delete" << std::endl;
-  delete fDatime;
   delete fDataSave;
   delete fGDisplay;
 
@@ -610,8 +597,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   fi.fFileTypes = (const char **)filetypes;
 
 
-  fDatime->Set();
-  *fLog << fDatime->AsString() << "........";
+  fMultiGrid->fDatime->Set();
+  *fMultiGrid->fLog << fMultiGrid->fDatime->AsString() << "........";
 
   switch(GET_MSG(msg)) {
 
@@ -623,48 +610,48 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 	// load setup
 	new TGFileDialog(fClient->GetRoot(), this, kFDOpen,&fi);
 	if (fi.fFilename) fMultiGrid->LoadConfig(fi.fFilename);
-	*fLog << "load setup from " << fi.fFilename;
+	*fMultiGrid->fLog << "load setup from " << fi.fFilename;
 	std::cout << "load setup from " << fi.fFilename;
 	break;
       case eSaveSetup:
 	// save setup
 	new TGFileDialog(fClient->GetRoot(), this, kFDSave,&fi);
 	if (fi.fFilename) fMultiGrid->SaveConfig(fi.fFilename);
-	*fLog << "save setup to   " << fi.fFilename;
+	*fMultiGrid->fLog << "save setup to   " << fi.fFilename;
 	std::cout << "save setup to   " << fi.fFilename;
 	break;
       case eSaveData:
 	// save histogram data
 	//new TGFileDialog(fClient->GetRoot(), this, kFDSave,&fi);
 	//if (fi.fFilename) fMultiGrid->SaveData(fi.fFilename);
-	*fLog << "save data to   " << fi.fFilename;
+	*fMultiGrid->fLog << "save data to   " << fi.fFilename;
 	std::cout << "save data to   " << fi.fFilename;
 	break;
       case eExit:
 	// exit
-	*fLog << "exit\n";
+	*fMultiGrid->fLog << "exit\n";
 	std::cout << "exit\n";
 	exit(0);
 	break;
       case eInitializeSetup:
 	// Initialize setup
-	*fLog << "Initialize setup\n";
+	*fMultiGrid->fLog << "Initialize setup\n";
 	std::cout << "Initialize setup\n";
 	exit(0);
 	break;
       case eMesytecAdc32:
 	new DGMadc32(fMultiGrid->fDMadc32);
-	*fLog << "open GUI for Mesytec\n";
+	*fMultiGrid->fLog << "open GUI for Mesytec\n";
 	std::cout << "open GUI for Mesytec\n";
 	break;
       case eCAENBridgeV1718:
 	new DGV1718(fMultiGrid->fDV1718);
-	*fLog << "open GUI for CAEN Bridge\n";
+	*fMultiGrid->fLog << "open GUI for CAEN Bridge\n";
 	std::cout << "open GUI for CAEN Bridge\n";
 	break;
       case eHelp:
 	new DGHelp((char*)"./help.hlp");
-	*fLog << "monitor help";
+	*fMultiGrid->fLog << "monitor help";
 	std::cout << "monitor help";
 	break;
       default:
@@ -675,29 +662,29 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
         case eStopAfterSecCB:
           fStopAfterFileCB->SetState(EButtonState(0));
           fStopAfterEventsCB->SetState(EButtonState(0));
-	  *fLog << "Set stop Acq parameter after [...] sec\n "; 
+	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] sec\n "; 
 	  std::cout << "Set stop Acq parameter after [...] sec\n ";
         break;
         case eStopAfterFileCB:
           fStopAfterSecCB->SetState(EButtonState(0));
           fStopAfterEventsCB->SetState(EButtonState(0));
-	  *fLog << "Set stop Acq parameter after [...] files\n " ;
+	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] files\n " ;
 	  std::cout << "Set stop Acq parameter after [...] files \n";
         break;
         case eStopAfterEventsCB:
           fStopAfterSecCB->SetState(EButtonState(0));
           fStopAfterFileCB->SetState(EButtonState(0));
-	  *fLog << "Set stop Acq parameter after [...] events\n ";
+	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] events\n ";
 	  std::cout << "Set stop Acq parameter after [...] events \n";
         break;
         case eSaveFileSizeCB:
           fSaveSizeEntry->SetState(fSaveSizeCB->GetState());
-	  *fLog << "Set SaveFileSize parameter after [...] file size\n ";
+	  *fMultiGrid->fLog << "Set SaveFileSize parameter after [...] file size\n ";
 	  std::cout << "Set SaveFileSize parameter after [...] file size\n ";
         break;
         case eSaveFileTimeCB:
           fSaveTimeEntry->SetState(fSaveTimeCB->GetState());
-	  *fLog << "Set SaveFileTime parameter after [...] file number\n";
+	  *fMultiGrid->fLog << "Set SaveFileTime parameter after [...] file number\n";
 	  std::cout << "Set SaveFileTime parameter after [...] file number\n";
         break;
         default:
@@ -714,16 +701,16 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fTick = 0;
               fMultiGrid->StartAcq();
               fTimer->TurnOn();
-	      *fLog << "program RUN ";
-	      std::cout << "program RUN " << fMultiGrid->m_Status << fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "program RUN ";
+	      std::cout << "program RUN " << fMultiGrid->m_Status << fMultiGrid->fDatime->AsString() << std::endl;
               }
            else{              
               fMultiGrid->m_Status = 0;
               fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
-	      *fLog << "program STOP ";
-	      std::cout << "program STOP " << fMultiGrid->m_Status << fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "program STOP ";
+	      std::cout << "program STOP " << fMultiGrid->m_Status << fMultiGrid->fDatime->AsString() << std::endl;
              }
 
         break;
@@ -748,8 +735,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fTick = 0;
               fMultiGrid->StartAcq();
               fTimer->TurnOn();
-	      *fLog << "Acqisition START ";
-	      std::cout << "Acqisition START " << fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "Acqisition START ";
+	      std::cout << "Acqisition START " << fMultiGrid->fDatime->AsString() << std::endl;
               }
            else{ 
               fMultiGrid->m_DataSave = 0;
@@ -757,16 +744,16 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
-	      *fLog << "Acqisition STOP ";
-	      std::cout << "Acqisition STOP " << fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "Acqisition STOP ";
+	      std::cout << "Acqisition STOP " << fMultiGrid->fDatime->AsString() << std::endl;
               } 
         break;
 
         case eDisplayButton:
            if(fMultiGrid->m_Display == 1) { fMultiGrid->m_Display = 0; fDisplayButton->SetText("DISPLAY OFF");}
            else { fMultiGrid->m_Display = 1; fDisplayButton->SetText("DISPLAY ON");}
-	   *fLog << "Display ON/OFF";
-	   std::cout << "Display ON/OFF" << fDatime->AsString() << std::endl;
+	   *fMultiGrid->fLog << "Display ON/OFF";
+	   std::cout << "Display ON/OFF" << fMultiGrid->fDatime->AsString() << std::endl;
         break;
 
         case eResetButton:
@@ -776,8 +763,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
             if( ret )  
               fGDisplay->Reset();
  
-	    *fLog << "Reset all histograms ";
-	    std::cout << "Reset all histograms " << fDatime->AsString() << std::endl;
+	    *fMultiGrid->fLog << "Reset all histograms ";
+	    std::cout << "Reset all histograms " << fMultiGrid->fDatime->AsString() << std::endl;
         break;
 
         default:
@@ -797,7 +784,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
     break;
   }
   Refresh();
-  *fLog << std::endl;
+  *fMultiGrid->fLog << std::endl;
   return kTRUE;
 
 }

@@ -52,6 +52,9 @@ extern std::string g_Path;
   LoadConfig((char*)m_ConfigPath.c_str());
   SaveConfig((char*)m_ConfigPath.c_str());
 
+  fDatime = new TDatime();
+  fLog = new std::ofstream("MGlog.txt", std::ios::out|std::ios::app);
+
   cout << "DMultiGrid::Path:       " << g_Path       << endl;
   cout << "DMultiGrid::ConfigPath: " << m_ConfigPath << endl;
   cout << "DMultiGrid::DataPath:   " << m_DataPath   << endl;
@@ -64,6 +67,7 @@ extern std::string g_Path;
     SaveConfig((char*)m_ConfigPath.c_str());
     fModuleList->Delete();
     delete fModuleList;
+    delete fLog;
     exit(0);
     //gApplication->Terminate(0);
 }
@@ -109,6 +113,9 @@ void DMultiGrid::StartAcq(){
   char mbstr[100];
   if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M", std::localtime(&t)) ) 
   SetFileTime(string(mbstr));
+  
+  *fLog << string(ctime(&t)) << " " << " ----- Start new acquisition ----- " << std::endl;
+  std::cout << string(ctime(&t)) << " " << " ----- Start new acquisition ----- " << std::endl;
 
   TObject   *elem;
   TIterator *iter;
@@ -124,6 +131,9 @@ void DMultiGrid::StopAcq(){
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StopAcq();
  
+  std::time_t t = std::time(NULL);
+  *fLog << string(ctime(&t)) << " " << " ----- Stop new acquisition ----- " << std::endl;
+  std::cout << string(ctime(&t)) << " " << " ----- Stop new acquisition ----- " << std::endl;
   delete iter;
 }
 //-----------------------------------------------------------------------------

@@ -61,9 +61,8 @@ enum Widget{
   DMultiGrid          	*fMultiGrid;          // trigger object pointer
   TTimer            	*fTimer;            // timer pointer
   Int_t             	fTick;              // timer downscale-counter
-  TDatime           	*fDatime;           // current time
-  std::ofstream         *fLog;              // log-file stream pointer
-  std::ofstream         *fScalFile;         // scaler database pointer
+  //TDatime           	*fDatime;           // current time
+  //std::ofstream         *fLog;              // log-file stream pointer
   DGDisplay        	*fGDisplay;          // monitor Display( = lower panel)
   DDataSave        	*fDataSave;          // pointer to data save
 

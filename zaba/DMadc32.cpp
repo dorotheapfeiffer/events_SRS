@@ -62,6 +62,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
 extern int  VME_CRATE; //this is for test only, if you want to change the value, change it in main.cpp
 TRandom m_random;
+#define MAX_BLT_SIZE (256*1024)
 
 using namespace std;
 
@@ -338,7 +339,6 @@ address = m_BaseAddress + 0x4000;
 //-----------------------------------------------------------------------------
  void DMadc32::ReadVME() {
 
- Int_t bytesToRead = 0; 
  Int_t address = 0;
  Int_t data = 0;
  Int_t ret;
@@ -346,10 +346,6 @@ address = m_BaseAddress + 0x4000;
  static UInt_t nn_IRQ = 0;
  static UInt_t n1_IRQ = 0;
  static UInt_t n0_IRQ = 0;
-
-
- static int i = 0;
- i++;
 
  CAEN_BYTE mask;
 
@@ -376,37 +372,16 @@ if( VME_CRATE ){ // to test puropse only....
        }
     }
 
-  bytesToRead = 256; 
   bool DEBUG_READ_DATA = 0;
-
-  UInt_t offset = 0;
-  UInt_t nn = 0;
 
   address = m_BaseAddress + 0x0; // 0x0 - begining of FIFO buffer;
 
   //UInt_t buffer_length = 0;
   //ret = CAENVME_ReadCycle(m_VMEBridge, 0x6030, &buffer_length, cvA32_U_DATA, cvD32) ;
-  //ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-  //printf("buffer length = %u, check ret value after BLTReadCycle = %d, read: %d bytes\n", 0x0000FFFF & buffer_length, ret, m_dataSizeByte);
-  
-  UInt_t *a = m_localBuffer;
-  UInt_t buffer_length = 0;
-  ret = CAENVME_ReadCycle(m_VMEBridge, 0x6030, &buffer_length, cvA32_U_DATA, cvD32) ;
-  while(nn < 25 && ret == 0){
-      ret = CAENVME_BLTReadCycle(m_VMEBridge, address, &m_localBuffer[ offset ], bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-      //ret = CAENVME_BLTReadCycle(m_VMEBridge, address, a+offset, bytesToRead, cvA32_U_DATA, cvD32, &m_dataSizeByte) ;
-      offset += m_dataSizeByte;
-      //printf("buffer length = %u, check ret value after BLTReadCycle = %d, read: %d bytes, nn = %d, offset = %d\n", 
-      //       0x0000FFFF & buffer_length, ret, m_dataSizeByte, nn, offset);
-      nn++;
-    }
-  
-
+  ret = CAENVME_MBLTReadCycle(m_VMEBridge, address, m_localBuffer, MAX_BLT_SIZE, cvA32_U_MBLT, &m_dataSizeByte) ;
 
   if(DEBUG_READ_DATA) printf("check ret value after BLTReadCycle = %d, read: %d bytes, in hex = 0x%X\n", ret, m_dataSizeByte, m_dataSizeByte);
 
-
-  m_dataSizeByte = offset;
   for(Int_t i = 0; i < m_dataSizeByte/4; i++){
      UInt_t id = (m_localBuffer[i] >> 30) & 0x3;
      switch(id)
@@ -590,7 +565,8 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    gCurrentTimeADC = gGetLongTimeADC() / 1000;              // check the current time
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
-   memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   //memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   memcpy(m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
    m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
 
    // ==========================================================================
@@ -637,7 +613,10 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
        DataFile.write((char*)m_Buffer, m_BufferPos); 
        DataFile.close();
       }
- 
+
+     std::time_t t = std::time(NULL);
+     *fMultiGrid->fLog << string(ctime(&t)) << " " << "New file [" << filename<< "] has been created and saved\n"; 
+     *fMultiGrid->fLog << "\t\ttotal number of events: " << m_Events << std::endl;
  // ===============================================================================
  // some cleaning after saving and writing message to the std output
     m_BufferPos = 0;

@@ -56,6 +56,9 @@ public:
   std::string		m_Path;
   std::string		m_ConfigPath; 
   std::string		m_DataPath; 
+  std::ofstream         *fLog;                  // log-file stream pointer
+  TDatime		*fDatime;
+
 public:
   DMultiGrid();
   //DMultiGrid(bool);
