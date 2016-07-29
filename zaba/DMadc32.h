@@ -45,9 +45,10 @@ public:
   void		LoadConfig(std::ifstream &);
   void		StartAcq();
   void		StopAcq();
+  void          Log(std::ofstream &);
   void		ConfigureModule();
   void		ReadVME();
-  void		ShowData(DGDisplay* );
+  void		ShowData(DGDisplay*, DMultiGrid *);
   void		DataSave(DMultiGrid *);
   void		ResetModule();
   UInt_t	GetNrEvents() { return m_Events;}

@@ -12,9 +12,7 @@
 
 static struct termios g_old_kbd_mode;
 
-void		ShowData(DMultiGrid *);
 int		CheckKeyboard();
-static long 	get_time();
 static void 	cooked(void);
 static void 	raw(void);
 int 		kbhit();
@@ -30,36 +28,28 @@ Int_t VME_CRATE = 1;
 
 int main(int argc, char **argv) {
 
-g_Path = exec((char*)"pwd");
+ g_Path = exec((char*)"pwd");
 
-DMultiGrid	*dMultiGrid = new DMultiGrid();
+ DMultiGrid	*dMultiGrid = new DMultiGrid();
 
-//DV1718		*dV1718 = new DV1718();	
-//DMadc32		*dMadc32 = new DMadc32();	
+ //DV1718		*dV1718 = new DV1718();	
+ //DMadc32		*dMadc32 = new DMadc32();	
   
-//dMultiGrid->LoadConfig((char*)"zabarc");
+ //dMultiGrid->LoadConfig((char*)"zabarc");
+ dMultiGrid->StartAcq();
 
-dMultiGrid->StartAcq();
-
-//std::time_t result = std::time(0);
-//cout << "Acquisition start " << std::asctime(std::localtime(&result)) << endl;
-
-
-while( CheckKeyboard() ){
+ while( CheckKeyboard() ){
 
    dMultiGrid->ReadVME(); 
    dMultiGrid->DataSave();
+   dMultiGrid->ShowData(NULL);
    
-   ShowData( dMultiGrid );
-
    //std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
-}
+ }
 
-dMultiGrid->StopAcq();
-delete dMultiGrid;
-//result = std::time(0);
-//cout << "Acquisition stop " << std::asctime(std::localtime(&result)) << endl;
+ dMultiGrid->StopAcq();
+ delete dMultiGrid;
 
 return 0;
 }
@@ -79,47 +69,7 @@ int CheckKeyboard(){
 }
 
 //===============================================================================
-void ShowData(DMultiGrid *dMultiGrid){
 
- static uint64_t CurrentTime, PrevRateTime, ElapsedTime, StartTime;
- static uint64_t Nb, Ne, prevNe, prevNb;
- static unsigned int firstTime = 0;
-
- CurrentTime = get_time();
- if(!firstTime){  // time when the acq starts to know how long its run
-   StartTime = CurrentTime; firstTime = 1;
-   }
-
- ElapsedTime = CurrentTime - PrevRateTime;
- Nb += dMultiGrid->fDMadc32->GetDataSize();
- Ne  = dMultiGrid->fDMadc32->GetNrEvents();
-
- //cout << "Nb: "<< Nb << " Ne: " << Ne << endl;
-
- if (ElapsedTime < 1000)
- return; 
- 
- if (!Nb) 
-    printf("No data...\n");
- else
-    printf("Reading at %.5f MB/s (Trg Rate: %.2f Hz)\n", (float)(Nb-prevNb)/((float)ElapsedTime*1048.576f), (float)(Ne-prevNe)*1000.0f/(float)ElapsedTime);
-
- cout << "Acq time: " << (CurrentTime - StartTime) / 1000 << "s\tnr of Events:" << Ne << endl; 
- prevNe = Ne;
- prevNb = Nb;
- PrevRateTime = CurrentTime;
-
-}
-//===============================================================================
-static long get_time() {
-    long time_ms;
-    struct timeval t1;
-    struct timezone tz;
-    gettimeofday(&t1, &tz);
-    time_ms = (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
-    return time_ms;
-}
-//===============================================================================
 int getch(void) {
         unsigned char temp;
 

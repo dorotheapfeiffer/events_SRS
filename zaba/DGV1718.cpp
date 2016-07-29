@@ -92,7 +92,7 @@
 //-----------------------------------------------------------------------------
  void DGV1718::Refresh() {
   // Update display so it represents the actual contents of fModule.
-  DV1718 *dV1718 = (DV1718 *) fModule;
+  //DV1718 *dV1718 = (DV1718 *) fModule;
 /*
  std::cout << " DGV1718 refresh button status " << std::endl;
   for (Int_t i = 0; i < 32; i++) {
