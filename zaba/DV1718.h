@@ -6,6 +6,7 @@
 
 //*****************************************************************************
 class DGDisplay;
+class DMultiGrid;
 
 class DV1718 : public DModule {
 
@@ -30,9 +31,10 @@ public:
   void		ReadVME();
   void		StartAcq();
   void		StopAcq();
+  void		Log(std::ofstream &);
   void		SaveConfig(std::ofstream &){}
   void		LoadConfig(std::ifstream &){}
-  void		ShowData(DGDisplay* );
+  void		ShowData(DGDisplay*, DMultiGrid* );
   void		DataSave(DMultiGrid *);
   void		ResetModule();
   UInt_t	GetNrCounts() { return m_Value;}

@@ -1,5 +1,6 @@
 #include "DV1718.h"
 #include "DGDisplay.h"
+#include "DMultiGrid.h"
 #include <bitset>
 #include <string>
 #include <fstream>
@@ -13,7 +14,8 @@ ClassImp(DV1718)
 //*****************************************************************************
  DV1718::DV1718(Char_t *mdesc, UInt_t addr) : 
        DModule((char*)"VME Bridge",(char*)"CAEN V1718",mdesc,addr) {
-	       std::cout<<"constructing DV1718\n";
+
+  std::cout<<"\t+ module V1718...\n";
 
 
   //m_VMEBridge   = cvV1718;
@@ -23,22 +25,22 @@ ClassImp(DV1718)
   m_CountOutput = 0;
   //m_Handle	= -1;
 
-  std::cout<<"VME_CRATE: " << VME_CRATE << " m_VMEBridge: "<< m_VMEBridge << " m_Handle: " << m_Handle << "\n";
+  //std::cout<<"VME_CRATE: " << VME_CRATE << " m_VMEBridge: "<< m_VMEBridge << " m_Handle: " << m_Handle << "\n";
   if( VME_CRATE ){ // to test puropse only.... (test without crate)
   if (CAENVME_Init( m_VMEBridge, 0, 0, &m_Handle) != cvSuccess) {
-     printf("Error opening the device!!! Crate is down\n");
+     printf("[ERROR] opening the device!!! Crate is down, exit!!!!\n");
      exit(1);
      }
   else {
-     printf("CAEN V1718 Opened, Crate is OK\n");
-     printf("           Handle = %d\n", m_Handle);
+     std::cout << "\t\t- CAEN bridge V1718 Opened, Crate is OK\n";
+     std::cout << "\t\t- Handle = " << m_Handle << std::endl;
+     std::cout << "\t\t- construction V1718 done!\n";
     }
   }
-
 }
 //-----------------------------------------------------------------------------
  DV1718::~DV1718() {
-  std::cout<<"destroying DV1718\n";
+  std::cout<<"\t+ module V1718...\n";
 
  } // end of VME_CRATE
 
@@ -61,6 +63,10 @@ if( VME_CRATE ){ // to test puropse only....
 //-----------------------------------------------------------------------------
  void DV1718::ConfigureModule() {
 
+ }
+//-----------------------------------------------------------------------------
+ void DV1718::Log(std::ofstream & logfile) {
+ //logfile << "TEST LOG FILE FROM DV1718" << std::endl;
  }
 //-----------------------------------------------------------------------------
  void DV1718::InitModule() {
@@ -106,7 +112,7 @@ if( VME_CRATE ){ // to test puropse only....
 }
 
 //-----------------------------------------------------------------------------
- void DV1718::ShowData(DGDisplay *fDisplay) {
+ void DV1718::ShowData(DGDisplay *fDisplay, DMultiGrid *fMultiGrid) {
     
     //printf("Scaler value = %d\n", m_Value);
     //m_Value = 0;

@@ -1,5 +1,6 @@
 #include "DMultiGrid.h"
-   
+#include <sys/time.h>  
+ 
 ClassImp(DMultiGrid)
 
 using namespace std;
@@ -10,12 +11,26 @@ extern std::string g_Path;
   // Create objects corresponding to VME modules, and store the pointers 
   // to these objects on the object array *fModuleList.
 
-  std::cout<<"constructing DMultiGrid\n";
+  fLog = new std::ofstream("MGlog.txt", std::ios::out|std::ios::app);
+
+  if (!fLog) {
+    std::cout << "[ERROR] log file cannot be opened, exit" << std::endl;
+    exit(0);
+  }
+
+  m_StartAcqTime = std::time(NULL);
+  std::string s1 = ctime(&m_StartAcqTime);
+  *fLog << s1.substr(0, s1.length()-1) << " ----- szaba has started" << endl;
+  *fLog << "\t\t\t" << " ----- constructing modules:" << endl;
+  std::cout<<"[MESSAGE] szaba has started\n";
+  std::cout<<"[MESSAGE] constructing modules:\n";
   
   fModuleList = new TObjArray();
 
   fModuleList->Add(fDV1718  = new DV1718((char*)"VME_USB_Bridge",   0x00000000));
   fModuleList->Add(fDMadc32  = new DMadc32((char*)"MultiGrid",   0xd0000000));
+  std::cout << "[MESSAGE] number of modules:      " << fModuleList->GetLast()+1 << std::endl;
+  *fLog << "\t\t\t" << " ----- number of modules:      " << fModuleList->GetLast()+1 << std::endl;
 
   m_Status 		= 0;
   m_Timerout 		= 1;
@@ -37,11 +52,11 @@ extern std::string g_Path;
   m_HistogramSave	= 0;
   m_DataSave		= 0;
 
-  m_StartAcqTime.Set();
-  m_EndAcqTime.Set();
-
   m_ElapsedAcqTime	= 0;
-  m_PrevAcqTime		= 0;
+  m_ElapsedTimeMS	= 0;
+  m_PrevTimeMS		= 0;
+  m_CurrentTimeMS	= 0;;
+
   m_NrOfSavedFiles	= 0;
 
   m_FileName = string("data");
@@ -52,22 +67,21 @@ extern std::string g_Path;
   LoadConfig((char*)m_ConfigPath.c_str());
   SaveConfig((char*)m_ConfigPath.c_str());
 
-  fDatime = new TDatime();
-  fLog = new std::ofstream("MGlog.txt", std::ios::out|std::ios::app);
-
-  cout << "DMultiGrid::Path:       " << g_Path       << endl;
-  cout << "DMultiGrid::ConfigPath: " << m_ConfigPath << endl;
-  cout << "DMultiGrid::DataPath:   " << m_DataPath   << endl;
-  cout << "DMultiGrid::FileName:   " << m_FileName   << endl;
-  cout << "Nr of Mudule(s) instaled" << fModuleList->GetLast()+1 << endl;
 }
 //-----------------------------------------------------------------------------
    DMultiGrid::~DMultiGrid() {
-    std::cout<<"destroying DMultiGrid\n";
+
+    m_TimeNow = std::time(NULL);
+    std::string s1 = string(ctime(&m_TimeNow));
+    *fLog << "\t\t\t ----- destroing modules" << endl;
+    std::cout<<"[MESSAGE] destroing modules:\n";
+
     SaveConfig((char*)m_ConfigPath.c_str());
     fModuleList->Delete();
     delete fModuleList;
+    *fLog << s1.substr(0, s1.length()-1) << " ----- szaba has ended\n" << endl;
     delete fLog;
+    std::cout<<"[MESSAGE] szaba has ended\n";
     exit(0);
     //gApplication->Terminate(0);
 }
@@ -98,28 +112,43 @@ extern std::string g_Path;
 
  void DMultiGrid::ShowData(DGDisplay *d) {
 
+  m_CurrentTimeMS = GetTimeMS();
+  m_ElapsedTimeMS = m_CurrentTimeMS - m_PrevTimeMS;
+  
+  if (m_ElapsedTimeMS < 1000)
+      return;
+
+  std::cout << "[MESSAGE] ACQ time: " << std::difftime(std::time(NULL), m_StartAcqTime) << " s.\n"; 
+
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
-  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ShowData(d);
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ShowData(d, this);
  
   delete iter;
+  m_PrevTimeMS = m_CurrentTimeMS;
 }
 
 //-----------------------------------------------------------------------------
 void DMultiGrid::StartAcq(){
 
-  std::time_t t = std::time(NULL);
   char mbstr[100];
-  if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M", std::localtime(&t)) ) 
+  if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M", std::localtime(&m_StartAcqTime)) ) 
   SetFileTime(string(mbstr));
-  
-  *fLog << string(ctime(&t)) << " " << " ----- Start new acquisition ----- " << std::endl;
-  std::cout << string(ctime(&t)) << " " << " ----- Start new acquisition ----- " << std::endl;
-
+ 
+ 
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->Log(*fLog);
+
+  std::string s1 = string(ctime(&m_StartAcqTime));
+  *fLog     << s1.substr(0, s1.length()-1) << " ----- Start acquisition" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Start acquisition ----- " << std::endl;
+
+  iter->Reset();
+  m_StartAcqTime = std::time(NULL);
+  m_PrevTimeMS = GetTimeMS();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StartAcq();
  
   delete iter;
@@ -131,9 +160,10 @@ void DMultiGrid::StopAcq(){
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StopAcq();
  
-  std::time_t t = std::time(NULL);
-  *fLog << string(ctime(&t)) << " " << " ----- Stop new acquisition ----- " << std::endl;
-  std::cout << string(ctime(&t)) << " " << " ----- Stop new acquisition ----- " << std::endl;
+  m_TimeNow = std::time(NULL);
+  std::string s1 = string(ctime(&m_TimeNow));
+  *fLog << s1.substr(0, s1.length()-1) << " ----- Stop and quit acquisition" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop and quit acquisition ----- " << std::endl;
   delete iter;
 }
 //-----------------------------------------------------------------------------
@@ -150,6 +180,16 @@ void DMultiGrid::StopAcq(){
 
 //-----------------------------------------------------------------------------
 
+ ULong_t DMultiGrid::GetTimeMS() {
+    long time_ms;
+    struct timeval t1;
+    struct timezone tz;
+    gettimeofday(&t1, &tz);
+    time_ms = (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
+    return time_ms;
+
+ }
+//-----------------------------------------------------------------------------
  void DMultiGrid::LoadConfig(char *filename) {
 
   std::ifstream inpfile(filename, std::ios::in);
@@ -158,7 +198,8 @@ void DMultiGrid::StopAcq(){
     return;
   }
 
-  cout << "Load general configuration " << filename << endl;
+  std::cout << "[MESSAGE] Load configuration file from " << filename << endl;
+  *fLog << "\t\t\t ----- Load configuration file from " << filename << endl;
   Int_t temp;
   string line;
   string name;
@@ -222,8 +263,16 @@ void DMultiGrid::StopAcq(){
 
     } // end while loop
 
-inpfile.clear();
-inpfile.seekg (0);
+ inpfile.clear();
+ inpfile.seekg (0);
+
+  
+
+  std::cout << "[MESSAGE] path to szaba:          " << g_Path       << std::endl;
+  std::cout << "[MESSAGE] configuration file:     " << m_ConfigPath << std::endl;
+  std::cout << "[MESSAGE] stored data path:       " << m_DataPath   << std::endl;
+  std::cout << "[MESSAGE] name added to filename: " << m_FileName   << std::endl;
+
 
   TObject   *elem;
   TIterator *iter;

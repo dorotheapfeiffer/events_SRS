@@ -41,11 +41,15 @@ public:
   Int_t			m_nrFile;		// keep how many files are stored in acq mode
   Int_t		 	m_PrevEvent;
   Int_t		 	m_PrevSize;
-  
-  TDatime		m_StartAcqTime;
-  TDatime		m_EndAcqTime;
-  UInt_t		m_ElapsedAcqTime;
-  UInt_t		m_PrevAcqTime;
+ 
+
+  time_t		m_StartAcqTime; 
+  time_t		m_TimeNow;
+
+  ULong_t		m_ElapsedAcqTime;
+  ULong_t		m_ElapsedTimeMS;
+  ULong_t		m_PrevTimeMS;
+  ULong_t		m_CurrentTimeMS;
   Int_t			m_NrOfSavedFiles;
 
 
@@ -57,7 +61,6 @@ public:
   std::string		m_ConfigPath; 
   std::string		m_DataPath; 
   std::ofstream         *fLog;                  // log-file stream pointer
-  TDatime		*fDatime;
 
 public:
   DMultiGrid();
@@ -72,16 +75,17 @@ public:
   void StartAcq();
   void StopAcq();
 
-  void ReadVME();                        // read VME data from module to the class objects
-  void ShowData(DGDisplay *);            // do online analysis and fill histograms 
-  void DataSave();                       // save data to file
+  void ReadVME();                           // read VME data from module to the class objects
+  void ShowData(DGDisplay *display = NULL); // do online analysis and fill histograms 
+  void DataSave();                          // save data to file
   void SetFileName(std::string filename) { m_FileName = filename; }
   void SetFileTime(std::string filename) { m_FileTime = filename; }
   void SetDataPath(std::string datapath) { m_DataPath = datapath; }
 
-  std::string GetFileName(){ return m_FileName; }
-  std::string GetFileTime(){ return m_FileTime; }
-  std::string Trim(std::string const& source, char const* delims = " \t\r\n" ); 
+  ULong_t		GetTimeMS();
+  std::string 		GetFileName(){ return m_FileName; }
+  std::string 		GetFileTime(){ return m_FileTime; }
+  std::string 		Trim(std::string const& source, char const* delims = " \t\r\n" ); 
 
   ClassDef(DMultiGrid,1)  		// MultiGrid readout 
 };

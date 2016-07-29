@@ -79,7 +79,7 @@ Int_t adc2pos(Int_t bin){
 //=====================================================================================================
 
 
-void readBin( char* filename) {
+void readBin(const char* filename) {
 
 //====================================================================================================
    const Int_t size = 65;
@@ -93,7 +93,6 @@ void readBin( char* filename) {
    for (Int_t nri = 0; nri < 65; nri++){ 
        taby[nri] = 100.;  
        }
-
 
    TH1F *adc1 = new TH1F("adc1", "adc1", 2000, 0, 4000);
    TH1F *adc2 = new TH1F("adc2", "adc2", 2000, 0, 4000);
@@ -152,7 +151,7 @@ void readBin( char* filename) {
         adc8->Fill(m_value_adc[7]);  
 
         tts->Fill(m_value_adc[32]);  
-
+        cout << m_value_adc[32] << endl;
         }
        
        

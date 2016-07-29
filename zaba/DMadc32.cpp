@@ -95,8 +95,8 @@ return strBin;
 //*****************************************************************************
  DMadc32::DMadc32(Char_t *mdesc, UInt_t addr) : 
        DModule((char*)"Pulse sensitive digitizer",(char*)"Mesytec Madc-32",mdesc,addr) {
-	       std::cout<<"constructing DMadc32\n";
 
+  std::cout<<"\t+ module Madc32...\n";
 
   m_BaseAddress = 0x0;
   m_ModuleID	= 0x6004;
@@ -105,7 +105,6 @@ return strBin;
   m_dataSizeByte= 0;
   m_Events	= 0;
   m_IRQ		= 0;
-
 
   //clear the buffer
   for(Int_t i = 0; i < 810*1024*1024; i++)
@@ -126,9 +125,9 @@ return strBin;
   m_GateOutput		= 0;
 
   VME_CRATE = 1;
- std::cout << "VME_CRATE (0)- simulation (1) - real instrument, VME_CRATE = " << VME_CRATE << endl; 
- std::cout << "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay 
-           << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
+  //std::cout << "VME_CRATE (0)- simulation (1) - real instrument, VME_CRATE = " << VME_CRATE << endl; 
+  //std::cout << "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay 
+  //         << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
 
   if( VME_CRATE ){ // to test puropse only....
      CAENVME_SystemReset(m_VMEBridge);
@@ -138,17 +137,19 @@ return strBin;
      // Set the module ID
      Int_t address = m_BaseAddress + m_ModuleID;
      Int_t data = 1;
-     printf("CAENVME_WriteCycle: Set Module Id = 1\n");
+     //printf("CAENVME_WriteCycle: Set Module Id = 1\n");
      Int_t ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
      if(ret) return;
+     else {
+       std::cout << "\t\t- Madc32 access OK\n";
+     }
    }
 
-
-std::cout << "end of constructor\n";
+  std::cout << "\t\t- construction Madc32 done!\n";
 }
 //-----------------------------------------------------------------------------
  DMadc32::~DMadc32() {
-  std::cout<<"destroying DMadc32\n";
+  std::cout<<"\t+ module Madc32\n";
 
   if( VME_CRATE ){ // to test puropse only....
       CAENVME_End(m_Handle);
@@ -174,22 +175,22 @@ if( VME_CRATE ){ // to test puropse only....
   // stop acquisition
  address = m_BaseAddress + 0x603A;
  data = 0x0;
- printf("CAENVME_WriteCycle: Stop acquisition\n");
+ //printf("CAENVME_WriteCycle: Stop acquisition\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
  // Timestamp
  address = m_BaseAddress + 0x6038;
  data = 0x1;
- if(data == 1) printf("CAENVME_WriteCycle: Set Timestamp%d\n", data);
- else if(data == 0) printf("CAENVME_WriteCycle: Set Counter%d\n", data);
+ //if(data == 1) printf("CAENVME_WriteCycle: Set Timestamp%d\n", data);
+ //else if(data == 0) printf("CAENVME_WriteCycle: Set Counter%d\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
  
  // set multi event register
  address = m_BaseAddress + 0x6036;
  data = 0x3;
- printf("CAENVME_WriteCycle: Set Multi event = %d\n", data);
+ //printf("CAENVME_WriteCycle: Set Multi event = %d\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -197,7 +198,7 @@ if( VME_CRATE ){ // to test puropse only....
  // Initialize IRQ - emit irq when more than 20 words in FIFO
  address = m_BaseAddress + 0x6018;
  data = 10;
- printf("CAENVME_WriteCycle: Initialize IRQ, emit irq when more than %d words in FIFO\n", data);
+ //printf("CAENVME_WriteCycle: Initialize IRQ, emit irq when more than %d words in FIFO\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -205,7 +206,7 @@ if( VME_CRATE ){ // to test puropse only....
  // max transfer data
  address = m_BaseAddress + 0x601A;
  data = 1000;
- printf("CAENVME_WriteCycle: Max transfer data to %d\n", data);
+ //printf("CAENVME_WriteCycle: Max transfer data to %d\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -213,7 +214,7 @@ if( VME_CRATE ){ // to test puropse only....
  // Initialize IRQ - irq vector
  address = m_BaseAddress + 0x6012;
  data = 0x0;
- printf("CAENVME_WriteCycle: Initialize IRQ vector = %d\n", data);
+ //printf("CAENVME_WriteCycle: Initialize IRQ vector = %d\n", data);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -221,7 +222,7 @@ if( VME_CRATE ){ // to test puropse only....
  // Initialize IRQ - irq set when event converted
  address = m_BaseAddress + 0x6010;
  data = 0x1;
- printf("CAENVME_WriteCycle: Initialize IRQ, set when event converted\n");
+ //printf("CAENVME_WriteCycle: Initialize IRQ, set when event converted\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -236,14 +237,14 @@ if( VME_CRATE ){ // to test puropse only....
 
  // ignore threshold
  address = m_BaseAddress + 0x604C;
- if (m_IgnoreThreshold) printf("CAENVME_WriteCycle: Ignore thresholds\n");
- else                   printf("CAENVME_WriteCycle: Thresholds will be set individualy\n");
+ //if (m_IgnoreThreshold) printf("CAENVME_WriteCycle: Ignore thresholds\n");
+ //else                   printf("CAENVME_WriteCycle: Thresholds will be set individualy\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_IgnoreThreshold, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
  // ADC resolution
  address = m_BaseAddress + 0x6042;
- printf("CAENVME_WriteCycle: Set ADC resolution to %d\n", m_ADCResolution);
+ //printf("CAENVME_WriteCycle: Set ADC resolution to %d\n", m_ADCResolution);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_ADCResolution, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -260,35 +261,35 @@ if( VME_CRATE ){ // to test puropse only....
  //std::cout<< "INIT m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
  // Gate generator output at busy output
  address = m_BaseAddress + 0x606E;
- printf("CAENVME_WriteCycle: Gate generator output monitoring at the NIM_busy %d\n", m_GateOutput);
+ //printf("CAENVME_WriteCycle: Gate generator output monitoring at the NIM_busy %d\n", m_GateOutput);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_GateOutput, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
 
  // internal gate generator delay0
  address = m_BaseAddress + 0x6050;
- printf("CAENVME_WriteCycle: Gate generator delay = %d\n", m_GateDelay);
+ //printf("CAENVME_WriteCycle: Gate generator delay = %d\n", m_GateDelay);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_GateDelay, cvA32_U_DATA, cvD16) );
  if(ret) return;
  
 
  // internal gate generator width 
  address = m_BaseAddress + 0x6054;
- printf("CAENVME_WriteCycle: Gate generator width %d\n", m_GateWidth);
+ //printf("CAENVME_WriteCycle: Gate generator width %d\n", m_GateWidth);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_GateWidth, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
  
  // internal gate generator 
  address = m_BaseAddress + 0x6058;
- printf("CAENVME_WriteCycle: Internal gate generator %d\n", m_GateGenerator);
+ //printf("CAENVME_WriteCycle: Internal gate generator %d\n", m_GateGenerator);
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &m_GateGenerator, cvA32_U_DATA, cvD16) );
  if(ret) return;
  
 // reset tts
  address = m_BaseAddress + 0x606C;
  data = 0x1;
- printf("CAENVME_WriteCycle: Reset Trigger Time Stamp, (NIM_fc_reset)\n");
+ //printf("CAENVME_WriteCycle: Reset Trigger Time Stamp, (NIM_fc_reset)\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -317,7 +318,7 @@ address = m_BaseAddress + 0x4000;
  // buffer initialization, reset
  address = m_BaseAddress + 0x603C;
  data = 0x0;
- printf("CAENVME_WriteCycle: Reset FIFO buffer\n");
+ //printf("CAENVME_WriteCycle: Reset FIFO buffer\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
@@ -325,14 +326,14 @@ address = m_BaseAddress + 0x4000;
  // readout reset register
  address = m_BaseAddress + 0x6034;
  data = 0x0;
- printf("CAENVME_WriteCycle: Reset readout register\n");
+ //printf("CAENVME_WriteCycle: Reset readout register\n");
  ret = CheckError( CAENVME_WriteCycle(m_VMEBridge, address, &data, cvA32_U_DATA, cvD16) );
  if(ret) return;
 
  
  } // end of VME_CRATE
 
- printf("Initialization Madc32 module done!\n");
+ //printf("Initialization Madc32 module done!\n");
 
 
  }
@@ -462,8 +463,6 @@ if( VME_CRATE ){ // to test puropse only....
 //-----------------------------------------------------------------------------
 void DMadc32::StartAcq(){
 
- 
- cout << "DMadc32::StartAcq()" << endl;
  ShowSettings();
  InitModule(); 
 
@@ -478,7 +477,6 @@ void DMadc32::StartAcq(){
 
 //-----------------------------------------------------------------------------
 void DMadc32::StopAcq(){
- cout << "DMadc32::StopAcq()" << endl;
  unsigned int address = m_BaseAddress + 0x603A;
  unsigned data = 0x0;
  if( VME_CRATE ){
@@ -487,8 +485,44 @@ void DMadc32::StopAcq(){
    if(ret) return;
    }
 }
+
 //-----------------------------------------------------------------------------
- void DMadc32::ShowData(DGDisplay *fDisplay) {
+ void DMadc32::Log(std::ofstream & logfile) {
+
+  logfile << "\t\t\t ----- Madc32::Settings" << std::endl;
+  logfile << "\t\t\t     + m_IgnoreThreshold: "<< m_IgnoreThreshold << std::endl;
+  logfile << "\t\t\t     + chn:   value    chn:   value"<< std::endl;
+  for(Int_t i = 0; i < 16; i++){
+    logfile << "\t\t\t     + ch["<< i    << "] " << m_ThresholdOn[i]    << ": " << m_ThresholdValue[i] 
+            << "\t["  << i+16 << "] " << m_ThresholdOn[i+16] << ": " << m_ThresholdValue[i+16] << std::endl;
+    }
+  logfile << "\t\t\t     + m_GateGenerator: " << m_GateGenerator   << std::endl;
+  logfile << "\t\t\t     + m_GateDelay    : " << m_GateDelay       << std::endl;
+  logfile << "\t\t\t     + m_GateWidth    : " << m_GateWidth       << std::endl;
+  logfile << "\t\t\t     + m_GateOutput   : " << m_GateOutput      << std::endl;
+  logfile << "\t\t\t     + m_ADCResolution: " << m_ADCResolution   << std::endl;
+
+ }
+
+//-----------------------------------------------------------------------------
+ void DMadc32::ShowData(DGDisplay *fDisplay, DMultiGrid *fMultiGrid) {
+
+  static UInt_t Nb, Ne, prevNe, prevNb;
+
+  Nb += GetDataSize();
+  Ne  = GetNrEvents();
+
+  if (!Nb)
+     std::cout << "\t+ No data...\n";
+  else{
+     std::cout << "\t+ Reading: " << setw(5) << (float)(Nb-prevNb) / ((float)fMultiGrid->m_ElapsedTimeMS*1.048576f) << " MB/s, " 
+               << "Trg Rate: " << (float)(Ne-prevNe) / (float)fMultiGrid->m_ElapsedTimeMS << "kHz, " 
+	       << "Total events:" << m_Events <<  std::endl; 
+  }
+
+  prevNe = Ne;
+  prevNb = Nb;
+
 
   bool DEBUG_SHOW_DATA = 0;
 
@@ -530,21 +564,23 @@ void DMadc32::StopAcq(){
    if(DEBUG_SHOW_DATA) printf("--------\n");
 
   
-   // fill histograms
+   // fill histograms only in GUI version when fDisplay is not NULL
+   if(fDisplay){ 
+      fDisplay->hPh[0]->Fill(value[0]);
+      fDisplay->hPosition[0]->Fill(value[1]);
+
+      fDisplay->hPh[1]->Fill(value[2]);
+      fDisplay->hPosition[1]->Fill(value[3]);
    
-   fDisplay->hPh[0]->Fill(value[0]);
-   fDisplay->hPosition[0]->Fill(value[1]);
+      fDisplay->hPh[2]->Fill(value[4]);
+      fDisplay->hPosition[2]->Fill(value[5]);
 
-   fDisplay->hPh[1]->Fill(value[2]);
-   fDisplay->hPosition[1]->Fill(value[3]);
-   
-   fDisplay->hPh[2]->Fill(value[4]);
-   fDisplay->hPosition[2]->Fill(value[5]);
+      fDisplay->hPh[3]->Fill(value[6]);
+      fDisplay->hPosition[3]->Fill(value[7]);
 
-   fDisplay->hPh[3]->Fill(value[6]);
-   fDisplay->hPosition[3]->Fill(value[7]);
+      fDisplay->hTTS->Fill(tts);
+      }
 
-   fDisplay->hTTS->Fill(tts);
    }
 
  }
@@ -562,15 +598,17 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    Bool_t m_saveAfterSize = kFALSE; // variable to check if the buffer size reach the max size 
    Bool_t m_saveAfterTime = kFALSE; // variable to check if the time elapsed to save file every sec/min/hour
 
+   static UInt_t m_fileEvents = 0; // temporary value to keep the nr of events per file needed for logfile
+
    gCurrentTimeADC = gGetLongTimeADC() / 1000;              // check the current time
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
-   //memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
-   memcpy(m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   //memcpy(m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
    m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
 
    // ==========================================================================
-   // check if the buffer is full and need to be writen to file
+   // check if the buffer is full and has to be writen to file
    if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
        }
@@ -593,8 +631,6 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
     char nr[256];
     sprintf(nr, "%03d", fMultiGrid->m_NrOfSavedFiles);
 
-
-
     //std::time_t t = std::time(NULL);
     //char mbstr[100];
     //if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M_", std::localtime(&t))) {
@@ -604,26 +640,32 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
     string filename = fMultiGrid->m_DataPath + string("/") + fMultiGrid->GetFileTime() 
 	   + string("_") + fMultiGrid->GetFileName() + string("_") + string(nr) + string(".bin");    
 
+    // take the time now
+    fMultiGrid->m_TimeNow = std::time(NULL);
+    std::string s1 = string(ctime(&fMultiGrid->m_TimeNow));
 
     std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
     if(!DataFile.is_open()) {
-       std::cout << "ERROR could not open the file... " << filename << std::endl;
+       std::cout << "[ ERROR ] could not open the file... " << filename << std::endl;
+       *fMultiGrid->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
        }
     else {
        DataFile.write((char*)m_Buffer, m_BufferPos); 
        DataFile.close();
+       *fMultiGrid->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
+       *fMultiGrid->fLog << "\t\t\t\tAcq time: " << fMultiGrid->m_TimeNow - fMultiGrid->m_StartAcqTime << "s, " 
+                         << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+       std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
+       std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
       }
 
-     std::time_t t = std::time(NULL);
-     *fMultiGrid->fLog << string(ctime(&t)) << " " << "New file [" << filename<< "] has been created and saved\n"; 
-     *fMultiGrid->fLog << "\t\ttotal number of events: " << m_Events << std::endl;
  // ===============================================================================
  // some cleaning after saving and writing message to the std output
     m_BufferPos = 0;
+    m_fileEvents = m_Events;
     fMultiGrid->m_NrOfSavedFiles++;
     gPrevRateTimeADC = gCurrentTimeADC;
-    std::cout << "[MESSAGE] data file [" << filename << "] has saved " << std::endl;
-    std::cout << "          Nr Events= " << m_Events << std::endl;
+
     }
 
 }
@@ -638,20 +680,19 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 }
 //*****************************************************************************
 void DMadc32::ShowSettings() {
-  std::cout << "======= DMadc32::ShowSettings =======" << std::endl; 
+  std::cout << "[MESSAGE] ======= DMadc32::ShowSettings =======" << std::endl; 
 
-  std::cout << "m_IgnoreThreshold: "<< m_IgnoreThreshold << std::endl; 
-  std::cout << " chn:   value    chn:   value"<< std::endl; 
+  std::cout << "\tm_IgnoreThreshold: "<< m_IgnoreThreshold << std::endl; 
+  std::cout << "\tchn:   value    chn:   value"<< std::endl; 
   for(Int_t i = 0; i < 16; i++){
-    std::cout << "ch["<< i << "] " << m_ThresholdOn[i] << ": " << m_ThresholdValue[i] << "\t[" << i+16 << "] " << m_ThresholdOn[i+16] << ": " << m_ThresholdValue[i+16] << std::endl; 
+    std::cout << "\tch["<< i << "] " << m_ThresholdOn[i] << ": " << m_ThresholdValue[i] << "\t[" << i+16 << "] " << m_ThresholdOn[i+16] << ": " << m_ThresholdValue[i+16] << std::endl; 
     //std::cout << i << ": "<< m_ThresholdValue[i] << "   " << i+16 << " " << m_ThresholdValue[i+16] << std::endl; 
   }
-  std::cout << "m_GateGenerator: " << m_GateGenerator   << std::endl; 
-  std::cout << "m_GateDelay    : " << m_GateDelay       << std::endl; 
-  std::cout << "m_GateWidth    : " << m_GateWidth       << std::endl; 
-  std::cout << "m_GateOutput   : " << m_GateOutput      << std::endl; 
-  std::cout << "m_ADCResolution: " << m_ADCResolution   << std::endl; 
-  std::cout << "m_: " << m_ADCResolution   << std::endl; 
+  std::cout << "\tm_GateGenerator: " << m_GateGenerator   << std::endl; 
+  std::cout << "\tm_GateDelay    : " << m_GateDelay       << std::endl; 
+  std::cout << "\tm_GateWidth    : " << m_GateWidth       << std::endl; 
+  std::cout << "\tm_GateOutput   : " << m_GateOutput      << std::endl; 
+  std::cout << "\tm_ADCResolution: " << m_ADCResolution   << std::endl; 
   std::cout << "=====================================\n"<< std::endl; 
 }
 
@@ -703,8 +744,7 @@ void DMadc32::ShowSettings() {
 //==================================================================================
  void DMadc32::LoadConfig(std::ifstream & inpfile){
  
-  cout << "Load configuration file MADC-32......" << endl;  
-
+  cout << "[MESSAGE] Load configuration file MADC-32......" << endl;  
   Int_t temp;
   string line;
   string name;

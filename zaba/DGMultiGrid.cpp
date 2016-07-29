@@ -410,7 +410,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
     fAcqEventSecEntryField->SetNumber( fMultiGrid->m_AcqStatusEntry3 );
     fAcqDataTraEntryField->SetNumber(  fMultiGrid->m_AcqStatusEntry4 );
     fMultiGrid->m_ElapsedAcqTime = 0;
-    fMultiGrid->m_StartAcqTime.Set();
+    fMultiGrid->m_StartAcqTime = std::time(NULL);
     }
   else{  				// ACQ MODE
     fRunButton->SetEnabled(kFALSE);
@@ -427,7 +427,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
     fAcqEventSecEntryField->SetNumber( fMultiGrid->m_AcqStatusEntry3 );
     fAcqDataTraEntryField->SetNumber(  fMultiGrid->m_AcqStatusEntry4 );
     fMultiGrid->m_ElapsedAcqTime = 0;
-    fMultiGrid->m_StartAcqTime.Set();
+    fMultiGrid->m_StartAcqTime = std::time(NULL);
     }
 
 }
@@ -514,9 +514,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 //-----------------------------------------------------------------------------
 
  void DGMultiGrid::RefreshStatus(){
-     fMultiGrid->m_EndAcqTime.Set();
-     UInt_t m_TimeNow = fMultiGrid->m_EndAcqTime.Convert();
-     fMultiGrid->m_ElapsedAcqTime = m_TimeNow - fMultiGrid->m_StartAcqTime.Convert();
+     fMultiGrid->m_TimeNow = std::time(NULL);
+     fMultiGrid->m_ElapsedAcqTime = (fMultiGrid->m_TimeNow) - (fMultiGrid->m_StartAcqTime);
 
      TDatime acqtime(fMultiGrid->m_ElapsedAcqTime);
 
@@ -597,8 +596,9 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   fi.fFileTypes = (const char **)filetypes;
 
 
-  fMultiGrid->fDatime->Set();
-  *fMultiGrid->fLog << fMultiGrid->fDatime->AsString() << "........";
+  fMultiGrid->m_TimeNow = std::time(NULL);
+  std::string s1 = std::string(ctime(&fMultiGrid->m_TimeNow));
+  *fMultiGrid->fLog << s1 << " ----- ";
 
   switch(GET_MSG(msg)) {
 
@@ -662,29 +662,29 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
         case eStopAfterSecCB:
           fStopAfterFileCB->SetState(EButtonState(0));
           fStopAfterEventsCB->SetState(EButtonState(0));
-	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] sec\n "; 
+	  *fMultiGrid->fLog << "\tSet stop Acq parameter after [...] sec\n "; 
 	  std::cout << "Set stop Acq parameter after [...] sec\n ";
         break;
         case eStopAfterFileCB:
           fStopAfterSecCB->SetState(EButtonState(0));
           fStopAfterEventsCB->SetState(EButtonState(0));
-	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] files\n " ;
+	  *fMultiGrid->fLog << "\tSet stop Acq parameter after [...] files\n " ;
 	  std::cout << "Set stop Acq parameter after [...] files \n";
         break;
         case eStopAfterEventsCB:
           fStopAfterSecCB->SetState(EButtonState(0));
           fStopAfterFileCB->SetState(EButtonState(0));
-	  *fMultiGrid->fLog << "Set stop Acq parameter after [...] events\n ";
+	  *fMultiGrid->fLog << "\tSet stop Acq parameter after [...] events\n ";
 	  std::cout << "Set stop Acq parameter after [...] events \n";
         break;
         case eSaveFileSizeCB:
           fSaveSizeEntry->SetState(fSaveSizeCB->GetState());
-	  *fMultiGrid->fLog << "Set SaveFileSize parameter after [...] file size\n ";
+	  *fMultiGrid->fLog << "\tSet SaveFileSize parameter after [...] file size\n ";
 	  std::cout << "Set SaveFileSize parameter after [...] file size\n ";
         break;
         case eSaveFileTimeCB:
           fSaveTimeEntry->SetState(fSaveTimeCB->GetState());
-	  *fMultiGrid->fLog << "Set SaveFileTime parameter after [...] file number\n";
+	  *fMultiGrid->fLog << "\tSet SaveFileTime parameter after [...] file number\n";
 	  std::cout << "Set SaveFileTime parameter after [...] file number\n";
         break;
         default:
@@ -701,16 +701,16 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fTick = 0;
               fMultiGrid->StartAcq();
               fTimer->TurnOn();
-	      *fMultiGrid->fLog << "program RUN ";
-	      std::cout << "program RUN " << fMultiGrid->m_Status << fMultiGrid->fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "\tClick button RUN, program in mode: " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "Click button RUN, program in mode: " << fMultiGrid->m_Status << std::endl;
               }
            else{              
               fMultiGrid->m_Status = 0;
               fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
-	      *fMultiGrid->fLog << "program STOP ";
-	      std::cout << "program STOP " << fMultiGrid->m_Status << fMultiGrid->fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "\tClick button STOP, program in mode: " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "Click button STOP, program in mode: " << fMultiGrid->m_Status << std::endl;
              }
 
         break;
@@ -735,8 +735,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fTick = 0;
               fMultiGrid->StartAcq();
               fTimer->TurnOn();
-	      *fMultiGrid->fLog << "Acqisition START ";
-	      std::cout << "Acqisition START " << fMultiGrid->fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "\tClick button ACQ/Start, program in mode: " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "Click button ACQ/Start, program in mode: " << fMultiGrid->m_Status << std::endl;
               }
            else{ 
               fMultiGrid->m_DataSave = 0;
@@ -744,16 +744,16 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
               fMultiGrid->StopAcq();
               fTimer->TurnOff();
               fTick = 0;
-	      *fMultiGrid->fLog << "Acqisition STOP ";
-	      std::cout << "Acqisition STOP " << fMultiGrid->fDatime->AsString() << std::endl;
+	      *fMultiGrid->fLog << "\tClick button ACQ/Stop, program in mode: " << fMultiGrid->m_Status << std::endl;
+	      std::cout << "Click button ACQ/Stop, program in mode: " << fMultiGrid->m_Status << std::endl;
               } 
         break;
 
         case eDisplayButton:
            if(fMultiGrid->m_Display == 1) { fMultiGrid->m_Display = 0; fDisplayButton->SetText("DISPLAY OFF");}
            else { fMultiGrid->m_Display = 1; fDisplayButton->SetText("DISPLAY ON");}
-	   *fMultiGrid->fLog << "Display ON/OFF";
-	   std::cout << "Display ON/OFF" << fMultiGrid->fDatime->AsString() << std::endl;
+	   *fMultiGrid->fLog << "\tClick button DISPLAY ON/OFF: " << fMultiGrid->m_Display << std::endl;
+	   std::cout << "Click button DISPLAY ON/OFF: " << fMultiGrid->m_Display << std::endl;
         break;
 
         case eResetButton:
@@ -763,8 +763,8 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
             if( ret )  
               fGDisplay->Reset();
  
-	    *fMultiGrid->fLog << "Reset all histograms ";
-	    std::cout << "Reset all histograms " << fMultiGrid->fDatime->AsString() << std::endl;
+	    *fMultiGrid->fLog << "\tReset all histograms ";
+	    std::cout << "Reset all histograms " << std::endl;
         break;
 
         default:
