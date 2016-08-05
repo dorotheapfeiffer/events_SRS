@@ -17,16 +17,13 @@ using namespace std;
 class UserClass : public TObject {
 
 private:
-	TObjArray       *mSignalList;
-	TString		mName;			// string to keep the output result file name (only core) will be added _CD_SUM, _CD_MAX or _IND 
-	TH1F		*m_GridAmplitude;	// histograms for keeping grid amlitude
-	TH1F		*m_GridPosition;	// histograms for wires position
-	TH1F		*m_WireAmplitude;	// histograms for keeing position amplitude
-	TH1F		*m_WirePosition;	// histograms for strips position
-	TH2F		*m_2DView;		// histograms 2D for imagine
-	TGraph		*m_TTS;			// graph for trigger time stamp
+	TObjArray       m_SignalList;
+	TString		m_Name;			// string to keep the output result file name (only core) will be added _CD_SUM, _CD_MAX or _IND 
+	TH1F		*m_ADC[32];		// histograms for keeping grid amlitude
+	TH1F		*m_tts;		// histograms for keeping grid amlitude
 
-	Int_t		mMode;
+	Int_t		m_Mode;
+	Int_t		m_NrADC;
 
 public:
 	UserClass(){}
@@ -37,10 +34,11 @@ public:
 	virtual void 	SignalProcessing(AEvent &);
 
 		void 	DrawCanvas(Int_t);
+		void 	UpdateCanvas();
 		Int_t	adc2pos(Int_t);
 
-	TCanvas		*c;
-	TCanvas		*c_2DV;
+	TCanvas		c1;
+	TCanvas		c2;
 
 ClassDef(UserClass, 0)
 };

@@ -102,7 +102,7 @@ void readBin(const char* filename) {
    TH1F *adc6 = new TH1F("adc6", "adc6", 2000, 0, 4000);
    TH1F *adc7 = new TH1F("adc7", "adc7", 2000, 0, 4000);
    TH1F *adc8 = new TH1F("adc8", "adc8", 2000, 0, 4000);
-   TH1F *tts  = new TH1F("tts", "pos", 1000000, 10, 1000000000);
+   TH1F *tts  = new TH1F("tts", "tts", 100000, 10, 300000);
 
    //Bool_t DEBUG = kTRUE;
    Bool_t DEBUG = kFALSE;
@@ -151,7 +151,7 @@ void readBin(const char* filename) {
         adc8->Fill(m_value_adc[7]);  
 
         tts->Fill(m_value_adc[32]);  
-        cout << m_value_adc[32] << endl;
+        //cout << m_value_adc[32] << endl;
         }
        
        
@@ -167,22 +167,24 @@ void readBin(const char* filename) {
   printf("read %d words, wrong = %d\n", i, wrong);
   fclose(f); 
 
-  TCanvas *c = new TCanvas("c","c",800, 600);
   TCanvas *c1 = new TCanvas("c1","c1",800, 600);
-  c->Divide(4,2);
-  //...............
-  c->cd(1); adc1->Draw(); gPad->SetLogy();
-  c->cd(2); adc2->Draw(); gPad->SetLogy();
-  c->cd(3); adc3->Draw(); gPad->SetLogy();
-  c->cd(4); adc4->Draw(); gPad->SetLogy();
-  c->cd(5); adc5->Draw(); gPad->SetLogy();
-  c->cd(6); adc6->Draw(); gPad->SetLogy();
-  c->cd(7); adc7->Draw(); gPad->SetLogy();
-  c->cd(8); adc8->Draw(); gPad->SetLogy();
-  //...............
-  c->cd();
-  c1->cd();
   tts->Draw();
+  TCanvas *c2 = new TCanvas("c2","c2",800, 400);
+  c2->Divide(4,2);
+  //...............
+  c2->cd(1); adc1->Draw(); gPad->SetLogy();
+  c2->cd(2); adc2->Draw(); gPad->SetLogy();
+  c2->cd(3); adc3->Draw(); gPad->SetLogy();
+  c2->cd(4); adc4->Draw(); gPad->SetLogy();
+  c2->cd(5); adc5->Draw(); gPad->SetLogy();
+  c2->cd(6); adc6->Draw(); gPad->SetLogy();
+  c2->cd(7); adc7->Draw(); gPad->SetLogy();
+  c2->cd(8); adc8->Draw(); gPad->SetLogy();
+  //...............
+  c2->cd();
+  c1->cd();
+  c1->Modified(); c1->Update();
+  c2->Modified(); c2->Update();
   
 //////////////////////////////////////////////////////////////////
 // pos = 22mV/bin + 460(fixed_offset_adc) + 355*address;

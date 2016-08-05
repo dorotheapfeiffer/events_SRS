@@ -35,10 +35,10 @@ $(DICT): $(HEADERS) zabaLinkDef.h
 $(TARGET):$(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
 
-$(TARGET2):$(OBJECTS2)
+$(TARGET2):$(OBJECTS2) $(OBJECTS)
 
 	$(CC) $(CFLAGS) $(OBJECTS2) DMultiGrid.o DModule.o DV1718.o DDataSave.o DGHelp.o DGModule.o DGMultiGrid.o DGMadc32.o DGV1718.cpp DGDisplay.o zabaDict.o\
  $(ROOTCFLAGS) $(ROOTLIBS) $(ROOTGLIBS) $(LFLAGS) -o $@
 
 clean:
-	rm -f *.o *Dict* $(TARGET)
+	rm -f *.o *Dict* $(TARGET) $(TARGET2) *log.txt

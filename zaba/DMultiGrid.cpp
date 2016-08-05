@@ -7,11 +7,11 @@ using namespace std;
 extern std::string g_Path;
 
 //*****************************************************************************
- DMultiGrid::DMultiGrid() : TObject() {
+ DMultiGrid::DMultiGrid(std::string s) : TObject(), m_AcqName(s) {
   // Create objects corresponding to VME modules, and store the pointers 
   // to these objects on the object array *fModuleList.
 
-  fLog = new std::ofstream("MGlog.txt", std::ios::out|std::ios::app);
+  fLog = new std::ofstream(string(m_AcqName)+string("log.txt"), std::ios::out|std::ios::app);
 
   if (!fLog) {
     std::cout << "[ERROR] log file cannot be opened, exit" << std::endl;
@@ -28,7 +28,7 @@ extern std::string g_Path;
   fModuleList = new TObjArray();
 
   fModuleList->Add(fDV1718  = new DV1718((char*)"VME_USB_Bridge",   0x00000000));
-  fModuleList->Add(fDMadc32  = new DMadc32((char*)"MultiGrid",   0xd0000000));
+  fModuleList->Add(fDMadc32  = new DMadc32((char*)"Mesytec MADC-32",   0xd0000000));
   std::cout << "[MESSAGE] number of modules:      " << fModuleList->GetLast()+1 << std::endl;
   *fLog << "\t\t\t" << " ----- number of modules:      " << fModuleList->GetLast()+1 << std::endl;
 
@@ -58,6 +58,7 @@ extern std::string g_Path;
   m_CurrentTimeMS	= 0;;
 
   m_NrOfSavedFiles	= 0;
+  m_EmptyBuffer		= 0;
 
   m_FileName = string("data");
   m_Path = g_Path;
@@ -65,12 +66,11 @@ extern std::string g_Path;
   m_ConfigPath = g_Path + string("/zabarc"); 
 
   LoadConfig((char*)m_ConfigPath.c_str());
-  SaveConfig((char*)m_ConfigPath.c_str());
+  //SaveConfig((char*)m_ConfigPath.c_str());
 
 }
 //-----------------------------------------------------------------------------
    DMultiGrid::~DMultiGrid() {
-
     m_TimeNow = std::time(NULL);
     std::string s1 = string(ctime(&m_TimeNow));
     *fLog << "\t\t\t ----- destroing modules" << endl;
@@ -108,6 +108,46 @@ extern std::string g_Path;
  
   delete iter;
 }
+//-----------------------------------------------------------------------------
+bool DMultiGrid::CheckCondition(){
+  // stops acquisition after certain number of events set by the user
+  if(m_StopAfterEventsEntry){
+     if( m_AcqStatusEntry2 >= m_StopAfterEventsEntry ){
+	 m_EmptyBuffer = 1;    
+         return kFALSE;
+       }
+     }
+
+  // stops acquisition after certain number of seconds set by the user
+  if(m_StopAfterSecEntry){
+     //std::cout << "m_ElapsedAcqTime: " << m_ElapsedAcqTime << " m_StopAfterSecEntry: " << m_StopAfterSecEntry << std::endl;
+     if( std::difftime(std::time(NULL), m_StartAcqTime) >= (UInt_t)m_StopAfterSecEntry ){
+	 m_EmptyBuffer = 1;    
+         return kFALSE;
+       }
+     }
+
+  // stops acquisition after certain number of saved files set by the user
+  if(m_StopAfterFileEntry){
+     //std::cout << "m_NrOvedFiles " << m_NrOfSavedFiles << " m_StopAfterFileEntry: " << m_StopAfterFileEntry << std::endl;
+     if( m_NrOfSavedFiles >= m_StopAfterFileEntry ){
+	 m_EmptyBuffer = 0;    
+         return kFALSE;
+       }
+     }
+
+return kTRUE;
+
+}
+//-----------------------------------------------------------------------------
+ void DMultiGrid::EmptyBuffer(int quitKB, int quitCK){
+ 
+      if( (!quitKB and quitCK) or (quitKB and m_EmptyBuffer) ){    
+	 m_EmptyBuffer=1;     
+	 DataSave();
+      }
+
+ }
 //-----------------------------------------------------------------------------
 
  void DMultiGrid::ShowData(DGDisplay *d) {

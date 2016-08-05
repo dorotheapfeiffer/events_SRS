@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
-using namespace std;
 
 /// Root Includes
 #include <TROOT.h>
@@ -19,13 +18,20 @@ using namespace std;
 #include "ATrack.h"
 #include "ASignal.h"
 
+using namespace std;
 
 ClassImp(UserClass)
 
 
 
 
-UserClass::UserClass(TString name, int mAlgorythm) {
+UserClass::UserClass(TString name, int mAlgorythm) : 
+	TObject(), 
+	m_SignalList(),
+	m_NrADC(8), 
+	c1("c1", "c1", 1000, 640),
+	c2("c2", "c2", 1000, 640)
+	{
 
  //--------------------------------------------------------------------
  // remove the full path name and keep only last part without numbering
@@ -36,17 +42,13 @@ UserClass::UserClass(TString name, int mAlgorythm) {
  name = name.Remove(name.Length()-4);
  Int_t n = name.Last('/');
  name = name.Remove(0, n+1);
- mName = name;
+ m_Name = name;
 
  //--------------------------------------------------------------------
- mSignalList = new TObjArray();
-
- c = new TCanvas("c", "c", 1000, 640);
- c->SetWindowPosition(100, 300);
-
- c_2DV = new TCanvas("c_2DV", "c_2DV", 600, 600);
- c_2DV->SetWindowPosition(200, 400);
- DrawCanvas( mAlgorythm );
+ c1.SetWindowPosition(100, 300);
+ c2.SetWindowPosition(200, 400);
+ 
+DrawCanvas( mAlgorythm );
 
 //-------------------------------------------------------------------------
 //Update canvas (reuired by ROOT)
@@ -58,57 +60,36 @@ void UserClass::DrawCanvas(Int_t m_Algorythm){
 
  
 
- c->SetTitle("...::: MultiGrid result :::..");
+ c1.SetTitle("...::: MultiGrid result :::..");
 
- mSignalList->Delete();
+ m_SignalList.Delete();
 
- c->Clear();
- c->Divide(2,2);
+ c1.Clear();
+ c1.Divide((m_NrADC + 1) / 2, 2);
  //gStyle->SetOptStat(0);
 
- m_GridAmplitude = new TH1F("GridAmplitude", "GridAmplitude", 4000, 0, 4000);
- m_WireAmplitude = new TH1F("WireAmplitude", "WireAmplitude", 4000, 0, 4000);
- m_GridPosition	 = new TH1F("GridPosition",  "GridPosition",  4000, 0, 4000);
- m_WirePosition	 = new TH1F("WirePosition",  "WirePosition",  4000, 0, 4000);
- m_2DView	 = new TH2F("2DView",  "2DView", 128, 0, 128, 128, 0, 128);
- m_TTS		 = new TGraph(10000);
+ for(Int_t i = 0; i < m_NrADC; i++){
+     char name[256];
+     sprintf(name,"adc_%d", i);
+     m_ADC[i] = new TH1F(name, name, 4000, 0, 4000);
+     }
+ m_tts  = new TH1F("tts", "tts", 100000, 10, 300000);
 
- //mSignalList->Add();
+ for(Int_t i = 0; i < m_NrADC; i++){
+     c1.cd(i+1); m_ADC[i]->Draw(); gPad->SetLogy();
+     }
 
- c->cd(1);
- m_GridAmplitude->Draw();
- gPad->SetLogy();
+ c1.cd(); c1.Modified(); c1.Update();
 
- c->cd(2);
- m_WireAmplitude->Draw();
- gPad->SetLogy();
-
- c->cd(3);
- m_GridPosition->Draw();
- gPad->SetLogy();
-
- c->cd(4);
- m_WirePosition->Draw();
- gPad->SetLogy();
-
- c->cd();
- c->Modified();
- c->Update();
-// c->cd(5);
-// m_TTS->Draw();
-
- c_2DV->SetTitle("...::: 2D view of the detector :::..");
- c_2DV->Clear();
- m_2DView->Draw("colz");
- c_2DV->Modified();
- c_2DV->Update();
+ c2.SetTitle("...::: MultiGrid Trigger Time Stamp :::..");
+ c2.cd(); m_tts->Draw(); 
+ c2.Modified(); c2.Update();
  
 }
 //============================================================
 
 UserClass::~UserClass() {
    //cout << " ((((((( destruktor )))))))" << endl;
-   delete mSignalList;
 }
 
 //============================================================
@@ -127,9 +108,15 @@ return ((float(bin)/22. + fixed_offset_adc +  355*address )  + 0.5);
 
 //============================================================
 
+void UserClass::UpdateCanvas(){
+
+       c1.cd(); c1.Modified(); c1.Update();
+       c2.cd(); c2.Modified(); c2.Update();
+}
+//============================================================
 
 void UserClass::SignalProcessing(AEvent &aEvent){
-   mSignalList->Clear();
+   m_SignalList.Clear();
 
 }
 
@@ -142,65 +129,28 @@ void UserClass::DoAnalysis(AEvent &aEvent, int _mMode) {
   static int iref = 0;
   ++iref;
 
-  Int_t nrTrack = aEvent.GetNrTracks();
-  //cout << "\nTrack = " << nrTrack << endl;
-
-  Int_t     ch[ nrTrack ];
-  UShort_t *ptr; 
-  Int_t     adc[ nrTrack ]; 
-  ULong_t   tts; 
-  UInt_t	idW, iDG;
-
-
-
-  for(Int_t i = 0; i < nrTrack; i++){
-     ch[i] = aEvent.GetTrack(i)->GetChannelNr();
-     ptr = aEvent.GetTrack(i)->GetData();
-     adc[i] = ptr[0];
+  for(Int_t i = 0; i < aEvent.GetNrTracks(); i++){
+     m_ADC[i]->Fill( *(aEvent.GetTrack(i)->GetData())  );  
     }
-
-     m_GridAmplitude->Fill( adc[0] );       // adc[1] - GA
-     m_WireAmplitude->Fill( adc[2] );       // adc[0] - WA
-     m_GridPosition->Fill(  adc[1] );       // adc[3] - GP
-     m_WirePosition->Fill(  adc[3] );       // adc[2] - WP
-     m_2DView->Fill( adc2pos(adc[1]),  adc2pos(adc[3] ) );
-
-     //tts = aEvent.GetTrack(i)->GetTimeStamp();
-     //cout << iref << "\ti= " << i << "\tch: " << ch[i] << "\tadc: " << adc[i] << endl ;
-     //cout << " adc0: " << adc[0] <<" adc[1]: " << adc[1] << " / " << adc2pos(adc[1] )
-     //     << " adc2: " << adc[2] <<  " adc3: " << adc[3] << " / " << adc2pos(adc[3] ) << endl;
-
-
+  m_tts->Fill( aEvent.GetTrack(0)->GetTimeStamp());
 
 //----------------------------------------------------------------------
 
 
-// Update histograms and canvases, every 500 events to speed up the program, refreshing every single event will slow down the program significantly
+// Update histograms and canvases, every 100000 events to speed up the program, refreshing every single event will slow down the program significantly
 //
 
-    if( !( iref % 5000)){ 
-       c->cd(1);
-       m_GridAmplitude->Draw();
-
-       c->cd(2);
-       m_WireAmplitude->Draw();
-
-       c->cd(3);
-       m_GridPosition->Draw();
-
-       c->cd(4);
-       m_WirePosition->Draw();
-
-       c_2DV->cd();
-       m_2DView->Draw("cont0"); 
-       c_2DV->Modified();
-       c_2DV->Update();
-
-
-       c->cd();
-       c->Modified();
-       c->Update(); 
-  
+    if( !( iref % 500000)){ 
+       c1.cd(1); m_ADC[0]->Draw();
+       c1.cd(2); m_ADC[1]->Draw();
+       c1.cd(3); m_ADC[2]->Draw();
+       c1.cd(4); m_ADC[3]->Draw();
+       c1.cd(5); m_ADC[4]->Draw();
+       c1.cd(6); m_ADC[5]->Draw();
+       c1.cd(7); m_ADC[6]->Draw();
+       c1.cd(8); m_ADC[7]->Draw();
+       c1.cd(); c1.Modified(); c1.Update();
+       c2.cd(); c2.Modified(); c2.Update();
      }
  
 //-----------------------------------------------------------------------

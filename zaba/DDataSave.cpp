@@ -3,10 +3,8 @@
   ClassImp(DDataSave)
 
 //-----------------------------------------------------------------------------
- DDataSave::DDataSave(DMultiGrid *multigrid) {
-  std::cout << "Constructing DDataSave" << std::endl; //ja
-
-  fMultiGrid = multigrid;
+ DDataSave::DDataSave(DMultiGrid *fMultiGrid) {
+  std::cout << "[MESSAGE] Constructing DataSave" << std::endl; //ja
 
 }
 //-----------------------------------------------------------------------------

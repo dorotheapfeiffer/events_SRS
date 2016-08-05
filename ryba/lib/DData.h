@@ -1,5 +1,5 @@
-#ifndef ReadData_h
-#define ReadData_h
+#ifndef DData_h
+#define DData_h
 
 #include "AEvent.h"
 #include "ATrack.h"
@@ -9,23 +9,23 @@
 
 
 
-class ReadData : public TObject {
+class DData : public TObject {
 
         std::vector< AEvent *>  	 allEvents;
         std::vector< AEvent *>::iterator it;
 
 
 public:
-        ReadData() 		{ std::cout << "Normal constructor called..." << std::endl; }
-        ReadData( TString ) ;
-	virtual ~ReadData();
+        DData() 		{ std::cout << "Normal constructor called..." << std::endl; }
+        DData( TString ) ;
+	virtual ~DData();
 
 	AEvent* GetEvent(Int_t nr){ return allEvents.at( nr ); }
 
         Int_t   GetNrEvents(){  return allEvents.size(); }
 
 
-ClassDef(ReadData, 1) // class to read and keep in vector actual data in memory
+ClassDef(DData, 1) // class to read and keep in vector actual data in memory
 };
 
 #endif

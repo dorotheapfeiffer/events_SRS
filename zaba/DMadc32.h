@@ -5,6 +5,8 @@
 #include "DModule.h"
 #include "CAENVMElib.h"
 
+#define MAX_BLT_SIZE (256*1024)
+
 //*****************************************************************************
 class DGDisplay;
 
@@ -15,8 +17,8 @@ private:
  Int_t			m_BaseAddress;
  Int_t			m_ModuleID;
 
- UInt_t			m_Buffer[1024*1024*810]; //810MB max buffer
- UInt_t			m_localBuffer[1024*1024*10]; //810MB max buffer
+ UInt_t			m_Buffer[MAX_BLT_SIZE]; 
+ UInt_t			m_localBuffer[MAX_BLT_SIZE]; 
  UInt_t			m_BufferPos;
  UInt_t			m_BufferSize;
 

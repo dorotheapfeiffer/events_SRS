@@ -21,3 +21,4 @@ clean:
 	   do                              \
 	    $(MAKE) --directory=$$d clean; \
 	   done
+	@ rm -f $(EXE)

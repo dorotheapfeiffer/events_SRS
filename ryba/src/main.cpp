@@ -106,7 +106,7 @@ int main( int argc, char *argv[] )
 
 	if( Files::getInstance().GetSize() ){
 		mMainWindow.SetCurrentFile(Files::getInstance().GetFile(0).Data()); 
-		mMainWindow.ReadDataFrom();
+		mMainWindow.ReadData();
 		}
 	//else if () 			// for net, not implemented yet
 	//else       			// just in case
@@ -135,20 +135,20 @@ string trim(string const& source, char const* delims) {
 //-----------------------------------------------------------------------
 
 void display_usage( void ) {
-    cout << "usage: display [OPTION]... FILES..." << endl;
+    cout << "usage: ryba [OPTION]... FILES..." << endl;
     cout << "  Start data analysis application" << endl; 
     cout << endl;
     cout << "Mandatory arguments to long options are mandatory for short options too" << endl;
-    cout << "  -d[dir],	--dir[dir]	\tset directory where display will start looking for data files" << endl;
-    cout << "  -f[name],	--files[name]	\tload file with files to analyse" << endl;
+    cout << "  -d[dir],	--dir[dir]	\tset directory with data files" << endl;
+    cout << "  -f[name],	--files[name]	\tload file with list of files to analyse" << endl;
     cout << "  		--help		\tdisplay this help message and exit" <<endl;
     cout << "  		--version	\toutput version information and exit" << endl;
     cout << "  example1:"<<endl;
-    cout << "     ./display -d/np/vdg/data \n" <<endl;
+    cout << "     ./ryba -d/home/data \n" <<endl;
     cout << "  example2:"<<endl;
-    cout << "     ./display data1.dat data2.dat data3.dat" <<endl;
+    cout << "     ./ryba data1.dat data2.dat data3.dat" <<endl;
     cout << "  example3:"<<endl;
-    cout << "     ./display -f list_data_file " <<endl;
+    cout << "     ./ryba -f list_data_file " <<endl;
 
     exit( EXIT_FAILURE );
 }

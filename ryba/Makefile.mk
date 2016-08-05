@@ -2,7 +2,7 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-APPPATH	     := /home/admin/dg_epool/ryba
+APPPATH	     := $(PWD)
 USERAPP	     := $(APPPATH)/app
 
 CC = g++ -std=c++11 -g  

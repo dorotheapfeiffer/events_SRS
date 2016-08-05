@@ -1,18 +1,18 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.7.29	15:2:26
+# the file was created:  2016.8.5	10:39:45
 # Line starts with a '#' is a comment line
 #
 #
 [GENERAL SETTINGS]
 # Stop acquisition after certain number of seconds, default 0 means acq will runn forever
 # Keep in mind that from StopAfterSec, StopAfterFile, StopAfterEvents ONLY ONE CAN BE DIFFERENT THAN 0!
-StopAfterSec 100
+StopAfterSec 0
  
 # Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
 StopAfterFile 0
  
 # Stop acquisition after certain number of Events, default 0 means acq will runn forever
-StopAfterEvents 0
+StopAfterEvents 20000
  
 # Save each file after reach the file size
 SaveFileSize 500
@@ -37,7 +37,7 @@ FileName mes1
 # There are much more but for the standard using they are not neccesary to set.
 # The parameters below are only these which you can change in the GUI.
 # Settings another parameters require adding some code and recompile. The simplest way is to edit DMadc.32.cpp
-# and in the function InitModule either uncomment or write which register and value you wan to set. Similar to what is already there.
+m_AcqStatusEntry2InitModule either uncomment or write which register and value you wan to set. Similar to what is already there.
 # For details of other settings see the documentation.
 [Mesytec Madc-32]
 BaseAddress 0
