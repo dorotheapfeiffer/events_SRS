@@ -41,6 +41,7 @@ public:
   Int_t			m_nrFile;		// keep how many files are stored in acq mode
   Int_t		 	m_PrevEvent;
   Int_t		 	m_PrevSize;
+  Int_t		 	m_EmptyBuffer;
  
 
   time_t		m_StartAcqTime; 
@@ -55,6 +56,7 @@ public:
 
   DMadc32		*fDMadc32;		// Mesytec pulse sensitive ADC
   DV1718		*fDV1718;		// Bridge VME_USB
+  std::string		m_AcqName;
   std::string		m_FileName;
   std::string		m_FileTime;
   std::string		m_Path;
@@ -63,9 +65,10 @@ public:
   std::ofstream         *fLog;                  // log-file stream pointer
 
 public:
-  DMultiGrid();
-  //DMultiGrid(bool);
+  DMultiGrid(){}
+  DMultiGrid(std::string s);
   virtual ~DMultiGrid();
+  void Exit(){std::cout << "dupa....\n"; this->~DMultiGrid();}
   void ResetModules();                   // Call ResetModule() for each VME module
   void InitModules();                    // Load the fixed part of the settings
   void LoadConfig(char *filename);             // Load the variable part of settings from file
@@ -74,6 +77,7 @@ public:
 
   void StartAcq();
   void StopAcq();
+  void EmptyBuffer(int, int );
 
   void ReadVME();                           // read VME data from module to the class objects
   void ShowData(DGDisplay *display = NULL); // do online analysis and fill histograms 
@@ -81,6 +85,7 @@ public:
   void SetFileName(std::string filename) { m_FileName = filename; }
   void SetFileTime(std::string filename) { m_FileTime = filename; }
   void SetDataPath(std::string datapath) { m_DataPath = datapath; }
+  bool 			CheckCondition();
 
   ULong_t		GetTimeMS();
   std::string 		GetFileName(){ return m_FileName; }

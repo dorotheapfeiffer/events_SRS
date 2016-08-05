@@ -28,9 +28,11 @@ Int_t VME_CRATE = 1;
 
 int main(int argc, char **argv) {
 
- g_Path = exec((char*)"pwd");
+ g_Path = string(get_current_dir_name());	 
+ std::cout << "path = " << g_Path << endl;
+ //g_Path = exec((char*)"pwd");
 
- DMultiGrid	*dMultiGrid = new DMultiGrid();
+ DMultiGrid	*dMultiGrid = new DMultiGrid("MultiGrid");
 
  //DV1718		*dV1718 = new DV1718();	
  //DMadc32		*dMadc32 = new DMadc32();	
@@ -38,8 +40,10 @@ int main(int argc, char **argv) {
  //dMultiGrid->LoadConfig((char*)"zabarc");
  dMultiGrid->StartAcq();
 
- while( CheckKeyboard() ){
+ int quitKB = 1;
+ int quitCK = 1;
 
+ while( (quitKB = CheckKeyboard()) and (quitCK = dMultiGrid->CheckCondition())){
    dMultiGrid->ReadVME(); 
    dMultiGrid->DataSave();
    dMultiGrid->ShowData(NULL);
@@ -48,7 +52,9 @@ int main(int argc, char **argv) {
 
  }
 
+ std::cout << "[DEBUG] main quitKB = " << quitKB <<  ", quitCK = " << quitKB << std::endl; 
  dMultiGrid->StopAcq();
+ dMultiGrid->EmptyBuffer(quitKB, quitCK);
  delete dMultiGrid;
 
 return 0;

@@ -9,20 +9,17 @@
 
 
 // Root Includes
-#include "ReadData.h"
+#include "DData.h"
 
 using namespace std;
 
-ClassImp(ReadData)
+ClassImp(DData)
 
 //============================================================
 
 
-ReadData::ReadData( TString file )  : TObject() {
+DData::DData( TString file )  : TObject() {
  
-     int a = file.Length();
-     cout << "length = " << file.Length() << endl;
-
      char tab[ file.Length()+1 ];     
      strcpy( tab, file.Data() );
      string filename (tab);
@@ -31,13 +28,13 @@ ReadData::ReadData( TString file )  : TObject() {
      size_t pos = filename.find_last_of('.');
      string extension = filename.substr(pos);
 
-     cout << "DEBUG [ReadData::ReadData] extension file" << extension << endl;
+     cout << "DEBUG [DData::DData] extension file" << extension << endl;
   
      allEvents.clear();
 
      Int_t nrEvents = 0;
  
-
+//==============================================================================================
      if( extension.compare(".bin") == 0){ //reading file with bin extension (Anton Madc32)
 
 
@@ -150,7 +147,7 @@ ReadData::ReadData( TString file )  : TObject() {
       }
      fclose(fin);
 
-     cout << "DEBUG [ReadData] loaded succesfull from .bin files "<< endl;
+     cout << "DEBUG [DData] loaded succesfull from .bin files "<< endl;
      } // end of reading bin files
 
 //=================================================================================================================
@@ -224,7 +221,7 @@ ReadData::ReadData( TString file )  : TObject() {
           fread(extraDataEvent, eHEADER.extraData, 1, fin);
           }
 	AEvent *aEvent = new AEvent();	
-	//cout << "DEBUG [ReadData::ReadData]::aEvent.nrAllTracks = " << eHEADER.nrAllTracks << endl;
+	//cout << "DEBUG [DData::DData]::aEvent.nrAllTracks = " << eHEADER.nrAllTracks << endl;
 
         for(int i = 0; i < eHEADER.nrAllTracks; i++ ){
             fread(&tHEADER, sizeof(tHEADER), 1, fin);
@@ -254,7 +251,7 @@ ReadData::ReadData( TString file )  : TObject() {
 
 
 
-   cout << "DEBUG [ReadData::ReadData] exit, " << filename <<" allEvents.size = " << allEvents.size() << endl;
+   cout << "DEBUG [DData::DData] exit, " << filename <<" allEvents.size = " << allEvents.size() << endl;
 
 
 }
@@ -263,12 +260,12 @@ ReadData::ReadData( TString file )  : TObject() {
 //============================================================
 
 
-ReadData::~ReadData() {
+DData::~DData() {
 
-cout << "DEBUG [Destructor ReadData ]"<< endl; 
+cout << "DEBUG [Destructor DData ]"<< endl; 
 UInt_t i = 0;
 
-cout << "DEBUG [Destructor ReadData ] allEventSize = " << allEvents.size() << endl; 
+cout << "DEBUG [Destructor DData ] allEventSize = " << allEvents.size() << endl; 
    for( i = 0; i < allEvents.size(); i++) {
         //allEvents.at(i)->EventShow();
         //delete  allEvents.at(i); 
@@ -286,7 +283,8 @@ cout << "DEBUG [Destructor ReadData ] allEventSize = " << allEvents.size() << en
 
  // allEvents.clear();
 
-cout << "DEBUG [Destructor ReadData ] skasowalem wszystko z bufora i wyczyscilem"<< endl; 
+cout << "DEBUG [Destructor DData ] skasowalem wszystko z bufora i wyczyscilem"<< endl;
+
 
 }
 

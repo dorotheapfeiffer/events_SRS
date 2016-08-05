@@ -33,16 +33,14 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   ClassImp(DGMultiGrid)
 
 //-----------------------------------------------------------------------------
- DGMultiGrid::DGMultiGrid(DMultiGrid *aDMultiGrid) : TGMainFrame(gClient->GetRoot(), 0, 0) {
+ DGMultiGrid::DGMultiGrid(DMultiGrid *fMultiGrid) : TGMainFrame(gClient->GetRoot(), 0, 0) {
   TGLayoutHints *fL0,*fL1,*fL2,*fL10,*fL11,*fL5;
   //TGLayoutHints *fL3,*fL4,*fL12, fL200;
   TGLayoutHints *fL201,*fL210,*fL211, *fL300;
   //TGLayoutHints *fL301,*fL310,*fL311;
   ULong_t color;
 
-  std::cout << "constructing DGMultiGrid...\n";
-
-  fMultiGrid = aDMultiGrid;
+  std::cout << "[MESSAGE] Constructing GUI window\n";
 
   //gClient->GetColorByName("green", color);
   gClient->GetColorByName("#00CC00", color);
@@ -277,16 +275,14 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
   MapSubwindows();
   this->Resize(this->GetDefaultSize());
-  SetWindowName("MultiGrid Readout");
+  SetWindowName(fMultiGrid->m_AcqName.c_str());
   MapWindow();
   this->Move(100,100);
    
-  std::cout << "Set acq loop to " << fMultiGrid->m_Timerout << std::endl;
   fTimer = new TTimer(this, fMultiGrid->m_Timerout);
 
-  std::cout << "Initialization modules" << std::endl;
-  fMultiGrid->InitModules();
-  std::cout << " All initialization DONE!" << std::endl;
+  std::cout << "[MESSAGE] All initialization DONE!" << std::endl;
+  std::cout << "        + System ready to start" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -306,12 +302,12 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
     (fSaveSizeEntry->GetNumberEntry())->Disconnect("ReturnPressed()");
 
   fTimer->TurnOff();
-  //std::cout <<"destroying DGMultiGrid, timer delete" << std::endl;
   delete fTimer;
   delete fDataSave;
   delete fGDisplay;
-
-  delete fMultiGrid;
+  Cleanup();
+  //delete fMultiGrid;
+  //Connect("CloseWindow()", "DMultiGrid", fMultiGrid, "Exit()");
 }
 //-----------------------------------------------------------------------------
  void DGMultiGrid::Refresh() {
@@ -467,14 +463,6 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
          return kFALSE;
        }
      }
-
-/*
-  if(fMultiGrid->m_StopAllAcquisition){
-     ProcessMessage(259, 7, 0); // simulate stop button click...
-     RefreshStatus();
-     return kFALSE;
-     }
-*/
 
   //..................
   // transfer data from VME modules, one after the other according to the fModuleList, if neessary display and/or save

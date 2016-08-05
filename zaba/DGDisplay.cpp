@@ -5,7 +5,8 @@
 
 //-----------------------------------------------------------------------------
  DGDisplay::DGDisplay(DMultiGrid *multigrid, TCanvas *canvas) {
-  std::cout << "Constructing DGDisplay" << std::endl; //ja
+
+  std::cout << "[MESSAGE] Constructing Display" << std::endl; //ja
 
 
   fMultiGrid = multigrid;

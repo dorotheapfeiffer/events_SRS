@@ -62,7 +62,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 
 extern int  VME_CRATE; //this is for test only, if you want to change the value, change it in main.cpp
 TRandom m_random;
-#define MAX_BLT_SIZE (256*1024)
+//#define MAX_BLT_SIZE (256*1024)
 
 using namespace std;
 
@@ -124,7 +124,7 @@ return strBin;
   m_GateWidth		= 0;
   m_GateOutput		= 0;
 
-  VME_CRATE = 1;
+  //VME_CRATE = 1;
   //std::cout << "VME_CRATE (0)- simulation (1) - real instrument, VME_CRATE = " << VME_CRATE << endl; 
   //std::cout << "CONSTR m_GateGenerator: " << m_GateGenerator << " m_GateDelay: " << m_GateDelay 
   //         << " m_GateWidth: " << m_GateWidth << " m_GateOutput: " << m_GateOutput <<"\n";
@@ -509,6 +509,7 @@ void DMadc32::StopAcq(){
 
   static UInt_t Nb, Ne, prevNe, prevNb;
 
+  fMultiGrid->m_AcqStatusEntry2 = m_Events;
   Nb += GetDataSize();
   Ne  = GetNrEvents();
 
@@ -588,12 +589,16 @@ void DMadc32::StopAcq(){
 //-----------------------------------------------------------------------------
 void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 
-   // write data to buffer only wnhen the IRQ happend, otherwise return 
+   // write data to buffer only when the IRQ happend, otherwise return 
    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
    // If you want to simulate events you have to comment this line, m_IRQ = 1;
+   //std::cout << "[DEBUG] 1 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
    if( !VME_CRATE ) m_IRQ = 1; 
+   if( fMultiGrid->m_EmptyBuffer ) m_IRQ = 1; 
+   //std::cout << "[DEBUG] 2 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
    if(!m_IRQ) return;
       m_IRQ = 0;
+   //std::cout << "[DEBUG] 3 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
 
    Bool_t m_saveAfterSize = kFALSE; // variable to check if the buffer size reach the max size 
    Bool_t m_saveAfterTime = kFALSE; // variable to check if the time elapsed to save file every sec/min/hour
@@ -604,12 +609,12 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
    memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
-   //memcpy(m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   //memcpy(m_Buffer + m_BufferPos, m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
    m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
 
    // ==========================================================================
    // check if the buffer is full and has to be writen to file
-   if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1024*1024) ) {
+   if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1000*1000) ) {
        m_saveAfterSize = kTRUE;
        }
 
@@ -625,9 +630,12 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
            m_saveAfterTime = kTRUE;  
           }
      }
+
+ 
   // =============================================================================
-  // writing bufer to file if one of the two condition are fulfill
-  if( m_saveAfterSize || m_saveAfterTime ){
+  // writing bufer to file if one of the three conditions are fulfill
+  if( m_saveAfterSize || m_saveAfterTime || fMultiGrid->m_EmptyBuffer){
+    std::cout << "[DEBUG] 4 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
     char nr[256];
     sprintf(nr, "%03d", fMultiGrid->m_NrOfSavedFiles);
 
@@ -704,7 +712,7 @@ void DMadc32::ShowSettings() {
  fout << "# There are much more but for the standard using they are not neccesary to set." << std::endl;
  fout << "# The parameters below are only these which you can change in the GUI." << std::endl;
  fout << "# Settings another parameters require adding some code and recompile. The simplest way is to edit DMadc.32.cpp" << std::endl;
- fout << "# and in the function InitModule either uncomment or write which register and value you wan to set. Similar to what is already there." << std::endl;
+ fout << "m_AcqStatusEntry2InitModule either uncomment or write which register and value you wan to set. Similar to what is already there." << std::endl;
  fout << "# For details of other settings see the documentation." << std::endl;
  fout << "[" <<  GetActTypeDescription()  << "]" << std::endl;
  fout << "BaseAddress "  << m_BaseAddress << std::endl;

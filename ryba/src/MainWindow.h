@@ -35,7 +35,7 @@ class TGRadioButton;
 class TGTransientFrame;
 class TString;
 class Files;
-class ReadData; 
+class DData; 
 
 
 
@@ -98,7 +98,7 @@ private:
 	TObjArray 		*mGraphList;
 	Int_t			mAlgorythm;	
 	Int_t			mMode;
-	ReadData 		*aReadData = NULL;
+	DData 			*aData = NULL;
 
 public:
 	MainWindow() {};
@@ -114,7 +114,7 @@ public:
         void DoRadioButton();
 	void NumberEntrySet(Long_t);
 
-	void ReadDataFrom();
+	void ReadData();
 	void ReadConfigFile();
 	void WriteConfigFile();
 

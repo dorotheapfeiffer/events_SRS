@@ -8,6 +8,6 @@
 #pragma link C++ class ASignal+;
 #pragma link C++ class AEvent+;
 #pragma link C++ class ATrack+;
-#pragma link C++ class ReadData+;
+#pragma link C++ class DData+;
 
 #endif

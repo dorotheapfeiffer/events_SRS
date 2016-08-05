@@ -46,7 +46,7 @@
 #include "MainWindow.h"
 #include "UserClass.h"
 #include "Files.h"
-#include "ReadData.h"
+#include "DData.h"
 
 using namespace std;
 
@@ -81,7 +81,7 @@ MainWindow::MainWindow(const TGWindow *p, UInt_t w, UInt_t h) : TGMainFrame( p, 
   mUserClass	= 0;
   mAlgorythm    = 0;
 
-  aReadData = NULL;
+  aData = NULL;
 
   SetCleanup(kDeepCleanup);
 
@@ -121,8 +121,8 @@ MainWindow::~MainWindow() {
 
   delete mGraphList;
 
-  if(aReadData)
-     delete aReadData;
+  if(aData)
+     delete aData;
 
 
   SetCleanup(kDeepCleanup);
@@ -134,27 +134,27 @@ MainWindow::~MainWindow() {
 
 //============================================================
 
-void MainWindow::ReadDataFrom(){
-    cout << "DEBUG [MainWindow::ReadData] entrance " << aaa++ << endl;
+void MainWindow::ReadData(){
+    cout << "DEBUG [MainWindow::DData] entrance " << aaa++ << endl;
 
      UpdateProgressBar((char*)"reading");
      try{
-        cout << "DEBUG [MainWindow::ReadData] check if aReadData exist " << endl;
-	if(aReadData) {
-           cout << "DEBUG [MainWindow::ReadData] YES and must be deleted " << endl;
-           delete aReadData; 
-           aReadData=0; 
+        cout << "DEBUG [MainWindow::DData] check if aData exist " << endl;
+	if(aData) {
+           cout << "DEBUG [MainWindow::DData] YES and must be deleted " << endl;
+           delete aData; 
+           aData=0; 
            }
         else{     
-           cout << "DEBUG [MainWindow::ReadData] NO and must be created " << endl;
+           cout << "DEBUG [MainWindow::DData] NO and must be created " << endl;
            }
-           cout << "DEBUG [MainWindow::ReadData] try to created aReadData from file: " << iCurrentFile.Data() << endl;
-           //cout << "DEBUG [MainWindow::ReadData] try to created aReadData from file: " << iCurrentFile << endl;
-           aReadData = new ReadData( iCurrentFile );
-           cout << "DEBUG [MainWindow::ReadData] created aReadData from filei done: " << iCurrentFile << endl;
+           cout << "DEBUG [MainWindow::DData] try to created aData from file: " << iCurrentFile.Data() << endl;
+           //cout << "DEBUG [MainWindow::DData] try to created aData from file: " << iCurrentFile << endl;
+           aData = new DData( iCurrentFile );
+           cout << "DEBUG [MainWindow::DData] created aData from filei done: " << iCurrentFile << endl;
            
         fEventNumber->SetNumber(0);
-        fEventNumber->SetLimits(TGNumberEntry::kNELLimitMax, 0, aReadData->GetNrEvents() );
+        fEventNumber->SetLimits(TGNumberEntry::kNELLimitMax, 0, aData->GetNrEvents() );
         }
      catch(...){ cout << "Error during reading file" << endl; return; }
 
@@ -168,13 +168,13 @@ void MainWindow::ReadDataFrom(){
      fStatusBar->SetText(iCurrentFile, 0);
 
      if( !mUserClass ) {
-        cout << "DEBUG [MainWindow::ReadData] created mUserClass] " << endl;
+        cout << "DEBUG [MainWindow::DData] created mUserClass] " << endl;
         mUserClass = new UserClass(iCurrentFile, mAlgorythm);
        }
     
      DisplayEvent(0);    
  
-    cout << "DEBUG [MainWindow::ReadData] exit" << endl;
+    cout << "DEBUG [MainWindow::DData] exit" << endl;
 }
 
 //============================================================
@@ -188,9 +188,9 @@ void MainWindow::AnalyseData(){
       while( GetLoopCondition() ){
              
            fEventNumber->SetNumber(0);
-           for(i = 0; i < aReadData->GetNrEvents(); i++){
-               //AEvent &aEvent = aReadData->GetEvent(fEventNumber->GetNumber());  
-               AEvent *aEvent= aReadData->GetEvent(i);  
+           for(i = 0; i < aData->GetNrEvents(); i++){
+               //AEvent &aEvent = aData->GetEvent(fEventNumber->GetNumber());  
+               AEvent *aEvent= aData->GetEvent(i);  
                mUserClass->DoAnalysis(*aEvent, mMode);
                gSystem->ProcessEvents();
            
@@ -208,7 +208,7 @@ void MainWindow::AnalyseData(){
             iNrFile++;
             if( iNrFile < Files::getInstance().GetSize() ){
                SetCurrentFile(Files::getInstance().GetFile( iNrFile ).Data());
-               ReadData();
+               DData(Files::getInstance().GetFile( iNrFile ));
                }
             else break;
 
@@ -411,10 +411,14 @@ void MainWindow::HandleMenu(Int_t id)
 	  }
 	  
 	  if(fi.fMultipleSelection && fi.fFileNamesList) {
+            std::cout << "--- DUPA -1- KUPA ---" << std::endl;
 	    TObjString *el;
 	    TIter next(fi.fFileNamesList);
+            int i = 0;
 	    while((el = (TObjString *) next())) {
 	      Files::getInstance().AddFile(el->GetString());
+              std::cout << "--- DUPA -2- KUPA ---" << Files::getInstance().GetFile(i++) << std::endl;
+              
 	    }
 	  } else if (fi.fFilename) {
 	    Files::getInstance().AddFile(fi.fFilename);
@@ -422,7 +426,9 @@ void MainWindow::HandleMenu(Int_t id)
 
 	  if(fi.fFilename != 0 || Files::getInstance().GetFile(0) != 0){
             SetCurrentFile(Files::getInstance().GetFile(0).Data());
+            std::cout << "--- DUPA -3- KUPA ---" << std::endl;
 	    ReadData();
+            std::cout << "--- DUPA -4- KUPA ---" << std::endl;
 	 
 	    }
 	  else{
@@ -460,24 +466,24 @@ void MainWindow::NumberEntrySet(Long_t nrEvent){
 
  switch (id) {
    case eEVENTNUMBER:
-        if ( fEventNumber->GetNumber() >  0 &&  fEventNumber->GetNumber() < aReadData->GetNrEvents() ){ // normal case
-             //aReadData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
+        if ( fEventNumber->GetNumber() >  0 &&  fEventNumber->GetNumber() < aData->GetNrEvents() ){ // normal case
+             //aData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
 	     DisplayEvent(fEventNumber->GetNumber());
            }
-	else if( (fEventNumber->GetNumber() >= aReadData->GetNrEvents()) && ((iNrFile+1) < Files::getInstance().GetSize())){ 
+	else if( (fEventNumber->GetNumber() >= aData->GetNrEvents()) && ((iNrFile+1) < Files::getInstance().GetSize())){ 
                                                // reach the max event, load next file
                                                // if exist
             iNrFile++; 
             SetCurrentFile(Files::getInstance().GetFile( iNrFile ).Data());
-            ReadData();
+            DData();
 
           }
         else if ( fEventNumber->GetNumber() == 0 && iNrFile > 0 ){ // reach min event load prevoius file (if exist)
 
             iNrFile--;
             SetCurrentFile(Files::getInstance().GetFile( iNrFile ).Data());
-            ReadData();
-            fEventNumber->SetNumber(aReadData->GetNrEvents());
+            DData();
+            fEventNumber->SetNumber(aData->GetNrEvents());
 
           }
    break;
@@ -556,16 +562,16 @@ void MainWindow::ResetDisplay(){
         cout << "DEBUG [MainWindow::DoReset] iNrFile = " << iNrFile << endl;
         fEventNumber->SetNumber(0);
         DisplayEvent(fEventNumber->GetNumber());
-        //aReadData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
+        //aData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
         }
       else{
         cout << "DEBUG [MainWindow::DoReset] iNrFile = " << iNrFile << endl;
         iNrFile = 0;
         fEventNumber->SetNumber(0);
         SetCurrentFile(Files::getInstance().GetFile( iNrFile ).Data());
-        ReadData();
+        DData();
         DisplayEvent(fEventNumber->GetNumber());
-        //aReadData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
+        //aData->DrawEvent( fEcan, fEventNumber->GetNumber(), 0);
         } 
    UpdateProgressBar((char*)"analysing"); 
 }
@@ -622,7 +628,7 @@ void MainWindow::UpdateProgressBar(char* operation){
   if(tsOper == "analysing"){
     //analysing
     strText.Form(" Analysing ( %d / %d )", iNrFile + 1, Files::getInstance().GetSize() );
-    progressBar->SetMax( aReadData->GetNrEvents() );
+    progressBar->SetMax( aData->GetNrEvents() );
     progressBar->ShowPosition( kTRUE, kFALSE, strText.Data() );
     progressBar->SetPosition( fEventNumber->GetNumber()  );
   }
@@ -634,7 +640,7 @@ void MainWindow::UpdateProgressBar(char* operation){
   }
   else if(tsOper == "read"){ 
     //Read
-    strText.Form(" File ( %d / %d ) has loaded, %d events ", iNrFile + 1, Files::getInstance().GetSize(), aReadData->GetNrEvents());
+    strText.Form(" File ( %d / %d ) has loaded, %d events ", iNrFile + 1, Files::getInstance().GetSize(), aData->GetNrEvents());
     progressBar->ShowPosition( kTRUE, kFALSE, strText.Data() );
   } 
   else if(tsOper == "seek"){
@@ -765,7 +771,7 @@ return;
 }
    TCanvas *canvas = fEcan->GetCanvas();
    canvas->Clear();
-   //cout<< "[MainWindow::ReadData]:iNrTracks\t"<<iNrTracks<<endl;
+   //cout<< "[MainWindow::DData]:iNrTracks\t"<<iNrTracks<<endl;
    // cout<<"iNbToDisplay"<<iNbToDisplay<<endl;
    if(iNbToDisplay == 1)       canvas->cd();
    else if (iNbToDisplay == 2) canvas->Divide(1,2);
@@ -880,12 +886,12 @@ void MainWindow::DisplayEvent(Int_t iEvent) {
    c->cd();
    c->Clear();
  
-   if( !aReadData ) {
+   if( !aData ) {
      cout << "Please load the data first...." << endl;
      return;
      }
 
-   AEvent* aEvent= aReadData->GetEvent(iEvent);
+   AEvent* aEvent= aData->GetEvent(iEvent);
  
    Int_t mNrTracks = aEvent->GetNrTracks();
 
