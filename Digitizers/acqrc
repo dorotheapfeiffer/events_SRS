@@ -1,5 +1,5 @@
 # Configuration file for the data acquisition system
-# the file was created:  2016.3.8	10:41:32
+# the file was created:  2016.8.18	16:10:34
 # Line starts with a '#' is a comment line
 #
 #
@@ -11,7 +11,7 @@
 SoftTimeout 0
 MaxEvents 0
 MaxFiles 0
-MaxAcqTime 200
+MaxAcqTime 0
 NewFileSize 200
 NewFileTime 3600
 
@@ -20,7 +20,7 @@ NewFileTime 3600
 
 
 
-[CAEN5740.171]
+[CAEN5740.848]
 # instrument can be enalbed  = 1
 #                or disabled = 0
 # not fully tested, do not use this option, set it always 1
@@ -28,47 +28,47 @@ InstrEnabled 1
 
 # Channel Configuration
 # You can difine the track lengt (RecordLength), is the same for all channels
-RecordLength 513
+RecordLength 1023
 # you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
-PostTrigger 60
+PostTrigger 50
 # disable = 0 or enable = 1 group channels
 EnableMaskGr1 1
-EnableMaskGr2 1
-EnableMaskGr3 1
-EnableMaskGr4 1
+EnableMaskGr2 0
+EnableMaskGr3 0
+EnableMaskGr4 0
 # Set offet for group channels 
 # DCOffsetGrN: DC offset adjust (DAC channel setting) in mV. It will automatically recalculated to the correct value of DAC
 # -1000: analog input dynamic range = -Vpp to 0 (negative signals)
 # +1000: analog input dynamic range = 0 to +Vpp (positive signals)
 #     0:   analog input dynamic range = -Vpp/2 to +Vpp/2 (bipolar signals)
-DCOffsetGr1 750
-DCOffsetGr2 750
-DCOffsetGr3 -750
-DCOffsetGr4 -750
+DCOffsetGr1 0
+DCOffsetGr2 0
+DCOffsetGr3 0
+DCOffsetGr4 0
 
 # The save option allows you to save certain channels. The digitizer is designed in such that even only one channel is used
 # all group must be transfered to PC. Then you can choose by software which channel you want to store and/or display.
 # It is one 32 bits word, Each bit correspond to each channel
-SaveChannel 4294967295
+SaveChannel 1
 
 # Trigger Configuration
 # Enable or disable software, external and channel trigger
 # the options could be 0, 1, 2, 3, disable, enable acq only, enable ext only, both, respectevely 
 SoftwareTriggerMode 0
-ExternalTriggerMode 0
+ExternalTriggerMode 1
 # 
 ChannelTriggerModeGr1 1
-ChannelTriggerModeGr2 1
+ChannelTriggerModeGr2 0
 ChannelTriggerModeGr3 0
 ChannelTriggerModeGr4 0
 # 
 # Adjust the threshold to the coresponding channel in mv
 # Treshold value is an absolut value, consider it when you add offset to the channel
 # Possible values between -2000 and 2000 mv
-ThresholdGr1 -750
-ThresholdGr2 -750
-ThresholdGr3 -850
-ThresholdGr4 -850
+ThresholdGr1 0
+ThresholdGr2 0
+ThresholdGr3 0
+ThresholdGr4 0
 # 
 # Trigger slope for the every group of channels, could be positive or negative
 TriggerSlopeGr1 0
@@ -78,8 +78,8 @@ TriggerSlopeGr4 0
 # 
 # Global trigger can be built from logic OR all indyvidual channel triggers. This option allows you to set which indyvidual 
 # trigger will contribute to build the global one. This is set by indyvidual group. Every group consist of 8 channels
-SelfTriggerMaskGr1 11111111
-SelfTriggerMaskGr2 11111111
+SelfTriggerMaskGr1 00000000
+SelfTriggerMaskGr2 00000000
 SelfTriggerMaskGr3 00000000
 SelfTriggerMaskGr4 00000000
 # 
@@ -100,7 +100,7 @@ BufferConfiguration 0
 # if you want to change clock setings you have to first update firmware
 ClockType 0
 # Define maximum parameter of how many events can be read from instrument
-MaxEvents 255
+MaxEvents 1
 # DO not use it
 SynchronizationMode 0
 # 

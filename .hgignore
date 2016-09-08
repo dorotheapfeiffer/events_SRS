@@ -4,6 +4,8 @@
 #ignore any build output and user files:
 ^build/.*
 ^rundir/.*
+^data/.*
+^temp/.*
 #a protection against adding in build output:
 \.so$
 \.dylib$

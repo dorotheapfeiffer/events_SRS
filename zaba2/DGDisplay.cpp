@@ -4,7 +4,7 @@
   ClassImp(DGDisplay)
 
 //-----------------------------------------------------------------------------
- DGDisplay::DGDisplay(DMultiGrid *multigrid, TCanvas *canvas) {
+ DGDisplay::DGDisplay(DAcquisition *multigrid, TCanvas *canvas) {
 
   std::cout << "[MESSAGE] Constructing Display" << std::endl; //ja
 

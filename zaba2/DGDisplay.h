@@ -10,13 +10,13 @@
 //#include <TArrow.h>
 //#include <TEllipse.h>
 
-#include "DMultiGrid.h"
+#include "DAcquisition.h"
 
 class DGDisplay {
 
 private:
 public:
-  DMultiGrid	*fMultiGrid;                // pointer to DMultiGrid to be monitored
+  DAcquisition	*fMultiGrid;                // pointer to DAcquisition to be monitored
   TCanvas	*fCanvas;
   TObjArray	*fHistogramList;
 
@@ -28,7 +28,7 @@ public:
 
 public:
   DGDisplay(){}
-  DGDisplay(DMultiGrid *, TCanvas *canvas);
+  DGDisplay(DAcquisition *, TCanvas *canvas);
   virtual ~DGDisplay();
   void Refresh();
   void Reset();

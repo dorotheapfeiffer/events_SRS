@@ -1,6 +1,6 @@
 #include "DV1718.h"
 #include "DGDisplay.h"
-#include "DMultiGrid.h"
+#include "DAcquisition.h"
 #include <bitset>
 #include <string>
 #include <fstream>
@@ -116,14 +116,14 @@ if( VME_CRATE ){ // to test puropse only....
 }
 
 //-----------------------------------------------------------------------------
- void DV1718::ShowData(DGDisplay *fDisplay, DMultiGrid *fMultiGrid) {
+ void DV1718::ShowData(DGDisplay *fDisplay, DAcquisition *fMultiGrid) {
     
     //printf("Scaler value = %d\n", m_Value);
     //m_Value = 0;
  }
 
 //-----------------------------------------------------------------------------
-void DV1718::DataSave(DMultiGrid *fMultiGrid){
+void DV1718::DataSave(DAcquisition *fMultiGrid){
 
 }
 

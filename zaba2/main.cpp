@@ -3,8 +3,8 @@
 #include <TApplication.h>
 #include <TSystem.h>
 
-#include "DMultiGrid.h"
-#include "DGMultiGrid.h"
+#include "DAcquisition.h"
+#include "DGAcquisition.h"
 
 void setbit(UShort_t *, Int_t, Int_t){}
 
@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
  TApplication theApp("App",&argc,argv);
  g_Path = gSystem->WorkingDirectory();
 
- DMultiGrid *dMultiGrid = new DMultiGrid("MultiGrid"); 
- new DGMultiGrid( dMultiGrid );
+ DAcquisition *dMultiGrid = new DAcquisition("MultiGrid"); 
+ new DGAcquisition( dMultiGrid );
 
  theApp.Run();
 return 0;
