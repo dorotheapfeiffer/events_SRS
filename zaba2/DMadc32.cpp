@@ -509,11 +509,11 @@ void DMadc32::StopAcq(){
  }
 
 //-----------------------------------------------------------------------------
- void DMadc32::GetEvent(DMultiGrid *fMultiGrid) {
+ void DMadc32::GetEvent(DAcquisition *fMultiGrid) {
 
  }	 
 //-----------------------------------------------------------------------------
- void DMadc32::ShowData(DGDisplay *fDisplay, DMultiGrid *fMultiGrid) {
+ void DMadc32::ShowData(DGDisplay *fDisplay, DAcquisition *fMultiGrid) {
 
   static UInt_t Nb, Ne, prevNe, prevNb;
 
@@ -596,7 +596,7 @@ void DMadc32::StopAcq(){
  }
 
 //-----------------------------------------------------------------------------
-void DMadc32::DataSave(DMultiGrid *fMultiGrid){
+void DMadc32::DataSave(DAcquisition *fMultiGrid){
 
    // write data to buffer only when the IRQ happend, otherwise return 
    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ

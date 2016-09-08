@@ -1,13 +1,13 @@
-#include "DMultiGrid.h"
+#include "DAcquisition.h"
 #include <sys/time.h>  
  
-ClassImp(DMultiGrid)
+ClassImp(DAcquisition)
 
 using namespace std;
 extern std::string g_Path;
 
 //*****************************************************************************
- DMultiGrid::DMultiGrid(std::string s) : TObject(), m_AcqName(s) {
+ DAcquisition::DAcquisition(std::string s) : TObject(), m_Gnuplot("/usr/bin/gnuplot"), m_AcqName(s) {
   // Create objects corresponding to VME modules, and store the pointers 
   // to these objects on the object array *fModuleList.
 
@@ -27,8 +27,10 @@ extern std::string g_Path;
   
   fModuleList = new TObjArray();
 
-  fModuleList->Add(fDV1718  = new DV1718((char*)"VME_USB_Bridge",   0x00000000));
-  fModuleList->Add(fDMadc32  = new DMadc32((char*)"Mesytec MADC-32",   0xd0000000));
+  //fModuleList->Add(fDV1718     = new DV1718(   (char*)"VME_USB_Bridge",  0x00000000));
+  //fModuleList->Add(fDMadc32    = new DMadc32(  (char*)"Mesytec MADC-32", 0xd0000000));
+  fModuleList->Add(fDCAEN1740  = new DCAEN1740((char*)"CAEN 1740D",      0x32100000));
+
   std::cout << "[MESSAGE] number of modules:      " << fModuleList->GetLast()+1 << std::endl;
   *fLog << "\t\t\t" << " ----- number of modules:      " << fModuleList->GetLast()+1 << std::endl;
 
@@ -59,6 +61,7 @@ extern std::string g_Path;
 
   m_NrOfSavedFiles	= 0;
   m_EmptyBuffer		= 0;
+  m_StopCondition	= 0;
 
   m_FileName = string("data");
   m_Path = g_Path;
@@ -70,7 +73,7 @@ extern std::string g_Path;
 
 }
 //-----------------------------------------------------------------------------
-   DMultiGrid::~DMultiGrid() {
+   DAcquisition::~DAcquisition() {
     m_TimeNow = std::time(NULL);
     std::string s1 = string(ctime(&m_TimeNow));
     *fLog << "\t\t\t ----- destroing modules" << endl;
@@ -86,7 +89,7 @@ extern std::string g_Path;
     //gApplication->Terminate(0);
 }
 //-----------------------------------------------------------------------------
- void DMultiGrid::ResetModules() {
+ void DAcquisition::ResetModules() {
   // Call ResetModule for every VME module of fModuleList
 
   TObject   *elem;
@@ -96,7 +99,7 @@ extern std::string g_Path;
   delete iter;
 }
 //-----------------------------------------------------------------------------
- void DMultiGrid::InitModules() {
+ void DAcquisition::InitModules() {
   // Setup these parameters of VME modules which are fixed, i.e. not
   // supposed to be changed by the end-user, and thus are not accesible
   // via GUI.
@@ -108,12 +111,23 @@ extern std::string g_Path;
  
   delete iter;
 }
+
 //-----------------------------------------------------------------------------
-bool DMultiGrid::CheckCondition(){
+void DAcquisition::BuildEvent(){
+
+  TObject   *elem;
+  TIterator *iter;
+  iter = fModuleList->MakeIterator();
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->GetEvent();
+  delete iter;
+   	
+ }
+//-----------------------------------------------------------------------------
+bool DAcquisition::CheckCondition(){
   // stops acquisition after certain number of events set by the user
   if(m_StopAfterEventsEntry){
      if( m_AcqStatusEntry2 >= m_StopAfterEventsEntry ){
-	 m_EmptyBuffer = 1;    
+	 m_StopCondition = 3;    
          return kFALSE;
        }
      }
@@ -122,7 +136,7 @@ bool DMultiGrid::CheckCondition(){
   if(m_StopAfterSecEntry){
      //std::cout << "m_ElapsedAcqTime: " << m_ElapsedAcqTime << " m_StopAfterSecEntry: " << m_StopAfterSecEntry << std::endl;
      if( std::difftime(std::time(NULL), m_StartAcqTime) >= (UInt_t)m_StopAfterSecEntry ){
-	 m_EmptyBuffer = 1;    
+	 m_StopCondition = 2;    
          return kFALSE;
        }
      }
@@ -131,7 +145,7 @@ bool DMultiGrid::CheckCondition(){
   if(m_StopAfterFileEntry){
      //std::cout << "m_NrOvedFiles " << m_NrOfSavedFiles << " m_StopAfterFileEntry: " << m_StopAfterFileEntry << std::endl;
      if( m_NrOfSavedFiles >= m_StopAfterFileEntry ){
-	 m_EmptyBuffer = 0;    
+	 m_StopCondition = 1;    
          return kFALSE;
        }
      }
@@ -139,18 +153,39 @@ bool DMultiGrid::CheckCondition(){
 return kTRUE;
 
 }
-//-----------------------------------------------------------------------------
- void DMultiGrid::EmptyBuffer(int quitKB, int quitCK){
- 
-      if( (!quitKB and quitCK) or (quitKB and m_EmptyBuffer) ){    
-	 m_EmptyBuffer=1;     
-	 DataSave();
-      }
+//=============================================================================
+ void DAcquisition::EmptyBuffer(){
 
+  if(m_StopCondition == 1) 
+     return;
+  else{
+     m_EmptyBuffer = 1;
+     DataSave();
+  }
+	 
  }
-//-----------------------------------------------------------------------------
+//=============================================================================
+ void DAcquisition::GnuplotOnline(){
 
- void DMultiGrid::ShowData(DGDisplay *d) {
+  static UInt_t a_gnuplot_prev = GetTimeMS();	 
+  UInt_t a_gnuplot_esaplsed = GetTimeMS() - a_gnuplot_prev;
+  
+  if (a_gnuplot_esaplsed < 100)
+      return;
+
+  TObject   *elem;
+  TIterator *iter;
+  iter = fModuleList->MakeIterator();
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->GnuplotOnline( m_Gnuplot );
+ 
+  delete iter;
+  a_gnuplot_prev = GetTimeMS();
+  
+	 
+ }
+
+//=============================================================================
+ void DAcquisition::ShowData(DGDisplay *d) {
 
   m_CurrentTimeMS = GetTimeMS();
   m_ElapsedTimeMS = m_CurrentTimeMS - m_PrevTimeMS;
@@ -169,8 +204,8 @@ return kTRUE;
   m_PrevTimeMS = m_CurrentTimeMS;
 }
 
-//-----------------------------------------------------------------------------
-void DMultiGrid::StartAcq(){
+//=============================================================================
+void DAcquisition::StartAcq(){
 
   char mbstr[100];
   if (std::strftime(mbstr, sizeof(mbstr), "%Y_%m_%d_%H%M", std::localtime(&m_StartAcqTime)) ) 
@@ -183,6 +218,7 @@ void DMultiGrid::StartAcq(){
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->Log(*fLog);
 
   std::string s1 = string(ctime(&m_StartAcqTime));
+
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Start acquisition" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
@@ -200,12 +236,14 @@ void DMultiGrid::StartAcq(){
   delete iter;
 }
 //-----------------------------------------------------------------------------
-void DMultiGrid::StopAcq(){
+void DAcquisition::StopAcq(){
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->StopAcq();
- 
+
+  EmptyBuffer();
+
   m_TimeNow = std::time(NULL);
   std::string s1 = string(ctime(&m_TimeNow));
   *fLog << s1.substr(0, s1.length()-1) << " ----- Stop and quit acquisition" << std::endl;
@@ -214,7 +252,7 @@ void DMultiGrid::StopAcq(){
 }
 //-----------------------------------------------------------------------------
 
- void DMultiGrid::DataSave() {
+ void DAcquisition::DataSave() {
 
   TObject   *elem;
   TIterator *iter;
@@ -226,7 +264,7 @@ void DMultiGrid::StopAcq(){
 
 //-----------------------------------------------------------------------------
 
- ULong_t DMultiGrid::GetTimeMS() {
+ ULong_t DAcquisition::GetTimeMS() {
     long time_ms;
     struct timeval t1;
     struct timezone tz;
@@ -236,11 +274,11 @@ void DMultiGrid::StopAcq(){
 
  }
 //-----------------------------------------------------------------------------
- void DMultiGrid::LoadConfig(char *filename) {
+ void DAcquisition::LoadConfig(char *filename) {
 
   std::ifstream inpfile(filename, std::ios::in);
   if (!inpfile) {
-    std::cout << "DMultiGrid: cannot open file " << filename << std::endl;
+    std::cout << "DAcquisition: cannot open file " << filename << std::endl;
     return;
   }
 
@@ -334,7 +372,7 @@ inpfile.close();
 
 }
 //-----------------------------------------------------------------------------
- void DMultiGrid::SaveConfig(char *filename) {
+ void DAcquisition::SaveConfig(char *filename) {
 
  ofstream fout(filename, ios::out | ios::trunc);
  if(!fout) {
@@ -398,7 +436,7 @@ fout.close();
 
 }
 //-----------------------------------------------------------------------------
- void DMultiGrid::ReadVME() {
+ void DAcquisition::ReadVME() {
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
@@ -408,7 +446,7 @@ fout.close();
 }
 //*****************************************************************************
 
-std::string DMultiGrid::Trim(std::string const& source, char const* delims )
+std::string DAcquisition::Trim(std::string const& source, char const* delims )
 {
  string result(source);
  string::size_type index = result.find_last_not_of(delims);

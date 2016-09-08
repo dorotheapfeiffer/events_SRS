@@ -7,7 +7,7 @@
 #include <stdlib.h> 
 #include <unistd.h> 
 #include <stdio.h> 
-#include "DMultiGrid.h"
+#include "DAcquisition.h"
 
 
 static struct termios g_old_kbd_mode;
@@ -32,15 +32,16 @@ int main(int argc, char **argv) {
  std::cout << "path = " << g_Path << endl;
  //g_Path = exec((char*)"pwd");
 
- DMultiGrid	*dMultiGrid = new DMultiGrid("MultiGrid");
+ DAcquisition	*dMultiGrid = new DAcquisition("MultiGrid");
 
  dMultiGrid->StartAcq();
 
  while( CheckKeyboard() and dMultiGrid->CheckCondition() ){
    dMultiGrid->ReadVME(); 
-   dMultiGrid->BuildEvent();
+   dMultiGrid->GnuplotOnline();
+   //dMultiGrid->BuildEvent();
    //dMultiGrid->DataSave();
-   //dMultiGrid->ShowData(NULL); // null because we do not use graphics in the szaba version, prints only on the terminal
+   dMultiGrid->ShowData(); // null because we do not use graphics in the szaba version, prints only on the terminal
    
    //std::this_thread::sleep_for(std::chrono::microseconds(1000));
 

@@ -1,17 +1,17 @@
 #ifndef DDATASAVE_H 
 #define DDATASAVE_H
 
-#include "DMultiGrid.h"
+#include "DAcquisition.h"
 
 class DDataSave {
 
 private:
 public:
-  DMultiGrid	*fMultiGrid;                // pointer to DMultiGrid to be monitored
+  DAcquisition	*fMultiGrid;                // pointer to DAcquisition to be monitored
  
 public:
   DDataSave(){}
-  DDataSave(DMultiGrid *);
+  DDataSave(DAcquisition *);
   virtual ~DDataSave();
 
   ClassDef(DDataSave,0)                  // class controlon save data to file

@@ -50,9 +50,9 @@ public:
   void          Log(std::ofstream &);
   void		ConfigureModule();
   void		ReadVME();
-  void		GetEvent(DMultiGrid *);
-  void		ShowData(DGDisplay*, DMultiGrid *);
-  void		DataSave(DMultiGrid *);
+  void		GetEvent(DAcquisition *);
+  void		ShowData(DGDisplay*, DAcquisition *);
+  void		DataSave(DAcquisition *);
   void		ResetModule();
   UInt_t	GetNrEvents() { return m_Events;}
   UInt_t	GetDataSize() { return m_dataSizeByte;}

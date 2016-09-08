@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 class DGDisplay;
-class DMultiGrid;
+class DAcquisition;
 
 class DV1718 : public DModule {
 
@@ -35,8 +35,8 @@ public:
   void		Log(std::ofstream &);
   void		SaveConfig(std::ofstream &){}
   void		LoadConfig(std::ifstream &){}
-  void		ShowData(DGDisplay*, DMultiGrid* );
-  void		DataSave(DMultiGrid *);
+  void		ShowData(DGDisplay*, DAcquisition* );
+  void		DataSave(DAcquisition *);
   void		ResetModule();
   UInt_t	GetNrCounts() { return m_Value;}
   void		ShowSettings();

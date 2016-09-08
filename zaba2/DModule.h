@@ -13,6 +13,7 @@
 #include <TMessage.h>
 #include <TFormula.h>
 #include "CAENVMElib.h"
+#include "gnuplot-iostream.h"
 
 
 //extern "C" void swab(const void *, void *, size_t);
@@ -21,7 +22,7 @@ extern "C" void setbit(UShort_t *, Int_t, Int_t);
 //*****************************************************************************
 class DGDisplay;
 class DDataSave;
-class DMultiGrid;
+class DAcquisition;
 
 class DModule : public TObject {
   
@@ -52,12 +53,13 @@ public:
   virtual void ReadVME()          		{ std::cout << this << " DModule ReadVME called\n";         }
   virtual void ResetModule()      		{ std::cout << this << " DModule ResetModule called\n";     }
   virtual void InitModule()       		{ std::cout << this << " DModule InitModule called\n";      }
-  virtual void ShowData(DGDisplay *, DMultiGrid *){ std::cout << this << " DModule ShowData called\n";        }
-  virtual void DataSave(DMultiGrid *)		{ std::cout << this << " DModule DataSave called\n";        }
+  virtual void ShowData(DGDisplay *, DAcquisition *){ std::cout << this << " DModule ShowData called\n";        }
+  virtual void DataSave(DAcquisition *)		{ std::cout << this << " DModule DataSave called\n";        }
   virtual void ConfigureModule()  		{ std::cout << this << " DModule ConfigureModule called\n"; }
   virtual void StartAcq()	  		{ std::cout << this << " DModule StartAcq called\n"; }
   virtual void StopAcq()	  		{ std::cout << this << " DModule StopAcq called\n"; }
   virtual void GetEvent()	  		{ std::cout << this << " DModule GetEvent called\n"; }
+  virtual void GnuplotOnline(Gnuplot &)		{ std::cout << this << " DModule GnuplotOnline called\n"; }
   virtual void Log(std::ofstream &)  		{ std::cout << this << " DModule Log called\n"; }
   virtual void SaveConfig(std::ofstream &) 	{ std::cout << this << " DModule SaveConfig called\n"; }
   virtual void LoadConfig(std::ifstream &) 	{ std::cout << this << " DModule LoadConfig called\n"; }

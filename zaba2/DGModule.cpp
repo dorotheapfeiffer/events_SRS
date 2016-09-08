@@ -17,12 +17,13 @@
   fMDes = new TGGroupFrame(this, "Module description", kVerticalFrame);
   fMDat = new TGGroupFrame(this, "Module data",        kVerticalFrame);
 
-  fL1 = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX, 5,5,5,5);
+  fL1 = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsExpandY , 5,5,5,5);
+  fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX , 5,5,5,5);
   fL2 = new TGLayoutHints(kLHintsLeft, 2,2,5,0);
 
   fMDes->SetLayoutManager(new TGMatrixLayout(fMDes, 0, 2, 5));
  
-  this->AddFrame(fMDes,    fL1);
+  this->AddFrame(fMDes,    fL3);
   this->AddFrame(fMDat,    fL1);
   
   fMemList->Add(fMDes);
