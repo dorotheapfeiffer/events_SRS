@@ -1,0 +1,34 @@
+# Configuration file for ZABA data acquisition system
+# the file was created:  2016.8.18	15:6:17
+# Line starts with a '#' is a comment line
+#
+#
+[GENERAL SETTINGS]
+# Stop acquisition after certain number of seconds, default 0 means acq will runn forever
+# Keep in mind that from StopAfterSec, StopAfterFile, StopAfterEvents ONLY ONE CAN BE DIFFERENT THAN 0!
+StopAfterSec 0
+ 
+# Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
+StopAfterFile 0
+ 
+# Stop acquisition after certain number of Events, default 0 means acq will runn forever
+StopAfterEvents 0
+ 
+# Save each file after reach the file size
+SaveFileSize 500
+ 
+# Save each file after certain number of seconds
+SaveFileTime 10
+ 
+# Default path where the data is stored, if you do not set this parameter the path will be ./data
+DataPath /home/dlab/dg_epool/zaba/data
+ 
+# Default file name, in the GUI version program will ask the user to set correct file name
+# The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin
+# where xxxxxx is the file name and nr file number
+# if you put the field of FileName empty then by default the name will be test
+# e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1
+#     the file name will be: 2016_07_14_1956_measurement1_000.bin
+#     then only the number will be increased, so 001, 002, 003, 004
+FileName mes1
+ 
