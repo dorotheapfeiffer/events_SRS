@@ -6,12 +6,17 @@
 #include "sys/time.h"
 #include "TRandom.h"
 #include "gnuplot-iostream.h"
+#include "_CAENDigitizer_DPP-QDC.h"
 
+#define MAX_AGGR_NUM_PER_BLOCK_TRANSFER   1023 /* MAX 1023 */
 
  static ULong_t gCurrentTimeADC = 0;
  static ULong_t gElapsedTimeADC = 0;
  static ULong_t gPrevRateTimeADC = 0;
  //static ULong_t gPrevSizeADC = 0;
+
+unsigned int gEquippedGroups;
+_CAEN_DGTZ_DPP_QDC_Event_t     *gEventsGrp[8];
 
 //===========================================================
 static ULong_t gGetLongTimeADC(){
@@ -24,7 +29,7 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 //===========================================================
 
 static	std::string mode(Int_t a){
-	if(a == 0) return      std::string(" [disabled]");
+	if(a == 0)      return std::string(" [disabled]");
 	else if(a == 1) return std::string(" [acq only]");
 	else if(a == 2) return std::string(" [ext only]");
 	else if(a == 3) return std::string(" [acq &ext]");
@@ -32,22 +37,28 @@ static	std::string mode(Int_t a){
 	}
  	
 static	std::string edge(Int_t a){
-	if(a == 0) return      std::string("rise");
+	if(a == 0)      return std::string("rise");
 	else if(a == 1) return std::string("fall");
 	else            return std::string("unknown");
 	}
  	
 static	std::string polarity(Int_t a){
-	if(a == 0) return      std::string("NEG");
+	if(a == 0)      return std::string("NEG");
 	else if(a == 1) return std::string("POS");
+	else            return std::string("unknown");
+        }
+static	std::string iolevel(Int_t a){
+	if(a == 0)      return std::string("    NIM");
+	else if(a == 1) return std::string("    TTL");
 	else            return std::string("unknown");
 	}
 
-static	std::string iolevel(Int_t a){
-	if(a == 0) return      std::string("    TTL");
-	else if(a == 1) return std::string("    ECL");
+static	std::string acqmode(Int_t a){
+	if(a == 0)      return std::string(" SOFT ");
+	else if(a == 1) return std::string(" HARD ");
 	else            return std::string("unknown");
 	}
+
 //===========================================================
 
 static std::string Dec2BinStr2(Char_t dec){
@@ -84,13 +95,13 @@ using namespace std;
 
 //*****************************************************************************
  DCAEN1740::DCAEN1740(Char_t *mdesc, UInt_t addr) : 
-       DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) {
+       DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740",mdesc,addr) {
 
   std::cout<<"\t+ module CAEN 1740...\n";
 
   m_BaseAddress		= addr;
   m_ModuleID		= 0x6004;
-
+  m_Firmware		= 1;
   m_Enabled		= 0;
 
   m_localBuffer		= NULL;
@@ -127,31 +138,54 @@ using namespace std;
      m_GroupEnableMask[i]  = 0;
      m_ChannelPulsPolarity[i] = 0; 
      } 
- m_GroupEnableMask[0]  = 1; // this is not in for loop, set element 0 to 1;       
+ m_GroupEnableMask[0]  = 1; 
  
  for(UInt_t i = 0; i < 64; i++)
      m_SelfTriggerMask[i] = 0;
- m_SelfTriggerMask[0] = 1; // this is not in for loop, set element 0 to 1;
+ m_SelfTriggerMask[0] = 1; // this is not in the for loop, set element 0 to 1;
 
- 
+ m_Name = string(mdesc);
 
  UInt_t LinkNum = 0;
  UInt_t ConetNode = 0;
- m_BaseAddress = 0x32100000;
+
 
  if( VME_CRATE ){ 
- ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, LinkNum, ConetNode, m_BaseAddress, &m_Handle);
- if(ret != CAEN_DGTZ_Success){
-    CheckError(ret);
-    exit(1);
- }
- else
-    std::cout << "\t\t- construction CAEN 1740 done!\n";
+    std::cout << "try to open digitizer" << std::endl;	 
+    ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, 0, 0, (uint32_t)0x32100000, &m_Handle);
+    //ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, LinkNum, ConetNode, m_BaseAddress, &m_Handle);
+    if(ret != CAEN_DGTZ_Success){
+       CheckError(ret);
+       std::cout << "[ERROR] Open digitizer, error code = " << ret << "\n";  
+       std::cout << "        LinkNum: " <<  LinkNum << ", ConetNode: " << ConetNode << ", m_BaseAddress: 0x" << hex <<  m_BaseAddress  << dec << ret << "\n";  
+       exit(0);
+    } else {
+      std::cout << "digitizer open, handle = " << m_Handle << std::endl;	 
+      ret = CAEN_DGTZ_GetInfo(m_Handle, &BoardInfo);                               
+      CheckError(ret);
+      if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] GetInfo, error code = " << ret << "\n"; return; }
+ 
+      m_NrChannels = BoardInfo.Channels;
+      if(m_NrChannels < 32){
+         m_NrGroups = m_NrChannels;
+         m_NrChannels = 8*m_NrGroups;
+      } else{
+         m_NrGroups   = BoardInfo.Channels / 8;
+      }
+
+      gEquippedGroups = m_NrGroups;
+   
+      m_Name	+= string(".") + to_string(BoardInfo.SerialNumber); 
+      std::cout << "name: " << m_Name << " BoardInfo.Channels: " << BoardInfo.Channels << std::endl;	    
+      std::cout << "name: " << m_Name << " NrGroups: " << m_NrGroups << " NrChannels: " << m_NrChannels << std::endl;	    
+
+      std::cout << "\t\t- construction CAEN 1740 done!\n";
+    }
  }
 }
 //-----------------------------------------------------------------------------
  DCAEN1740::~DCAEN1740() {
-  std::cout<<"\t+ module CAEN 1740\n";
+  std::cout<<"\t+ module " << m_Name << "\n";
 if( VME_CRATE ){
   if(m_Handle){
      ret = CAEN_DGTZ_CloseDigitizer(m_Handle);
@@ -168,8 +202,12 @@ if( VME_CRATE ){
 
  }
 //-----------------------------------------------------------------------------
- void DCAEN1740::InitModule() {
-  if( VME_CRATE ){
+// configuration of the module DT5740 and DT5740D (V1740/V1740D) are different
+// Some of the settings are the same but
+// I decided setup the digitizer in (if else) depends on the model.
+
+void DCAEN1740::InitModule() {
+  if( !VME_CRATE ){
     return;
   }
 
@@ -177,82 +215,83 @@ if( VME_CRATE ){
  CheckError(ret);
  //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] Reset, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_GetInfo(m_Handle, &BoardInfo);                               
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] GetInfo, error code = " << ret << "\n"; return; }
- 
- m_NrChannels = BoardInfo.Channels;
- m_NrGroups   = BoardInfo.Channels / 8;
- m_Name	      = to_string(BoardInfo.SerialNumber); 
+    // setting general
+    ret = CAEN_DGTZ_SetRecordLength(m_Handle, m_RecordLength);                             
+    //CheckError(ret);
+    if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetRecordLength " << CheckError(ret) ;
 
- // setting general
- ret = CAEN_DGTZ_SetRecordLength(m_Handle, m_RecordLength);                             
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetRecordLength, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetDecimationFactor(m_Handle, m_DecimationFactor);
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] DecimationFactor, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_SetDecimationFactor(m_Handle, m_DecimationFactor);
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] DecimationFactor, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetPostTriggerSize(m_Handle, m_PostTrigger);
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetPostTriggerSize, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_SetPostTriggerSize(m_Handle, m_PostTrigger);
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetPostTriggerSize, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetIOLevel(m_Handle, static_cast<CAEN_DGTZ_IOLevel_t>(m_FPIOtype) );
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetIOLevel, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_SetIOLevel(m_Handle, static_cast<CAEN_DGTZ_IOLevel_t>(m_FPIOtype) );
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetIOLevel, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetMaxNumEventsBLT(m_Handle, m_MaxEventsBLT);                            
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetMaxNumEventsBLT, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_SetMaxNumEventsBLT(m_Handle, m_MaxEventsBLT);                            
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetMaxNumEventsBLT, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetAcquisitionMode(m_Handle, static_cast<CAEN_DGTZ_AcqMode_t>(m_AcqMode) );     
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetAcquisitionMode, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_SetAcquisitionMode(m_Handle, static_cast<CAEN_DGTZ_AcqMode_t>(m_AcqMode) );     
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetAcquisitionMode, error code = " << ret << "\n"; return; }
+    //================================= channels setting ================================================
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        ret = CAEN_DGTZ_SetGroupDCOffset(m_Handle, i, m_DCoffset[i]);
+        if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetGroupDCoffset " << CheckError(ret) << "\n"; return; }
+    }
 
- // setting if VME.....
+    UInt_t mask =0;
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        mask |= ((m_GroupEnableMask[i] & 0x1) << i);
+        //std::cout << i << " mask: " << mask << endl;  
+    }
 
- // channels setting
- for(UInt_t i = 0; i < m_NrGroups; i++){
-     ret = CAEN_DGTZ_SetGroupEnableMask(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_GroupEnableMask[i]) ); 
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetExtTriggerMode, gr:"<< i << ", error code = " << ret << "\n"; return; }
-     }
+    ret = CAEN_DGTZ_SetGroupEnableMask(m_Handle, mask);
+    if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetGroupEnableMask " << CheckError(ret) << "\n"; return; }
 
- //ret = CAEN_DGTZ_SetGroupDCOffset(m_Handle, i, WDcfg.DCoffset[i]);
- //ret = CAEN_DGTZ_SetChannelGroupMask(m_Handle, i, WDcfg.GroupTrgEnableMask[i]);
+    // here I implemented channel pulse polarity per group although it is per channel, you can change it manualy
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        ret = CAEN_DGTZ_SetChannelPulsePolarity(m_Handle, i, static_cast<CAEN_DGTZ_PulsePolarity_t>(m_ChannelPulsPolarity[i]) );
+        if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetChannelPulsePolarity " << CheckError(ret) << "\n"; return; }
+    }
+    //================================ trigger setting ====================================================
+    ret = CAEN_DGTZ_SetSWTriggerMode(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_SWTriggerMode) );      
+    if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetExtTriggerMode " << CheckError(ret) << m_SWTriggerMode << "\n"; return; }
 
- // trigger setting
- ret = CAEN_DGTZ_SetSWTriggerMode(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_SWTriggerMode) );      
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetSWTriggerMode, error code = " << ret << "\n"; return; }
+    ret = CAEN_DGTZ_SetExtTriggerInputMode(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_ExtTriggerMode) );
+    if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetExtTriggerMode " << CheckError(ret) << m_ExtTriggerMode << "\n"; return; }
 
- ret = CAEN_DGTZ_SetExtTriggerInputMode(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_ExtTriggerMode) );
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetExtTriggerMode, error code = " << ret << "\n"; return; }
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        ret = CAEN_DGTZ_SetGroupSelfTrigger(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_ChannelTriggerMode[i]), i);
+        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetGroupSelfTrigger " << CheckError(ret) << m_ChannelTriggerMode[i] << std::endl;
+    }
 
- for(UInt_t i = 0; i < m_NrGroups; i++){
-     ret = CAEN_DGTZ_SetGroupSelfTrigger(m_Handle, static_cast<CAEN_DGTZ_TriggerMode_t>(m_ChannelTriggerMode[i]), i);
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetGroupSelfTrigger, gr:"<< i << ", error code = " << ret << "\n"; return; }
+    mask = 0;
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        for(UInt_t j = 0; j< 8; j++){
+	    mask |= ((m_SelfTriggerMask[8*i+j] & 0x1) << i);     
+            //std::cout << i << " " << j << " mask: " << mask << endl;  
+        }	
+    ret = CAEN_DGTZ_SetChannelGroupMask(m_Handle, i, mask );
+    if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetChannelGroupMask " << CheckError(ret) << mask << std::endl;
+    }
 
-     UInt_t mask = 0;
-     for(UInt_t j = 0; j< m_NrChannels; j++)
-	mask |= ( (m_SelfTriggerMask[i] and 0x1) << j );     
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+        ret = CAEN_DGTZ_SetGroupTriggerThreshold(m_Handle, i, m_Threshold[i]);
+        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetGroupTriggerThreshold " << CheckError(ret) << m_Threshold[i] << std::endl;
+    }
 
-     ret = CAEN_DGTZ_SetGroupEnableMask(m_Handle, mask);
-     CheckError(ret);
-
-     ret = CAEN_DGTZ_SetGroupTriggerThreshold(m_Handle, i, m_Threshold[i]);
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetGroupTriggerThreshold, gr:"<< i << ", error code = " << ret << "\n"; return; }
-
-     ret = CAEN_DGTZ_SetTriggerPolarity(m_Handle, i, static_cast<CAEN_DGTZ_TriggerPolarity_t>(m_TriggerEdge[i]));
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetGroupTriggerPolarity, gr:"<< i << ", error code = " << ret << "\n"; return; }
- }
-
- // trigger logic not available from GUI (coinsidence, majoroty level, etc)
+    for(UInt_t i = 0; i < m_NrGroups; i++){
+       ret = CAEN_DGTZ_SetTriggerPolarity(m_Handle, i, static_cast<CAEN_DGTZ_TriggerPolarity_t>(m_TriggerEdge[i]));
+       CheckError(ret);
+    }
+    //--------------------------------------------------------------------------------------------------------
 
 
  // synchronization setting
@@ -312,53 +351,24 @@ if( VME_CRATE ){
 	break;
      }
 
-
- //std::cout << "Initialization Madc32 module done!\n";
+ std::cout << "Initialization " << m_Name << " module done!\n";
 
  }
 //-----------------------------------------------------------------------------
  void DCAEN1740::ReadVME() {
 
-
   ret = CAEN_DGTZ_ReadData(m_Handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, m_localBuffer, &m_Size);
   CheckError(ret);
   //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
 
-  if (m_Size != 0) {
-      ret = CAEN_DGTZ_GetNumEvents(m_Handle, m_localBuffer, m_Size, &m_EventsInBuffer);
-      CheckError(ret);
-  }
-  else{/*
-      UInt_t lstatus;	  
-      cout << " size of readout data in buffer = " << m_Size << endl; 
-      ret = CAEN_DGTZ_ReadRegister(m_Handle, CAEN_DGTZ_ACQ_STATUS_ADD, &lstatus);
-      if(ret != CAEN_DGTZ_Success) { 
-            std::cout << "[ERROR] read register CAEN_DGTZ_ACQ_STATUS_ADD, error code = " << ret << "\n"; return; 
-	    }
-      else{ 
-	    std::string = Dec2BinStr2((lstatus & 0xFF000000) >> 24) + string("'") + 
-	                  Dec2BinStr2((lstatus & 0x00FF0000) >> 16) + string("'") + 
-		          Dec2BinStr2((lstatus & 0x0000FF00) >>  8) + string("'") + 
-		          Dec2BinStr2((lstatus & 0x000000FF) );
-      }
+  if (m_Size == 0) return; // no data collected
 
-      ret = CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &lstatus);
-      if(ret != CAEN_DGTZ_Success) { 
-          std::cout << "[ERROR] Read register 0x8100, error code = " << ret << "\n"; return; 
-	  }
-       else{ 
-	    std::string = Dec2BinStr2((lstatus & 0xFF000000) >> 24) + string("'") + 
-	                  Dec2BinStr2((lstatus & 0x00FF0000) >> 16) + string("'") + 
-		          Dec2BinStr2((lstatus & 0x0000FF00) >>  8) + string("'") + 
-		          Dec2BinStr2((lstatus & 0x000000FF) );
-      }
-      */
-  }
+  int a_ret = CAEN_DGTZ_GetNumEvents(m_Handle, m_localBuffer, m_Size, &m_EventsInBuffer);
+  if(a_ret != 0)
+     std::cerr << "[ERROR] in GetNumEvents " << std::endl;
 
- 
-
- m_Events += m_EventsInBuffer;
- m_dataSizeByte += m_Size;
+  m_Events += m_EventsInBuffer;
+  m_dataSizeByte += m_Size;
 
 }
 //=============================================================================
@@ -366,7 +376,7 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
 
   // this function could possibly goes to separate thread...
 
-  if( m_EventsInBuffer == 0) return; // no data to display, return
+  if( m_Size == 0) return; // no data to display, return
   UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot  
 
   //if you want to change the graphs on gnuplot, be carefull it is quite tricky.... every space, comma, new line matters...
@@ -383,6 +393,7 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
   gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
   gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
 
+  std::string gp_command;
   Char_t	*a_EventPtr;
 
   ret = CAEN_DGTZ_GetEventInfo(m_Handle, m_localBuffer, m_Size, aEvent, &EventInfo, &a_EventPtr);
@@ -390,10 +401,11 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
   ret = CAEN_DGTZ_DecodeEvent(m_Handle, a_EventPtr, (void**)&Event16);
   CheckError(ret);
 
-  std::string gp_command = "plot ";
+  gp_command = "plot ";
 
   for(UInt_t j = 0; j < m_NrChannels; j++){
      if( ((m_SaveChannel >> j) & 1) && ((EventInfo.ChannelMask >> j/8 )& 1)) {
+	//std::cout << "SaveChannel: " << ((m_SaveChannel >> j) & 1) << " EventInfoChannelMask: " << ((EventInfo.ChannelMask >> j/8 )& 1) << std::endl;     
         char filename1[256];
 	sprintf(filename1,"temp/db%d.bin",j);
         std::ofstream gplot1(filename1, std::ofstream::out | std::ofstream::binary | std::ofstream::ate);
@@ -412,7 +424,8 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
 	}
   }
 
- // plot thresholds 
+ // plot thresholds
+  
   for(UInt_t j = 0; j < m_NrGroups; j++){
      if(m_ChannelTriggerMode[j]) {
         char filename1[256];
@@ -431,7 +444,7 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
 	   gp_command += string(" binary record=") + to_string(Event16->ChSize[j]);
 	   gp_command += string(" format='%uint16'");
 	   gp_command += string(" u 1 w l");
-	   gp_command += string(" notitle ");
+	   gp_command += string(" notitle, ");
            }
       
      } 
@@ -444,7 +457,8 @@ void DCAEN1740::GnuplotOnline(Gnuplot &gp){
 }
 //-----------------------------------------------------------------------------
 void DCAEN1740::StartAcq(){
- 
+
+	std::cout << "[DEBUG] DCAEN1740::StartAcq\n";       	
  ShowSettings();
  InitModule(); 
 
@@ -522,122 +536,56 @@ void DCAEN1740::BuildEvent(){
  }
 
 //======================================================================================================
- void DCAEN1740::CheckError(CAEN_DGTZ_ErrorCode err){
+std::string DCAEN1740::CheckError(CAEN_DGTZ_ErrorCode err){
+ 
+   std::string s1;
 
    switch (err) {
 	case 0:
 	break;
-	case -1:
-           std::cout << "Communication error" << std::endl;
-	break;
-	case -2:
-           std::cout << "Unspecified error" << std::endl;
-	break;
-	case -3:
-           std::cout << "Invalid parameter" << std::endl;
-	break;
-	case -4:
-           std::cout << "Invalid Link Type" << std::endl;
-	break;
-	case -5:
-           std::cout << "Invalid device handle" << std::endl;
-	break;
-	case -6:
-           std::cout << "Maximum number of devices exceeded" << std::endl;
-	break;
-	case -7:
-           std::cout << "The operation is not allowed on this type of board" << std::endl;
-	break;
-	case -8:
-           std::cout << "The interrupt level is not allowed" << std::endl;
-	break;
-	case -9:
-           std::cout << "The event number is bad" << std::endl;
-	break;
-	case -10:
-           std::cout << "Unable to read the registry" << std::endl;
-	break;
-	case -11:
-           std::cout << "Unable to write into the registry" << std::endl;
-	break;
-	case -13:
-           std::cout << "The channel number is invalid" << std::endl;
-	break;
-	case -14:
-           std::cout << "The Channel is busy" << std::endl;
-	break;
-	case -15:
-           std::cout << "Invalid FPIO Mode" << std::endl;
-	break;
-	case -16:
-           std::cout << "Wrong acquisition mode" << std::endl;
-	break;
-	case -17:
-           std::cout << "This function is not allowed for this module" << std::endl;
-	break;
-	case -18:
-           std::cout << "Communication Timeout" << std::endl;
-	break;
-	case -19:
-           std::cout << "The buffer is invalid" << std::endl;
-	break;
-	case -20:
-           std::cout << "The event is not found" << std::endl;
-	break;
-	case -21:
-           std::cout << "The vent is invalid" << std::endl;
-	break;
-	case -22:
-           std::cout << "Out of memory" << std::endl;
-	break;
-	case -23:
-           std::cout << "Unable to calibrate the board" << std::endl;
-	break;
-	case -24:
-           std::cout << "Unable to open the digitizer" << std::endl;
-	break;
-	case -25:
-           std::cout << "The Digitizer is already open" << std::endl;
-	break;
-	case -26:
-           std::cout << "The Digitizer is not ready to operate" << std::endl;
-	break;
-	case -27:
-           std::cout << "The Digitizer has not the IRQ configured" << std::endl;
-	break;
-	case -28:
-           std::cout << "The digitizer flash memory is corrupted" << std::endl;
-	break;
-	case -29:
-           std::cout << "The digitizer dpp firmware is not supported in this lib version" << std::endl;
-	break;
-	case -30:
-           std::cout << "Invalid Firmware License" << std::endl;
-	break;
-	case -31:
-           std::cout << "The digitizer is found in a corrupted status" << std::endl;
-	break;
-	case -32:
-           std::cout << "The given trace is not supported by the digitizer " << std::endl;
-	break;
-	case -33:
-           std::cout << "The given probe is not supported for the given digitizer's trace" << std::endl;
-        break;
-	case -99:
-           std::cout << "The function is not yet implemented" << std::endl;
-        break;
-        default:
-           std::cout << "Error unknown, check the library version, this was created for 2.7.5" << std::endl;
-        break;	
+	case -1:  s1 = " Communication error "; 		break;
+	case -2:  s1 = " Unspecified error " ; 			break;
+	case -3:  s1 = " Invalid parameter " ; 			break;
+	case -4:  s1 = " Invalid Link Type "; 			break;
+	case -5:  s1 = " Invalid device handle ";		break;
+	case -6:  s1 = " Maximum number of devices exceeded ";	break;
+	case -8:  s1 = " The interrupt level is not allowed ";	break;
+	case -9:  s1 = " The event number is bad "; 		break;
+	case -10: s1 = " Unable to read the registry ";		break;
+	case -11: s1 = " Unable to write into the registry ";	break;
+	case -13: s1 = " The channel number is invalid ";	break;
+	case -14: s1 = " The Channel is busy "; 		break;
+	case -15: s1 = " Invalid FPIO Mode "; 			break;
+	case -16: s1 = " Wrong acquisition mode " ; 		break;
+	case -18: s1 = " Communication Timeout " ; 		break;
+	case -19: s1 = " The buffer is invalid " ; 		break;
+	case -20: s1 = " The event is not found " ; 		break;
+	case -21: s1 = " The vent is invalid " ; 		break;
+	case -22: s1 = " Out of memory " ; 			break;
+	case -23: s1 = " Unable to calibrate the board " ; 	break;
+	case -24: s1 = " Unable to open the digitizer " ; 	break;
+	case -25: s1 = " The Digitizer is already open " ; 	break;
+	case -30: s1 = " Invalid Firmware License " ; 		break;
+	case -99: s1 = " The function is not yet implemented "; break;
+	case -26: s1 = " The Digitizer is not ready to operate ";		break;
+	case -28: s1 = " The digitizer flash memory is corrupted ";		break;
+	case -27: s1 = " The Digitizer has not the IRQ configured "; 		break;
+	case -17: s1 = " This function is not allowed for this module "; 	break;
+	case -7:  s1 = " The operation is not allowed on this type of board "; 	break;
+	case -29: s1 = " The digitizer dpp firmware is not supported in this lib version "; 	break;
+	case -31: s1 = " The digitizer is found in a corrupted status "; 			break;
+	case -32: s1 = " The given trace is not supported by the digitizer " ; 			break;
+	case -33: s1 = " The given probe is not supported for the given digitizer's trace "; 	break;
+        default:  s1 = " Error unknown, check the library version, this was created for 2.7.5 ";break;	
    }	   
   
-
+ return s1;
  }
 //======================================================================================================
  void DCAEN1740::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
 
-  static UInt_t Nb, Ne, prevNe, prevNb;
 
+  static UInt_t Nb, Ne, prevNe, prevNb;
 
   fAcquisition->m_AcqStatusEntry2 = m_Events;
   Nb += GetDataSize();
@@ -767,19 +715,20 @@ void DCAEN1740::DataSave(DAcquisition *fAcquisition){
 }
 //*****************************************************************************
 void DCAEN1740::ShowSettings() {
- std::cout << "[MESSAGE] ======= CAEN V1740::ShowSettings =======" << std::endl;
+
+ std::cout << "[MESSAGE] ======= ::" << m_Name << "::ShowSettings =======" << std::endl;
  std::cout << "\t| m_Name\t\t= "          << m_Name                      << std::endl  ;
  std::cout << "\t| m_Handle\t\t= "        << m_Handle                    << std::endl  ;
- std::cout << "\t| m_Module ID\t\t= "     << m_ModuleID                  << std::endl;
+ std::cout << "\t| m_Module ID\t\t= "     << hex << m_ModuleID    << dec << std::endl;
  std::cout << "\t| m_BaseAddress\t\t= 0x" << hex << m_BaseAddress << dec << std::endl;
- std::cout << "\t| m_AcqMode\t\t= "       << m_AcqMode                   << std::endl;
- std::cout << "\t| m_MaxEventsBLT\t= "  << m_MaxEventsBLT              << std::endl;
+ std::cout << "\t| m_AcqMode\t\t= "       << acqmode(m_AcqMode)          << std::endl;
+ std::cout << "\t| m_MaxEventsBLT\t= "    << m_MaxEventsBLT              << std::endl;
  std::cout << "\t+ =============================================="<< std::endl;
  std::cout << "\t+- Samples ------------ Group - Offset - Polarity - Save --+"<< std::endl;
- std::cout << "\t| m_RecodrLength = "  << m_RecordLength << "\t" << m_GroupEnableMask[0] << "\t" << m_DCoffset[0] << "\t "
-      << polarity(m_ChannelPulsPolarity[0]) << "\t   " << Dec2BinStr(m_SaveChannel) << std::endl;
- std::cout << "\t| m_PostTrg\t = " << m_PostTrigger  << "\t" << m_GroupEnableMask[1] << "\t" << m_DCoffset[1] << "\t "
-      << polarity(m_ChannelPulsPolarity[1]) << "\t   " << Dec2BinStr(Char_t(m_SaveChannel >> 8)) << std::endl;
+ std::cout << "\t| m_RecodrLength = "  << m_RecordLength << "\t" << m_GroupEnableMask[0] << "\t" << m_DCoffset[0] 
+	   << "\t " << polarity(m_ChannelPulsPolarity[0]) << "\t   " << Dec2BinStr(m_SaveChannel) << std::endl;
+ std::cout << "\t| m_PostTrg\t = " << m_PostTrigger  << "\t" << m_GroupEnableMask[1] << "\t" << m_DCoffset[1] 
+	   << "\t " << polarity(m_ChannelPulsPolarity[1]) << "\t   " << Dec2BinStr(Char_t(m_SaveChannel >> 8)) << std::endl;
 
  for(UInt_t i = 2; i < m_NrGroups; i++){
      cout << "\t| \t\t\t" << m_GroupEnableMask[i] << "\t" << m_DCoffset[i] << "\t "
@@ -788,41 +737,228 @@ void DCAEN1740::ShowSettings() {
 					      
 					 
  std::cout << "\t+ =============================================="<< std::endl;
- std::cout << "\t+----------- Mode - Threshold - Edge -- TrigerMask "<< endl;
+ std::cout << "\t+----------- Mode - Threshold - Edge -- SelfTrigerMask "<< endl;
 
  for(UInt_t i = 0; i < m_NrGroups; i++){
     std::cout << "\t| TgGr." << i << " " << mode(m_ChannelTriggerMode[i]) <<"\t"<< m_Threshold[i] <<"\t"<< edge(m_TriggerEdge[i]) <<"\t";
 	for(UInt_t j = 0; j < 8; j++){    
-		std::cout << std::bitset<1> (m_SelfTriggerMask[8*i+j]) ; 
+		std::cout <<  m_SelfTriggerMask[8*i+j] ; 
 	}
     std::cout << std::endl;
  }
 
- std::cout << "\t| TgExt  " << mode(m_ExtTriggerMode) << iolevel(m_FPIOtype)  << std::endl;
+ std::cout << "\t| Tg.Ext " << mode(m_ExtTriggerMode) << iolevel(m_FPIOtype)  << std::endl;
+ std::cout << "\t| GPIO\t\t" << iolevel(m_FPIOtype)  << std::endl;
  std::cout << "\t+ =============================================="<< std::endl;
-/*
- std::cout << "\t| Ext " << mExtTriggerMode << endl;
-if(mFPIOtype) cout << "\t| mFPIOtype = "         << "TTL" ;
-else          cout << "\t| mFPIOtype = "         << "NIM" ;
-if(mAcqMode) cout << "\tAcqMode = Hardware" << "\tDelay = " << mDelay;
-else         cout << "\tAcqMode = Software" << "\tDelay = " << mDelay;
-cout << endl;
-*/
 
 }
 
 //==================================================================================
- void DCAEN1740::SaveConfig(std::ofstream & fout){
+void DCAEN1740::SaveConfig(std::ofstream & fout){
+
+ fout << "[" << m_Name << "]" << endl;
+ fout << "# ======= Channel input signal settings ==========" << endl; 
+ fout << "RecordLength "        << m_RecordLength        <<endl;
+ fout << "# you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %" << endl;
+ fout << "# in case of DPP-QDC PreTrigger must be > Pregate + 7"<< endl;
+ fout << "# Offset for group channels " << endl;
+ fout << "# The values are in ADC convertion numbers, to see coresponding mV value run acq, look at the right yaxis and addapt accordingly" << endl;
+ fout << "# 32768 is a middle, there is no offset" << endl;
+ fout << "# syntax: DCoffset <group> <value>" << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "DCoffset " << i << " " << m_DCoffset[i]  << endl;
+ fout << endl;
+ fout << "PostTrigger " << m_PostTrigger         <<endl;
+ fout << endl;
+ fout << "# GroupEnableMask: disable = 0 or enable = 1 group channels" << endl;
+ fout << "# syntax: GroupEnableMask <group> <value>" << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "GroupEnableMask " << i << " " << m_GroupEnableMask[i]  << endl;
+ fout << endl;
+ fout << "# Set the pulse polarity, here is per group but you can do it manualy for every channel " << endl;
+ fout << "#  decided that for group is enough, The value can be 0 for positive signals and 1 for negative" << endl;
+ fout << "# need intervention in the source code..." << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "ChannelPulsPolarity " << i << " " << m_ChannelPulsPolarity[i]  << endl;
+
+ fout << endl;
+ fout << "# The save option allows you to save certain channels. The digitizer is designed in such that even only one channel is used"<< endl;
+ fout << "# all group must be transfered to PC. Then you can choose by software which channel you want to store and/or display."<< endl;
+ fout << "# It is one 32/64 bits word, Each bit correspond to each channel"<< endl;
+ fout << "SaveChannels " <<  m_SaveChannel        << endl;
+ fout << endl;
+
+ fout << "# ====== Trigger Configuration ==========" << endl;
+ fout << "# Enable or disable software, external and channel trigger" << endl;
+ fout << "# the options could be 0, 1, 2, 3, disable, enable acq only, enable ext only, both, respectevely "<< endl;
+ fout << "# syntax: ChannelTriggerMode <group> <value> "<< endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "ChannelTriggerMode " << i << " " << m_ChannelTriggerMode[i]  << endl;
+ fout << endl;
+ fout << "# " << endl;
+ fout << "ExtTriggerMode "<< m_ExtTriggerMode       <<endl;
+ fout << "# " << endl;
+ fout << "# Adjust the threshold to the coresponding channel" << endl;
+ fout << "# Treshold value is an absolut value, consider it when you add offset to the channel" << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "Threshold " << i <<" " <<  m_Threshold[i]  << endl;
+ fout << endl;
+ fout << "# Trigger slope for the every group of channels, could be rising (0) or falling (1)" << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+    fout << "TriggerEdge " << i << " " << m_TriggerEdge[i]  << endl;
+ fout << endl;
+
+ fout << "# Global trigger can be built from logic OR all indyvidual channel triggers. This option allows you to set which indyvidual "<< endl;
+ fout << "# trigger will contribute to build the global one. This is set by indyvidual group. Every group consist of 8 channels" << endl;
+ fout << "SelfTriggerMaskGr0 " << m_SelfTriggerMask[0]  << m_SelfTriggerMask[1]  << m_SelfTriggerMask[2]  << m_SelfTriggerMask[3]
+                               << m_SelfTriggerMask[4]  << m_SelfTriggerMask[5]  << m_SelfTriggerMask[6]  << m_SelfTriggerMask[7]  << endl;
+ fout << "SelfTriggerMaskGr1 " << m_SelfTriggerMask[8]  << m_SelfTriggerMask[9]  << m_SelfTriggerMask[10] << m_SelfTriggerMask[11]
+	                       << m_SelfTriggerMask[12] << m_SelfTriggerMask[13] << m_SelfTriggerMask[14] << m_SelfTriggerMask[15] << endl;
+ fout << "SelfTriggerMaskGr2 " << m_SelfTriggerMask[16] << m_SelfTriggerMask[17] << m_SelfTriggerMask[18] << m_SelfTriggerMask[19]
+	                       << m_SelfTriggerMask[20] << m_SelfTriggerMask[21] << m_SelfTriggerMask[22] << m_SelfTriggerMask[23] << endl;
+ fout << "SelfTriggerMaskGr3 " << m_SelfTriggerMask[24] << m_SelfTriggerMask[25] << m_SelfTriggerMask[26] << m_SelfTriggerMask[27]
+	                       << m_SelfTriggerMask[28] << m_SelfTriggerMask[29] << m_SelfTriggerMask[30] << m_SelfTriggerMask[31] << endl;
+ fout << "SelfTriggerMaskGr4 " << m_SelfTriggerMask[32] << m_SelfTriggerMask[33] << m_SelfTriggerMask[34] << m_SelfTriggerMask[35]
+	                       << m_SelfTriggerMask[36] << m_SelfTriggerMask[37] << m_SelfTriggerMask[38] << m_SelfTriggerMask[39] << endl;
+ fout << "SelfTriggerMaskGr5 " << m_SelfTriggerMask[40] << m_SelfTriggerMask[41] << m_SelfTriggerMask[42] << m_SelfTriggerMask[43]
+	                       << m_SelfTriggerMask[44] << m_SelfTriggerMask[45] << m_SelfTriggerMask[46] << m_SelfTriggerMask[47] << endl;
+ fout << "SelfTriggerMaskGr6 " << m_SelfTriggerMask[48] << m_SelfTriggerMask[49] << m_SelfTriggerMask[50] << m_SelfTriggerMask[51]
+	                       << m_SelfTriggerMask[52] << m_SelfTriggerMask[53] << m_SelfTriggerMask[54] << m_SelfTriggerMask[55] << endl;
+ fout << "SelfTriggerMaskGr7 " << m_SelfTriggerMask[56] << m_SelfTriggerMask[57] << m_SelfTriggerMask[58] << m_SelfTriggerMask[59]
+	                       << m_SelfTriggerMask[60] << m_SelfTriggerMask[61] << m_SelfTriggerMask[62] << m_SelfTriggerMask[63] << endl;
+ fout << "# " << endl;
+
+ fout << "# All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 0" << endl;
+ fout << "IOLevel "             << m_FPIOtype          << endl;
+ fout << "# " << endl;
+
+ fout << "# Acquisition Mode could be software controled = 0; or by signal from the front panel = 1" << endl;
+ fout << "AcquisitionMode "     << m_AcqMode           << endl;
+
+ fout << endl;
 
 }
 
 
 //==================================================================================
- void DCAEN1740::LoadConfig(std::ifstream & inpfile){
+void DCAEN1740::LoadConfig(std::ifstream & inpfile){
  
   cout << "[MESSAGE] Load configuration file CAEN1740......" << endl;  
+ 
+  string line;
+  string name;
+  string value;
+  string inSection;
+  int posEqual;
+  int lineNr = 0;
+  while (getline(inpfile, line)) {
+         lineNr++;
+         if ( !line.length()) continue;
+         if (line[0] == '#') continue;
+         if (line[0] == ';') continue;
+         if (line[0] == '[') {
+             inSection = Trim(line.substr(1,line.find(']')-1));
+             continue;
+         }
 
- }
+	 posEqual=line.find(' ');
+         name  = Trim(line.substr(0,posEqual));
+         value = Trim(line.substr(posEqual+1));
+	 vector<string> param;
+	 string buf;
+	 if( inSection == string(m_Name) ) {
+	     if     ( name == string("RecordLength")	) m_RecordLength	= atoi( value.c_str() );
+	     else if( name == string("PostTrigger")	) m_PostTrigger		= atoi( value.c_str() );
+	     else if( name == string("GroupEnableMask")	) {
+	        stringstream ss(value);
+		while (ss >> buf)  param.push_back(buf);
+		m_GroupEnableMask[ stoi(param.at(0)) ] = stoi( param.at(1) );
+	     }
+	     else if( name == string("DCoffset")	) {
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		m_DCoffset[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		}
+	     else if( name == string("ChannelPulsPolarity")){
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		m_ChannelPulsPolarity[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		}
+	     else if( name == string("SaveChannels")	      ) m_SaveChannel 	   	 = atoi( value.c_str()   );
+	     else if( name == string("ExtTriggerMode") 	      ) m_ExtTriggerMode         = atoi( value.c_str()   );
+	     else if( name == string("ChannelTriggerMode") ){
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		m_ChannelTriggerMode[ stoi(param.at(0)) ] = stoi( param.at(1) );
+	     }
+	     else if( name == string("Threshold")	) {
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		m_Threshold[ stoi(param.at(0)) ] = stoi( param.at(1) );
+	     }
+	     else if( name == string("TriggerEdge")  ) {
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		m_TriggerEdge[ stoi(param.at(0)) ] = stoi( param.at(1) );
+	     }
+             else if( name == string("SelfTriggerMaskGr0")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i] = 1; 
+			     else m_SelfTriggerMask[i] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr1")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+8] = 1; 
+			     else m_SelfTriggerMask[i+8] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr2")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+16] = 1; 
+			     else m_SelfTriggerMask[i+16] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr3")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+24] = 1; 
+			     else m_SelfTriggerMask[i+24] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr4")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+32] = 1; 
+			     else m_SelfTriggerMask[i+32] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr5")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+40] = 1; 
+			     else m_SelfTriggerMask[i+40] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr6")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+48] = 1; 
+			     else m_SelfTriggerMask[i+48] = 0; 
+		     } 
+	     }
+             else if( name == string("SelfTriggerMaskGr7")){ 
+		     for(Int_t i = 0; i < 8; i++){ 
+			     if(value[i] == '1') m_SelfTriggerMask[i+56] = 1; 
+			     else m_SelfTriggerMask[i+56] = 0; 
+		     } 
+	     }
+ 	     else if( name == string("IOLevel") 	) 	m_FPIOtype            = atoi( value.c_str() );
+             else if( name == string("AcquisitionMode") ) 	m_AcqMode             = atoi( value.c_str() );
+             else if( name == string("ClockDelay") 	) 	m_Delay                    = atoi( value.c_str() );
+             else if( name == string("ClockSource")	) 	m_Clock                    = atoi( value.c_str() );
+             else if( name == string("MaxEventsBLT")	) 	m_MaxEventsBLT             = atoi( value.c_str() );
+             else if( name == string("SynchronizationMode")) 	m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+             else cout << "[ERROR] Parameter not recognized, line nr = " << lineNr << "\t[" << inSection << "] " << name << " : " << value << endl;
+	 }
+  }
+}
 
 //==================================================================================
 void DCAEN1740::RegisterDump(){

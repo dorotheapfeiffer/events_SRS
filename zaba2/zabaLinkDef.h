@@ -13,7 +13,9 @@
 #pragma link C++ class DGV1718;
 #pragma link C++ class DV1718;
 #pragma link C++ class DGCAEN1740;
+#pragma link C++ class DGCAEN1740D;
 #pragma link C++ class DCAEN1740;
+#pragma link C++ class DCAEN1740D;
 #pragma link C++ class DGDisplay;
 #pragma link C++ class DDataSave;
 #pragma link C++ class DGHelp;

@@ -32,23 +32,23 @@ int main(int argc, char **argv) {
  std::cout << "path = " << g_Path << endl;
  //g_Path = exec((char*)"pwd");
 
- DAcquisition	*dMultiGrid = new DAcquisition("MultiGrid");
+ DAcquisition	*dAcquisition = new DAcquisition("MultiGrid");
 
- dMultiGrid->StartAcq();
+ dAcquisition->StartAcq();
 
- while( CheckKeyboard() and dMultiGrid->CheckCondition() ){
-   dMultiGrid->ReadVME(); 
-   dMultiGrid->GnuplotOnline();
-   //dMultiGrid->BuildEvent();
-   //dMultiGrid->DataSave();
-   dMultiGrid->ShowData(); // null because we do not use graphics in the szaba version, prints only on the terminal
+ while( CheckKeyboard() and dAcquisition->CheckCondition() ){
+   dAcquisition->ReadVME(); 
+   //dAcquisition->GnuplotOnline();
+   //dAcquisition->BuildEvent();
+   //dAcquisition->DataSave();
+   //dAcquisition->ShowData(); // no arguments because we do not use graphics in the szaba version, prints only on the terminal
    
-   //std::this_thread::sleep_for(std::chrono::microseconds(1000));
+   std::this_thread::sleep_for(std::chrono::microseconds(5000));
 
  }
 
- dMultiGrid->StopAcq();
- delete dMultiGrid;
+ dAcquisition->StopAcq();
+ delete dAcquisition;
 
 return 0;
 }

@@ -474,8 +474,10 @@ return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
   if( flag == 0 ){
       flag = 1;
       fAcquisition->ReadVME();
-      fAcquisition->m_AcqStatusEntry2 = fAcquisition->fDMadc32->GetNrEvents(); 
-      fAcquisition->m_AcqStatusEntry4 = fAcquisition->fDMadc32->GetDataSize(); 
+      //fAcquisition->m_AcqStatusEntry2 = fAcquisition->fDMadc32->GetNrEvents(); 
+      //fAcquisition->m_AcqStatusEntry4 = fAcquisition->fDMadc32->GetDataSize(); 
+      fAcquisition->m_AcqStatusEntry2 = fAcquisition->fDCAEN1740->GetNrEvents(); 
+      fAcquisition->m_AcqStatusEntry4 = fAcquisition->fDCAEN1740->GetDataSize(); 
      
       fAcquisition->ShowData(fGDisplay);
  
