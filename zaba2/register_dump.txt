@@ -1,0 +1,61 @@
+=== configuration settings ===
+RecordLengthDPP        = 256
+DecimationFactor    = 1
+FPIOtype            = 0
+Max events transfer = 1
+Acquisition control = 0
+EnableMask          = 15
+...... Group 0
+DCoffset[0]          = 32768
+Threshold[0]         = 10
+GroupTrgEnableMask[0]= 1
+...... Group 1
+DCoffset[1]          = 32768
+Threshold[1]         = 10
+GroupTrgEnableMask[1]= 1
+...... Group 2
+DCoffset[2]          = 32768
+Threshold[2]         = 10
+GroupTrgEnableMask[2]= 1
+...... Group 3
+DCoffset[3]          = 32768
+Threshold[3]         = 10
+GroupTrgEnableMask[3]= 1
+
+=== Register readout ===
+ERROR Read Register -1
+Group 0 Threshold                   (0x1080) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group 0 Status                      (0x1088) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group 0 DAC                         (0x1098) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group 0 ADC Configuration           (0x109C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group 0 Channel Trigger Enable Mask (0x10A8) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group Configuration                 (0x8000) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Buffer Organization                 (0x800C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Custom Size                         (0x8020) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Decimation Factor                   (0x8044) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Acquisition Control                 (0x8100) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Acquisition Status                  (0x8104) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Trigger Source Enable Mask          (0x810C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Front Panel Trigger Out Enable Mask (0x8110) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Post Trigger                        (0x8114) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Front Panel I/O  		    (0x811C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ERROR Read Register -1
+Group Enable Mask                   (0x8120) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
+ROC FPGA Firmware rev.              (0x8124) 	= 0xFA290408 = 11111010'00101001'00000100'00001000
+Events stored                       (0x812C) 	= 0x00000000 = 00000000'00000000'00000000'00000000
+Run Start/Stop Delay                (0x8170) 	= 0x00000000 = 00000000'00000000'00000000'00000000
+External Trigger Inhibit            (0x817C) 	= 0x00000000 = 00000000'00000000'00000000'00000000
