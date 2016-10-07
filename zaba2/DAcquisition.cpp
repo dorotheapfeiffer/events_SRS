@@ -29,7 +29,8 @@ extern std::string g_Path;
 
   //fModuleList->Add(fDV1718     = new DV1718(   (char*)"VME_USB_Bridge",  0x00000000));
   //fModuleList->Add(fDMadc32    = new DMadc32(  (char*)"Mesytec MADC-32", 0xd0000000));
-  fModuleList->Add(fDCAEN1740  = new DCAEN1740((char*)"CAEN 1740D",      0x32100000));
+  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"CAEN 1740D",      0x32100000));
+  //fModuleList->Add(fDCAEN1740  = new DCAEN1740((char*)"CAEN1740D",        0));
 
   std::cout << "[MESSAGE] number of modules:      " << fModuleList->GetLast()+1 << std::endl;
   *fLog << "\t\t\t" << " ----- number of modules:      " << fModuleList->GetLast()+1 << std::endl;
@@ -69,15 +70,14 @@ extern std::string g_Path;
   m_ConfigPath = g_Path + string("/zabarc"); 
 
   LoadConfig((char*)m_ConfigPath.c_str());
-  //SaveConfig((char*)m_ConfigPath.c_str());
+  SaveConfig((char*)m_ConfigPath.c_str());
 
 }
 //-----------------------------------------------------------------------------
    DAcquisition::~DAcquisition() {
     m_TimeNow = std::time(NULL);
     std::string s1 = string(ctime(&m_TimeNow));
-    *fLog << "\t\t\t ----- destroing modules" << endl;
-    std::cout<<"[MESSAGE] destroing modules:\n";
+    *fLog << "\t\t\t ----- destroing modules" << endl;    std::cout<<"[MESSAGE] destroing modules:\n";
 
     SaveConfig((char*)m_ConfigPath.c_str());
     fModuleList->Delete();
