@@ -28,7 +28,7 @@ uint32_t _COMMON_GetChannelAddress(uint32_t base, uint16_t channel) {
 }
 
 int32_t _V1740_SetGroupTriggerMask(int handle,uint32_t group, uint32_t channelask){
-    int32_t ret = 0;
+    CAEN_DGTZ_ErrorCode          ret;	
     int32_t address;
     if (group > V1740_MAX_CHANNELS -1) return CAEN_DGTZ_InvalidChannelNumber;
     address = _COMMON_GetChannelAddress(CAEN_DGTZ_CHANNEL_GROUP_V1740_BASE_ADDRESS, (uint8_t) group);
@@ -96,13 +96,17 @@ int _CAEN_DGTZ_DPP_QDC_GetDPPEvents(int handle, char *buffer, uint32_t BufferSiz
         for(grp=0; grp<grpmax; grp++) {
             if (!(grpmask & (1<<grp)))
                 continue;
-            if (_CAEN_DGTZ_DPP_QDC_DecodeDPPAggregate(buffer32+pnt, Events[grp]+index[grp], &nevgrp))
+            if (_CAEN_DGTZ_DPP_QDC_DecodeDPPAggregate(buffer32+pnt, Events[grp]+index[grp], &nevgrp)){
+		printf("error 1\n");    
                 return CAEN_DGTZ_InvalidEvent;
+	    }
             index[grp] += nevgrp;
             pnt += (buffer32[pnt] & 0x7FFFFFFF);
         }    
-        if (pnt != endaggr)
+        if (pnt != endaggr){
+	    printf("error 2\n");    
             return CAEN_DGTZ_InvalidEvent;
+        }
     }
     for(grp=0; grp<grpmax; grp++)
         NumEvents[grp] = index[grp];
@@ -134,12 +138,14 @@ int _CAEN_DGTZ_GetDPPEvents(int handle, char *buffer, uint32_t BufferSize, void 
 
     /* the for loop distributes events belongng to groups into single channel event arrays */
     for(i=0; i<gEquippedGroups; i++) { 
-	for(j=0; j<(int)NumEventsGrp[i]; j++) {
+	for(j=0; j<(unsigned int)NumEventsGrp[i]; j++) {
 		ch = i*8 + gEventsGrp[i][j].SubChannel;
 		if ((memcpy((_CAEN_DGTZ_DPP_QDC_Event_t *)Events[ch] + NumEvents[ch], &gEventsGrp[i][j], sizeof(_CAEN_DGTZ_DPP_QDC_Event_t))) == NULL) {
                      printf("Error during memcpy in _CAEN_DGTZ_GetDPPEvents() call: exiting ...\n");
                      exit(-1);
                 }
+	_CAEN_DGTZ_DPP_QDC_Event_t *ptr = (_CAEN_DGTZ_DPP_QDC_Event_t *)Events[ch];	
+	printf("ch = %d Events.SubChannel = %d\n", ch, ptr[j].SubChannel);
 	NumEvents[ch]++;
 	}
     }
@@ -152,8 +158,10 @@ int _CAEN_DGTZ_DPP_QDC_DecodeDPPAggregate(uint32_t *data, _CAEN_DGTZ_DPP_QDC_Eve
 {
     uint32_t i,size, evsize, nev, et, eq, ew, ee, pnt;
     
-    if (!(data[0] & 0x80000000))
+    if (!(data[0] & 0x80000000)){
+        printf("error 3\n");    
         return CAEN_DGTZ_InvalidEvent;
+    }
 	
     size   = data[0] & 0x3FFFF;                       
     ew     = (data[1]>>27) & 1;                       
@@ -163,10 +171,14 @@ int _CAEN_DGTZ_DPP_QDC_DecodeDPPAggregate(uint32_t *data, _CAEN_DGTZ_DPP_QDC_Eve
     evsize = ((data[1] & 0xFFF) << 2) + et + ee + eq; 
 
 
-    if(evsize==0) 
+    if(evsize==0){ 
+		printf("error 4\n");    
         return CAEN_DGTZ_InvalidEvent;
-    if ((size - 2) % evsize)
+    }
+    if ((size - 2) % evsize){
+		printf("error 5, (size-2 mod) evsize = %d, size-2 = %d, evsize = %d\n",(size - 2) % evsize, size -2, evsize );    
         return CAEN_DGTZ_InvalidEvent;
+    }
     nev = (size - 2) / evsize;
     pnt = 2;
     for (i=0; i<nev; i++) {
@@ -195,18 +207,18 @@ int _CAEN_DGTZ_DPP_QDC_DecodeDPPAggregate(uint32_t *data, _CAEN_DGTZ_DPP_QDC_Eve
             Events[i].Baseline = (uint16_t)((Events[i].Extras & 0xFFFF0000) >> 16);
         }
 
-        
-
         if (eq) {
             Events[i].Charge       = (uint16_t)(data[pnt] & 0x0000FFFF);
             Events[i].Pur          = (uint16_t)((data[pnt] & 0x08000000) >> 27);
             Events[i].Overrange    = (uint16_t)((data[pnt] & 0x04000000) >> 26);
             Events[i].SubChannel   = (uint16_t)((data[pnt] >> 28) & 0xF); 
+	    //printf("agregare i = %d, Events[%d].SubChannel = %d, pnt = %d\n", i, i, Events[i].SubChannel, pnt);
             pnt++;
         }
         else{
             Events[i].Charge = 0;
         }
+
         Events[i].Extras = 0;
     }
     *NumEvents = nev;

@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.10.7	18:15:54
+# the file was created:  2016.11.7	15:56:31
 # Line starts with a '#' is a comment line
 #
 #
@@ -34,7 +34,7 @@ FileName data
  
 [CAEN 1740D.142]
 # ======= Channel input signal settings ==========
-RecordLengthDPP 256
+RecordLengthDPP 512
 # you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
 # in case of DPP-QDC PreTrigger must be > Pregate + 7
 # Offset for group channels 
@@ -99,8 +99,10 @@ PulsePolarityDPP 5 0
 PulsePolarityDPP 6 0
 PulsePolarityDPP 7 0
 # ======= BaseLine settings ==========
+# if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples
 # BaseLine: baseline value per group 
-# syntax: BaseLineDPP <group> <value>
+# syntax: BaseLineDPP <group> <ifixed value>
+FixedBaseLineDPP 2
 BaseLineDPP 0 16
 BaseLineDPP 1 16
 BaseLineDPP 2 16
@@ -115,22 +117,22 @@ BaseLineDPP 7 16
 #         EnableChargePedestal <value>
 #         ChargeSensitivity    <value> 
 # gate width (in steps of 16 ns) 
-GateWidthDPP 0 50
-GateWidthDPP 1 50
-GateWidthDPP 2 50
-GateWidthDPP 3 50
-GateWidthDPP 4 50
-GateWidthDPP 5 50
-GateWidthDPP 6 50
-GateWidthDPP 7 50
-PreGateDPP 0 10
-PreGateDPP 1 10
-PreGateDPP 2 10
-PreGateDPP 3 10
-PreGateDPP 4 10
-PreGateDPP 5 10
-PreGateDPP 6 10
-PreGateDPP 7 10
+GateWidthDPP 0 100
+GateWidthDPP 1 100
+GateWidthDPP 2 100
+GateWidthDPP 3 100
+GateWidthDPP 4 100
+GateWidthDPP 5 100
+GateWidthDPP 6 100
+GateWidthDPP 7 100
+PreGateDPP 0 20
+PreGateDPP 1 20
+PreGateDPP 2 20
+PreGateDPP 3 20
+PreGateDPP 4 20
+PreGateDPP 5 20
+PreGateDPP 6 20
+PreGateDPP 7 20
 # EnableChargePedestal: 0 = disabled; 1 = enabled (add 1024 to the charge) 
 EnableChargePedestalDPP 0
 # ChargeSensitivity: 0=0.16pC, 1=0.32pC, 2=0.64pC, 3=1.28pC, 4=2.56pC, 5=5.12pC, 6=10.24pC, 7=20.48pC 
@@ -219,62 +221,6 @@ TriggerHoldOffDPP 4 0
 TriggerHoldOffDPP 5 0
 TriggerHoldOffDPP 6 0
 TriggerHoldOffDPP 7 0
-TriggerHoldOffDPP 8 0
-TriggerHoldOffDPP 9 0
-TriggerHoldOffDPP 10 0
-TriggerHoldOffDPP 11 0
-TriggerHoldOffDPP 12 0
-TriggerHoldOffDPP 13 0
-TriggerHoldOffDPP 14 0
-TriggerHoldOffDPP 15 0
-TriggerHoldOffDPP 16 0
-TriggerHoldOffDPP 17 0
-TriggerHoldOffDPP 18 5
-TriggerHoldOffDPP 19 10
-TriggerHoldOffDPP 20 10
-TriggerHoldOffDPP 21 10
-TriggerHoldOffDPP 22 10
-TriggerHoldOffDPP 23 10
-TriggerHoldOffDPP 24 10
-TriggerHoldOffDPP 25 10
-TriggerHoldOffDPP 26 10
-TriggerHoldOffDPP 27 10
-TriggerHoldOffDPP 28 10
-TriggerHoldOffDPP 29 10
-TriggerHoldOffDPP 30 10
-TriggerHoldOffDPP 31 10
-TriggerHoldOffDPP 32 10
-TriggerHoldOffDPP 33 10
-TriggerHoldOffDPP 34 10
-TriggerHoldOffDPP 35 10
-TriggerHoldOffDPP 36 10
-TriggerHoldOffDPP 37 10
-TriggerHoldOffDPP 38 10
-TriggerHoldOffDPP 39 10
-TriggerHoldOffDPP 40 10
-TriggerHoldOffDPP 41 10
-TriggerHoldOffDPP 42 10
-TriggerHoldOffDPP 43 10
-TriggerHoldOffDPP 44 10
-TriggerHoldOffDPP 45 10
-TriggerHoldOffDPP 46 10
-TriggerHoldOffDPP 47 10
-TriggerHoldOffDPP 48 10
-TriggerHoldOffDPP 49 10
-TriggerHoldOffDPP 50 10
-TriggerHoldOffDPP 51 10
-TriggerHoldOffDPP 52 10
-TriggerHoldOffDPP 53 10
-TriggerHoldOffDPP 54 10
-TriggerHoldOffDPP 55 10
-TriggerHoldOffDPP 56 10
-TriggerHoldOffDPP 57 10
-TriggerHoldOffDPP 58 10
-TriggerHoldOffDPP 59 10
-TriggerHoldOffDPP 60 10
-TriggerHoldOffDPP 61 10
-TriggerHoldOffDPP 62 10
-TriggerHoldOffDPP 63 10
 # PreTriggerDPP: must be bigger than pregate +7 
 # syntax: PreTriggerDPP     <group> <value>
 PreTriggerDPP 0 50

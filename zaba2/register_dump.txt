@@ -1,61 +1,155 @@
-=== configuration settings ===
-RecordLengthDPP        = 256
-DecimationFactor    = 1
-FPIOtype            = 0
-Max events transfer = 1
-Acquisition control = 0
-EnableMask          = 15
-...... Group 0
-DCoffset[0]          = 32768
-Threshold[0]         = 10
-GroupTrgEnableMask[0]= 1
-...... Group 1
-DCoffset[1]          = 32768
-Threshold[1]         = 10
-GroupTrgEnableMask[1]= 1
-...... Group 2
-DCoffset[2]          = 32768
-Threshold[2]         = 10
-GroupTrgEnableMask[2]= 1
-...... Group 3
-DCoffset[3]          = 32768
-Threshold[3]         = 10
-GroupTrgEnableMask[3]= 1
-
-=== Register readout ===
-ERROR Read Register -1
-Group 0 Threshold                   (0x1080) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group 0 Status                      (0x1088) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group 0 DAC                         (0x1098) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group 0 ADC Configuration           (0x109C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group 0 Channel Trigger Enable Mask (0x10A8) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group Configuration                 (0x8000) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Buffer Organization                 (0x800C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Custom Size                         (0x8020) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Decimation Factor                   (0x8044) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Acquisition Control                 (0x8100) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Acquisition Status                  (0x8104) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Trigger Source Enable Mask          (0x810C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Front Panel Trigger Out Enable Mask (0x8110) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Post Trigger                        (0x8114) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Front Panel I/O  		    (0x811C) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ERROR Read Register -1
-Group Enable Mask                   (0x8120) 	= 0xFFFFFFFF = 11111111'11111111'11111111'11111111
-ROC FPGA Firmware rev.              (0x8124) 	= 0xFA290408 = 11111010'00101001'00000100'00001000
-Events stored                       (0x812C) 	= 0x00000000 = 00000000'00000000'00000000'00000000
-Run Start/Stop Delay                (0x8170) 	= 0x00000000 = 00000000'00000000'00000000'00000000
-External Trigger Inhibit            (0x817C) 	= 0x00000000 = 00000000'00000000'00000000'00000000
+(0x1030) GateWidth	0x64
+(0x1130) GateWidth	0x64
+(0x1230) GateWidth	0x64
+(0x1330) GateWidth	0x64
+(0x1430) GateWidth	0x64
+(0x1530) GateWidth	0x64
+(0x1630) GateWidth	0x64
+(0x1730) GateWidth	0x64
+(0x1034)  GateOffset	0x14
+(0x1134)  GateOffset	0x14
+(0x1234)  GateOffset	0x14
+(0x1334)  GateOffset	0x14
+(0x1434)  GateOffset	0x14
+(0x1534)  GateOffset	0x14
+(0x1634)  GateOffset	0x14
+(0x1734)  GateOffset	0x14
+(0x1038) GateBaseline	0x2
+(0x1138) GateBaseline	0x2
+(0x1238) GateBaseline	0x2
+(0x1338) GateBaseline	0x2
+(0x1438) GateBaseline	0x2
+(0x1538) GateBaseline	0x2
+(0x1638) GateBaseline	0x2
+(0x1738) GateBaseline	0x2
+(0x103C)  PreTrigger	0x32
+(0x113C)  PreTrigger	0x32
+(0x123C)  PreTrigger	0x32
+(0x133C)  PreTrigger	0x32
+(0x143C)  PreTrigger	0x32
+(0x153C)  PreTrigger	0x32
+(0x163C)  PreTrigger	0x32
+(0x173C)  PreTrigger	0x32
+(0x1074) TriggerHoldOff	0x0
+(0x1174) TriggerHoldOff	0x0
+(0x1274) TriggerHoldOff	0x0
+(0x1374) TriggerHoldOff	0x0
+(0x1474) TriggerHoldOff	0x0
+(0x1574) TriggerHoldOff	0x0
+(0x1674) TriggerHoldOff	0x0
+(0x1774) TriggerHoldOff	0x0
+(0x1080) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1180) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1280) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1380) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1480) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1580) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1680) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1780) PulsePolarity	0xFFFFFFFF
+Errors during register dump.
+(0x1098)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1198)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1298)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1398)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1498)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1598)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1698)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x1798)  DCoffset	0xFFFFFFFF
+Errors during register dump.
+(0x10A8)  ChannelEnableMask	0xFF
+(0x11A8)  ChannelEnableMask	0xFF
+(0x12A8)  ChannelEnableMask	0xFF
+(0x13A8)  ChannelEnableMask	0xFF
+(0x14A8)  ChannelEnableMask	0xFF
+(0x15A8)  ChannelEnableMask	0xFF
+(0x16A8)  ChannelEnableMask	0xFF
+(0x17A8)  ChannelEnableMask	0xFF
+(0x10D0) TriggerThreshold	0xA
+(0x10D4) TriggerThreshold	0xA
+(0x10D8) TriggerThreshold	0xA
+(0x10DC) TriggerThreshold	0xA
+(0x10E0) TriggerThreshold	0xA
+(0x10E4) TriggerThreshold	0xA
+(0x10E8) TriggerThreshold	0xA
+(0x10EC) TriggerThreshold	0xA
+(0x11D0) TriggerThreshold	0xA
+(0x11D4) TriggerThreshold	0xA
+(0x11D8) TriggerThreshold	0xA
+(0x11DC) TriggerThreshold	0xA
+(0x11E0) TriggerThreshold	0xA
+(0x11E4) TriggerThreshold	0xA
+(0x11E8) TriggerThreshold	0xA
+(0x11EC) TriggerThreshold	0xA
+(0x12D0) TriggerThreshold	0xA
+(0x12D4) TriggerThreshold	0xA
+(0x12D8) TriggerThreshold	0xA
+(0x12DC) TriggerThreshold	0xA
+(0x12E0) TriggerThreshold	0xA
+(0x12E4) TriggerThreshold	0xA
+(0x12E8) TriggerThreshold	0xA
+(0x12EC) TriggerThreshold	0xA
+(0x13D0) TriggerThreshold	0xA
+(0x13D4) TriggerThreshold	0xA
+(0x13D8) TriggerThreshold	0xA
+(0x13DC) TriggerThreshold	0xA
+(0x13E0) TriggerThreshold	0xA
+(0x13E4) TriggerThreshold	0xA
+(0x13E8) TriggerThreshold	0xA
+(0x13EC) TriggerThreshold	0xA
+(0x14D0) TriggerThreshold	0xA
+(0x14D4) TriggerThreshold	0xA
+(0x14D8) TriggerThreshold	0xA
+(0x14DC) TriggerThreshold	0xA
+(0x14E0) TriggerThreshold	0xA
+(0x14E4) TriggerThreshold	0xA
+(0x14E8) TriggerThreshold	0xA
+(0x14EC) TriggerThreshold	0xA
+(0x15D0) TriggerThreshold	0xA
+(0x15D4) TriggerThreshold	0xA
+(0x15D8) TriggerThreshold	0xA
+(0x15DC) TriggerThreshold	0xA
+(0x15E0) TriggerThreshold	0xA
+(0x15E4) TriggerThreshold	0xA
+(0x15E8) TriggerThreshold	0xA
+(0x15EC) TriggerThreshold	0xA
+(0x16D0) TriggerThreshold	0xA
+(0x16D4) TriggerThreshold	0xA
+(0x16D8) TriggerThreshold	0xA
+(0x16DC) TriggerThreshold	0xA
+(0x16E0) TriggerThreshold	0xA
+(0x16E4) TriggerThreshold	0xA
+(0x16E8) TriggerThreshold	0xA
+(0x16EC) TriggerThreshold	0xA
+(0x17D0) TriggerThreshold	0xA
+(0x17D4) TriggerThreshold	0xA
+(0x17D8) TriggerThreshold	0xA
+(0x17DC) TriggerThreshold	0xA
+(0x17E0) TriggerThreshold	0xA
+(0x17E4) TriggerThreshold	0xA
+(0x17E8) TriggerThreshold	0xA
+(0x17EC) TriggerThreshold	0xA
+(0x8000) Board Configuration	0xD0110
+(0x800C) AggregateOrganization	0x3
+(0x8020) EventsPerAggregate	0x1
+(0x8024) Errors during register dump --------- ret(-1)
+(0x8040) Errors during register dump --------- ret(-1)
+(0x8100) AcqControl	0x0
+(0x810C) GlobalTriggerMask	0xC0000000
+(0x8120) GroupEnableMask	0xFF
+(0x814C) EventSize	0x0
+(0xEF00) ReadoutControl	0x10
+(0xEF1C) AggregateNumber per BLT	0xC8

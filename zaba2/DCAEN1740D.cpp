@@ -14,10 +14,12 @@
  static ULong_t gElapsedTimeADC = 0;
  static ULong_t gPrevRateTimeADC = 0;
  //static ULong_t gPrevSizeADC = 0;
+ extern unsigned int gEquippedGroups;
 
- #include <stdio.h>
+#include <stdio.h>
 #include <chrono>
 #include <thread>
+#include "DKeyboard.h" 
  FILE *       gWavePlotFile;
  FILE *       gPlotDataFile; 
 //===========================================================
@@ -93,6 +95,23 @@ return strBin;
 //===========================================================
 
 
+typedef tuple< uint16_t, uint16_t, uint64_t> singleEvent;
+/*
+class Compare{
+public:
+	bool operator()(const triple_t& a, const triple_t& b) const{
+	if(get<2>(a) > get<2>(b))
+	return true;
+	else
+	return false;
+	}
+};
+*/
+auto compare = [](const singleEvent& a, const singleEvent& b) { return get<2>(a) > get<2>(b); };
+typedef std::priority_queue < singleEvent, std::deque< singleEvent >, decltype(compare) > p_queue; // piority queue
+
+
+
 extern int  VME_CRATE; //this is for test only, if you want to change the value, change it in main.cpp
 using namespace std;
 
@@ -153,14 +172,14 @@ using namespace std;
  m_SelfTriggerMaskDPP[0] = 1; // this is not in the for loop, set element 0 to 1;
 
  m_AcqModeDPP 		= 1;      
- m_RecordLengthDPP	= 512; 
+ m_RecordLengthDPP	= 128; 
  
  m_EnableChargePedestalDPP = 0;
  m_ChargeSensitivityDPP	= 5;
  
  for(UInt_t i = 0; i < m_NrGroups; i++){
     m_GroupEnableMaskDPP[i]	= 1;
-    m_DCoffsetDPP[i]            = 32768; // this is middle, no offset
+    m_DCoffsetDPP[i]            = 32768; // this is in the middle, no offset
     m_BaseLineDPP[i] 		= 16;
     m_PreGateDPP[i] 		= 20;
     m_GateWidthDPP[i] 		= 100;
@@ -172,11 +191,13 @@ using namespace std;
     m_DisSelfTrigger		= 0;
     m_TestPulsesRate		= 0;
     m_EnTestPulses		= 0;
-    m_DisTrigHist		= 1; 
+    m_DisTrigHist		= 0;  // default is 1 
     m_TriggerModeDPP		= 0;
     m_TriggerSmoothingDPP	= 0;
-    m_MaxEventsAggBLT = 1;
+    m_FixedBaseLineDPP		= 2;
+    m_MaxEventsAggBLT 		= 1;
     m_Name = string(mdesc);
+
 
  for(UInt_t i = 0; i < 64; i++){
     m_ThresholdDPP[i] 		= 10;
@@ -185,6 +206,7 @@ using namespace std;
  for(UInt_t i = 0; i < 64; i++)
     gEvent[i] = 0;
  
+ memset(NumEvents, 0, MAX_CHANNELS*sizeof(NumEvents[0]));
 
  UInt_t LinkNum = 0;
  UInt_t ConetNode = 0;
@@ -210,6 +232,7 @@ using namespace std;
          m_NrGroups   = BoardInfo.Channels / 8;
       }
 
+      gEquippedGroups = m_NrGroups; // this line needed by external library _CAENDigitizer_DPP-QDC.c
       for(UInt_t i = 0; i < 8; i++)
           gEventsGrp[i] = NULL;
 
@@ -257,13 +280,15 @@ void DCAEN1740D::InitModule() {
  ret = CAEN_DGTZ_Reset(m_Handle);                                              
  CheckError(ret);
  //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] Reset, error code = " << ret << "\n"; return; }
+ uint32_t mask = 0;
 
-    uint32_t mask = 0;
     for(unsigned i = 0; i < m_NrGroups; i++) {
-	for(UInt_t j = 0; j< 8; j++)
-           mask |= ((m_SelfTriggerMaskDPP[8*i+j] & 0x1) << i);	
-
-        uint32_t address = 0x10A8 | (i << 8);
+        mask = 0;
+	for(UInt_t j = 0; j< 8; j++){
+        mask <<= 1;	
+        mask |= m_SelfTriggerMaskDPP[8*i+j] & 0x1;
+	}
+        uint32_t address = 0x10A8 + 0x100*i;
         ret = CAEN_DGTZ_WriteRegister(m_Handle, address, mask);
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Set individual trigger for group and channel " << CheckError(ret) << address << " " << mask << std::endl;
     }
@@ -277,10 +302,9 @@ void DCAEN1740D::InitModule() {
 
     //  Set selfTrigger threshold
     for(unsigned i = 0; i < m_NrChannels; i++){
-	for(UInt_t j = 0; j< 8; j++)
-           mask |= ((m_SelfTriggerMaskDPP[8*i+j] & 0x1) << i);	
-
-        uint32_t address = 0x10D0 | (i << 8);
+	uint32_t a_gr = i / 8;
+        uint32_t a_ch = i % 8;
+        uint32_t address = 0x1000 + 0x100*a_gr + 0xD0 + 4*a_ch;
         ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_ThresholdDPP[i]);	    
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetChannelTriggerThreshold " << CheckError(ret) << m_ThresholdDPP[i] << std::endl;
     } 
@@ -294,7 +318,8 @@ void DCAEN1740D::InitModule() {
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetSWTriggerMode " << CheckError(ret) << std::endl;
 
     /* Set the max number of events/aggregates to transfer in a sigle readout */
-    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, m_MaxEventsAggBLT); // here the m_MaxEventsAggBLT is equal 1024
+    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, MAX_AGGR_NUM_PER_BLOCK_TRANSFER); 
+    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, 200); 
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetMaxNumAggregatesBLT " << CheckError(ret) << std::endl;
 
     /* Set the start/stop acquisition control */
@@ -306,6 +331,15 @@ void DCAEN1740D::InitModule() {
        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8074, m_TriggerHoldOffDPP[i]);
        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Trigger Hold Off " << CheckError(ret) << std::endl;
     }
+    /* Pulse polarity */
+    /*
+    for(unsigned i = 0; i < m_NrGroups; i++) {
+       uint32_t address = 0x1080 + 0x100*i;
+       ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_PulsePolarityDPP[i]);
+       cout << i << " address:" << hex << address << dec << " pulspolarity:" << m_PulsePolarityDPP[i] << endl;
+       if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] PulsePolarityDPP " << CheckError(ret) << std::endl;
+    }
+*/
 
     uint32_t DppCtrl1 	      = 0;
     DppCtrl1 = ( ((m_ChargeSensitivityDPP    & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
@@ -315,7 +349,7 @@ void DCAEN1740D::InitModule() {
                  ((m_TriggerSmoothingDPP     & 0x0) << 12)   |  // smoothing signal, 0x0 - no smoothing 
                  ((0x0 			     & 0x1) << 16)   |  // 0 - positive, 1 negatize
                  ((m_TriggerModeDPP          & 0x3) << 18)   |  // 0x00 normal self trigger, 0x01 paired mode, read the documentation 
-                 ((0x0 		             & 0x3) << 20)   |  // 0-fixed, 1-4smp, 2-16smps, 3-64samples 
+                 ((m_FixedBaseLineDPP        & 0x7) << 20)   |  // 0-fixed, 1-4smp, 2-16smps, 3-64samples 
                  ((m_DisSelfTrigger          & 0x1) << 24)   |  // 
 		 ((m_DisTrigHist             & 0x1) << 30)   ); // trigger histeresis, disable
 
@@ -324,8 +358,8 @@ void DCAEN1740D::InitModule() {
 
     /* Set Pre Trigger (in samples) */
     // this is if you want to set all channels with one value 
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x803C, m_PreTriggerDPP[0]);
-    if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Pre Trigger " << CheckError(ret) << std::endl;
+    //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x803C, m_PreTriggerDPP[0]);
+    //if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Pre Trigger " << CheckError(ret) << std::endl;
     //this is per group
     for(unsigned i = 0; i < m_NrGroups; i++) {
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x103C + 0x100*i, m_PreTriggerDPP[i]);
@@ -343,13 +377,14 @@ void DCAEN1740D::InitModule() {
 
     /* Set Baseline (used in fixed baseline mode only) */
     // this is if you want to set all channels with one value 
-    //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_BaseLineDPP);
-    //if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Baseline " << CheckError(ret) << std::endl;
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_FixedBaseLineDPP);
+    if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Baseline " << CheckError(ret) << std::endl;
+/*
     for(unsigned i = 0; i < m_NrGroups; i++) {
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1038 + 0x100*i, m_BaseLineDPP[i]);
-        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
+          if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
     }
-
+*/
     /* Set Gate Width (in samples) */
     for(unsigned i = 0; i < m_NrGroups; i++) {
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1030 + 0x100*i, m_GateWidthDPP[i]);
@@ -357,7 +392,7 @@ void DCAEN1740D::InitModule() {
     }
 
     /* Set the waveform lenght (in samples) */
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP);
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP/8); // i do not know why but must be divided by 8....
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetRecordLength " << CheckError(ret) << std::endl;
 
     /* Set DC offset */
@@ -381,15 +416,17 @@ void DCAEN1740D::InitModule() {
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] m_AcqModeDPP " << CheckError(ret) << std::endl;
 
     /* Set number of events per memory buffer */
-    _CAEN_DGTZ_DPP_QDC_SetNumEvAggregate(m_Handle, 0); // 0 - automatic
+   _CAEN_DGTZ_DPP_QDC_SetNumEvAggregate(m_Handle, m_MaxEventsAggBLT); // 0 - automatic
+    //_CAEN_DGTZ_DPP_QDC_SetNumEvAggregate(m_Handle, 0); // 0 - automatic
 
     /* enable test pulses on TRGOUT/GPO */
     //if (ENABLE_TEST_PULSE) {
-    //   uint32_t d32;
-    //   ret |= CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &d32);
-    //   ret |= CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, d32 | (1<<15));
-    //   ret |= CAEN_DGTZ_WriteRegister(m_Handle, 0x8168, 2);
-    //}
+    if (1) {
+       uint32_t d32;
+       ret = CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &d32);
+       ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, d32 | (1<<15));
+       ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8168, 2);
+    }
 
     /* Set Extended Time Stamp if enabled*/
     //if (params->EnableExtendedTimeStamp)
@@ -453,15 +490,13 @@ void DCAEN1740D::InitModule() {
 	break;
      }
 
+ RegisterDump();
  std::cout << "Initialization " << m_Name << " module done!\n";
 
  }
 //-----------------------------------------------------------------------------
  void DCAEN1740D::ReadVME() {
   
-  ret = CAEN_DGTZ_SWStartAcquisition(m_Handle);
-  std::this_thread::sleep_for(std::chrono::microseconds(500000));
-  uint32_t     NumEvents[64];
   ret = CAEN_DGTZ_ReadData(m_Handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, m_localBuffer, &m_Size);
   CheckError(ret);
   //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
@@ -469,46 +504,112 @@ void DCAEN1740D::InitModule() {
   std::cout << "[DEBUG] read data, m_Size = " << m_Size << std::endl;
   if (m_Size == 0) return; // no data collected
 
+  for(uint32_t i = 0; i < 64; i++) {
+      for (uint32_t j = 0; j < NumEvents[i]; j++) {
+	   gEvent[i][j].Charge = 0; 		  
+	   gEvent[i][j].SubChannel = 0;
+           gEvent[i][j].TimeTag = 0;
+       }
+  }
+ 
+/*
+  for(uint32_t i = 0; i < NumEvents[i] && i < 64; i++) {
+      for (uint32_t j = 0; j < m_NrChannels; j++) {
+	   cout << "i= " << i << "\tj= " << j << endl;   
+	   gEvent[j][i].Charge = 0; 		  
+	   gEvent[j][i].SubChannel = 0;
+           gEvent[j][i].TimeTag = 0;
+       }
+  }
+ */
 
-     int a_ret = _CAEN_DGTZ_GetDPPEvents(m_Handle, m_localBuffer, m_Size, (void **)gEvent, NumEvents); 
-     if(a_ret != 0)
-        std::cerr << "[ERROR] in GetDPPEvents " << std::endl;
-     else {
-        for (unsigned i=0; i < m_NrChannels/8; ++i) {
-            cout << NumEvents[i*8+0] << " " << NumEvents[i*8+1] << " " << NumEvents[i*8+2] << " " << NumEvents[i*8+3] << " "
-		 << NumEvents[i*8+4] << " " << NumEvents[i*8+5] << " " << NumEvents[i*8+6] << " " << NumEvents[i*8+7] << endl;
-            }
+  int a_ret = _CAEN_DGTZ_GetDPPEvents(m_Handle, m_localBuffer, m_Size, (void **)gEvent, NumEvents); 
 
-        for (unsigned i=0; i < m_NrChannels; ++i) {
-            for(unsigned j=0; j < NumEvents[i]; ++j) {
-               uint32_t Charge;
-               Charge = (gEvent[i][j].Charge & 0xFFFF);  
+  printf("----- events ----- \n");
+  for(int i = 0; i < 32; i++)
+     cout << NumEvents[i] << " ";
+     cout << endl;  
+  for(int i = 32; i < 64; i++)
+     cout << NumEvents[i] << " ";
+     cout << endl;  
 
-	        _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][j], gWaveforms);
-		gPlotDataFile = fopen("PlotWave.txt", "w");
-		for(j=0; j<gWaveforms->Ns; j++) {
-		fprintf(gPlotDataFile, "%d ", gWaveforms->Trace1[j]);                 /* samples */
-		fprintf(gPlotDataFile, "%d ", 2000 + 200 *  gWaveforms->DTrace1[j]);  /* gate    */
-		fprintf(gPlotDataFile, "%d ", 1000 + 200 *  gWaveforms->DTrace2[j]);  /* trigger */
-		fprintf(gPlotDataFile, "%d ", 500 + 200 *  gWaveforms->DTrace3[j]);   /* trg hold off */
-		fprintf(gPlotDataFile, "%d\n", 100 + 200 *  gWaveforms->DTrace4[j]);  /* overthreshold */
-		}
-		fclose(gPlotDataFile);
 
-	       //std::cout << "ch." << i << " event: " << j << ", charge: "<< Charge << endl;
-              }
+ 
+
+  if(a_ret != 0) std::cerr << "[ERROR] in GetDPPEvents " << std::endl;
+  else {
+
+
+  p_queue singleEventQueue(compare);
+  
+   for (uint32_t i = 0; i < m_NrChannels; i++) {
+      //cout << "====== i: NumEvents["<<i<<"] " << NumEvents[i] << endl;;	   
+      for(uint32_t j = 0; j < NumEvents[i]; j++) {
+	   uint16_t Charge     = gEvent[i][j].Charge; 		  
+	   uint16_t SubChannel = uint16_t(8 * (i / 8)) + gEvent[i][j].SubChannel;
+           uint64_t TimeStamp  = gEvent[i][j].TimeTag;
+	   cout << "i= " << i << " j= " << j << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;   
+	   singleEventQueue.push( std::make_tuple(SubChannel, Charge, TimeStamp) );
+      }
+   }
+
+
+
+
+  std::ofstream dataf("temp1", std::ofstream::out | std::ofstream::app);
+/*
+  for(uint32_t i=0, j = 0; i < NumEvents[j] && j < 8; i++, ++j) {
+      for (uint32_t k = 0; k < 8; k++) {
+	   uint16_t Charge     = gEvent[8*k+k][j].Charge; 		  
+	   uint16_t SubChannel = gEvent[8*k+k][j].SubChannel;
+           uint64_t TimeStamp  = gEvent[8*k+k][j].TimeTag;
+	   cout << "i= " << i << " j= " << j << " k= " << k << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;   
+	   singleEventQueue.push( std::make_tuple(SubChannel, Charge, TimeStamp) );
+       }
+  }
+*/
+  
+  uint32_t i = 0;
+  while(singleEventQueue.size() != 0) {
+     dataf << i++ << " " << get<0>(singleEventQueue.top()) << " "  << get<1>(singleEventQueue.top()) << " " << get<2>(singleEventQueue.top()) << endl;
+     //cout << i++ << " " << get<0>(singleEventQueue.top()) << " "  << get<1>(singleEventQueue.top()) << " " << get<2>(singleEventQueue.top()) << endl;
+     singleEventQueue.pop();
+  }
+  dataf.close();
+
+  
+//=============================================================================================================================
+ /*  
+   uint32_t i2 = 0;
+   uint32_t k = 0, j = 0;
+	for(j=0; j<NumEvents[k] && k < 8; j++, ++k) {
+	    printf("----- charge j=%d k=%d\n", j, k);
+	    for (i2 = 0; i2 < 8; i2++) {
+	         printf("Gr.%d %5d\t%5d\t%5d\t%5d\t%5d\t%5d\t%5d\t%5d\n", i2,
+	               gEvent[8*i2+0][j].Charge & 0xFFFF, gEvent[8*i2+1][j].Charge & 0xFFFF, gEvent[8*i2+2][j].Charge & 0xFFFF, gEvent[8*i2+3][j].Charge & 0xFFFF,
+	               gEvent[8*i2+4][j].Charge & 0xFFFF, gEvent[8*i2+5][j].Charge & 0xFFFF, gEvent[8*i2+6][j].Charge & 0xFFFF, gEvent[8*i2+7][j].Charge & 0xFFFF );
+	    }
+	    printf("----- TimeTag j=%d k=%d\n", j, k);
+	    for (i2 = 0; i2 < 8; i2++) {
+	         printf("Gr.%u %8u\t%8u\t%8u\t%8u\t%8u\t%8u\t%8u\t%8u\n", i2,
+	               //gEvent[8*i2+0][j].SubChannel & 0xFFFF, gEvent[8*i2+1][j].SubChannel & 0xFFFF, gEvent[8*i2+2][j].SubChannel & 0xFFFF, gEvent[8*i2+3][j].SubChannel & 0xFFFF,
+	               //gEvent[8*i2+4][j].SubChannel & 0xFFFF, gEvent[8*i2+5][j].SubChannel & 0xFFFF, gEvent[8*i2+6][j].SubChannel & 0xFFFF, gEvent[8*i2+7][j].SubChannel & 0xFFFF );
+	               gEvent[8*i2+0][j].TimeTag , gEvent[8*i2+1][j].TimeTag , gEvent[8*i2+2][j].TimeTag, gEvent[8*i2+3][j].TimeTag,
+	               gEvent[8*i2+4][j].TimeTag , gEvent[8*i2+5][j].TimeTag , gEvent[8*i2+6][j].TimeTag, gEvent[8*i2+7][j].TimeTag);
+	    }
 	}
-     std::cout << "======================================" << std::endl;	
-     fprintf(gWavePlotFile, "plot 'PlotWave.txt' u 1 t 'Input' w step, 'PlotWave.txt' u 2 t 'Gate' w step, 'PlotWave.txt' u 3 t 'Trigger' w step, 'PlotWave.txt' u 4 t 'TrgHoldOff' w step, 'PlotWave.txt' u 5 t 'OverThr' w step\n");
+*/
+  
+
      uint32_t totalEvents = 0; 
      for (uint32_t i = 0; i < m_NrChannels; ++i)
 	 totalEvents += NumEvents[i];
 
+     cout << "total events: " << totalEvents<< endl;
      m_Events += totalEvents;	     	 
      m_dataSizeByte += m_Size;
-     }
 
-
+  }
 }
 //=============================================================================
 void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
@@ -518,61 +619,79 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
   if( m_Size == 0) return; // no data to display, return
   UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot  
 
+  DKeyboard *dKeyboard = &DKeyboard::GetInstance();
+
   //if you want to change the graphs on gnuplot, be carefull it is quite tricky.... every space, comma, new line matters...
   //read first the gnuplot documentation
-
+  static int first_time = 1;
+  if(first_time){
   gp << "set xrange  [" << 0 << ":" << m_RecordLengthDPP << "]\n";
   gp << "set xtics nomirror tc lt 0\n";
   gp << "set x2range ["<< 0 << ":" << 16*m_RecordLengthDPP << "]\n";
   gp << "set x2tics nomirror tc lt 0\n";
-  gp << "set yrange  [0:4300]\n";
+  gp << "set yrange  [0:4300] writeback\n";
   gp << "set ytics nomirror tc lt 0\n";
-  gp << "set y2range [-2.2:2.2]\n";
+  gp << "set y2range [-2.2:2.2] writeback\n";
   gp << "set y2tics nomirror tc lt 0\n";
   gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
   gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
+  gp << "set style line 1 lt 1 lw 1 \n";
+  gp << "set style line 2 lt 2 lw 1 \n";
+  gp << "set style line 3 lt 3 lw 1 \n";
+  gp << "set style line 4 lt 4 lw 1 \n";
+  first_time = 0;
+  }
+  std::string gp_command = "";
 
-  std::string gp_command;
-  Char_t	*a_EventPtr;
+  //std::ofstream gplot1("temp/dpp.txt", std::ofstream::out | std::ofstream::ate);
+  //if(!gplot1.is_open()) {
+  //  std::cout << "[ ERROR ] could not open the file temp/dpp.txt " << std::endl;
+  //}
 
-    std::cout << "gnuplot firmware == 1" << std::endl;
-    gp_command += string("plot ");
-    uint32_t grselec = 0;
+  gp_command += string("plot ");
+  uint32_t col = 1;
 
-    for(UInt_t j = grselec * 8 ; j < grselec*8 + 8; j++){
-        for(UInt_t k = 0 ; k < m_Events; k++){
-	    
-           _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[j][k], gWaveforms);
-	   //std::cout << "(m_SaveChannel >> j) & 1 = " << ((m_SaveChannel >> j) & 1)<<" ((EventInfo.ChannelMask >> j/8 )& 1) = "<<((EventInfo.ChannelMask >> j/8 )& 1)<<std::endl;
-           if( ((m_SaveChannel >> j) & 1) && ((EventInfo.ChannelMask >> j/8 )& 1)) {
-             char filename1[256];
-	     sprintf(filename1,"temp/dpp%d.txt",j);
-             std::ofstream gplot1(filename1, std::ofstream::out | std::ofstream::ate);
-             if(!gplot1.is_open()) {
-                std::cout << "[ ERROR ] could not open the file... " << filename1 << std::endl;
-             }
-             else {
-                for(uint32_t k = 0; k < gWaveforms->Ns; k++) {
-                    gplot1 << gWaveforms->Trace1[k];                /* samples       */
-                    gplot1 << 2000 + 200 * gWaveforms->DTrace1[k];  /* gate          */
-                    gplot1 << 1000 + 200 * gWaveforms->DTrace2[k];  /* trigger       */
-                    gplot1 << 500  + 200 * gWaveforms->DTrace3[k];  /* trg hold off  */
-                    gplot1 << 100  + 200 * gWaveforms->DTrace4[k];  /* overthreshold */
-                    gplot1 << endl;
-	         }														                            }
+  cout << endl;  
+  for(int i = 0; i < 32; i++)
+     cout << dKeyboard->m_ch[i] << " ";
+     cout << endl;  
+  for(int i = 32; i < 64; i++)
+     cout << dKeyboard->m_ch[i] << " ";
+     cout << endl;  
+  
+    for(UInt_t i = 0; i < m_NrChannels; i++){
+	//for(int j=0; j<NumEvents[i]; j++) {
+	    uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
+	    uint32_t SubChannel = gEvent[i][0].SubChannel & 0xFFFF;
+            if( dKeyboard->m_ch[i] && SubChannel == i){
+            cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << endl;
+		    
+                _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][0], gWaveforms);
+	     
+	        std::string fname = string("temp/ch") + to_string(i);
+                //cout << "event i: "<< i << "\tj: " << 0 << "\tfname: " << fname << endl;		 
+                std::ofstream gpfile(fname, std::ofstream::out | std::ofstream::ate);
+	        for(uint32_t k = 0; k < gWaveforms->Ns; k++){ 
+                   //cout << gWaveforms->Trace1[k] << endl;
+                    gpfile << gWaveforms->Trace1[k] << " ";                  // signal           column 1
+                    gpfile << 2000 + 200 * gWaveforms->DTrace1[k] << " ";    // gate             column 2
+		    gpfile << 500  + 200 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
+		    gpfile << gWaveforms->Trace1[0] + m_ThresholdDPP[i] << " "; // trigger          column 4
+	            gpfile << endl;
+	         }
+                 gpfile.close();
+                 gp_command += string("'") + fname + string("' u 1 w l ls 1 t 'ch") + to_string(i) + string("', ");		
+                 gp_command += string("'") + fname + string("' u 2 w l ls 2 t 'gt") + to_string(i) + string("', ");		
+                 gp_command += string("'") + fname + string("' u 3 w l ls 3 t 'ho") + to_string(i) + string("', ");		
+                 gp_command += string("'") + fname + string("' u 4 w l ls 4 t 'th") + to_string(i) + string("', ");		
+	   }
 
-                 gp_command += string(" '/temp/dpp.txt' u 1 t 'Input' w step,"); 
-	         gp_command += string(" '/temp/dpp.txt' u 2 t 'Gate' w step,"); 
-	         gp_command += string(" '/temp/dpp.txt' u 3 t 'Trigger' w step,"); 
-	         gp_command += string(" '/temp/dpp.txt' u 4 t 'TrgHoldOff' w step,"); 
-	         gp_command += string(" '/temp/dpp.txt' u 5 t 'OverThr' w step");
-             }
-           }
-        }
+           
+    }
 
-
-    //cout << gp_command << endl;
-    gp << gp_command << endl;
+    //gplot1.close();
+    //cout << "gp_command: " << gp_command << endl; // this is for test only, to check if the command is correct
+    if (gp_command.length() > 5) gp << gp_command << endl;
 
 }
 //-----------------------------------------------------------------------------
@@ -582,7 +701,6 @@ void DCAEN1740D::StartAcq(){
  ShowSettings();
  InitModule(); 
 
- RegisterDump();
 
     std::cout << "Alocate Buffer....."; 	 
     ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_MallocReadoutBuffer(m_Handle, &m_localBuffer, &m_Size));
@@ -604,9 +722,9 @@ void DCAEN1740D::StartAcq(){
     if (ret != CAEN_DGTZ_Success) std::cout << "Cannot allocate DPPWaveFormss " << ret << std::endl;
 
 
+ std::cout << "[DEBUG] Send software trigger.....\n"; 	 
  ret = CAEN_DGTZ_SWStartAcquisition(m_Handle);
- CheckError(ret);
- //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SWStartAcquisitionMode, error code = " << ret << "\n"; return; }
+ if (ret != CAEN_DGTZ_Success) std::cout << "Cannot start the acquisition " << ret << std::endl;
 
 }
 
@@ -617,38 +735,26 @@ void DCAEN1740D::StopAcq(){
   CheckError(ret);
   //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SWStopAcquisition, error code = " << ret << "\n"; return; }
 
-  if(m_Firmware == 0){
-     ret = CAEN_DGTZ_FreeReadoutBuffer(&m_localBuffer);
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] FreeReadoutBuffer, error code = " << ret << "\n"; return; }
+  //ret = CAEN_DGTZ_SWStopAcquisition(m_Handle);
+  //ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_FreeReadoutBuffer(&m_localBuffer));
+  //if(gWaveforms) free(gWaveforms);
 
-     ret = CAEN_DGTZ_FreeEvent(m_Handle, (void**)&Event16);
-     CheckError(ret);
-     //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] FreeEvent, error code = " << ret << "\n"; return; }
-
-  } else if(m_Firmware == 1){
-
-    ret = CAEN_DGTZ_SWStopAcquisition(m_Handle);
-    ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_FreeReadoutBuffer(&m_localBuffer));
-    //if(gWaveforms) free(gWaveforms);
-
-    for(int i = 0; i < MAX_CHANNELS; ++i) {
-       if (gEvent[i] != NULL)
-       free(gEvent[i]);
-    }
-    for(int i=0; i<8; i++) {
-    //   if (gEventsGrp[i] != NULL)
-      //    free(gEventsGrp[i]);
-    }
-
-
-
+  for(int i = 0; i < MAX_CHANNELS; ++i) {
+     if (gEvent[i] != NULL)
+     free(gEvent[i]);
   }
+  for(int i=0; i<8; i++) {
+       if (gEventsGrp[i] != NULL)
+        free(gEventsGrp[i]);
+    }
+
 
   ret = CAEN_DGTZ_ClearData(m_Handle);
   CheckError(ret);
   //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ClearData, error code = " << ret << "\n"; return; }
 
+ ret = CAEN_DGTZ_Reset(m_Handle);                                              
+ CheckError(ret);
  // stop the module	
 }
 
@@ -669,6 +775,51 @@ void DCAEN1740D::StopAcq(){
 //======================================================================================================
 
 void DCAEN1740D::BuildEvent(){
+
+   std::string	sdata = "";
+   uint64_t	tts = 0xFFFFFFFFFFFFFFFF;
+
+   for (uint32_t i = 0; i < 64; i++) {
+      for(uint32_t j = 0; j < NumEvents[i]; j++) {
+          for(uint32_t k = 0; k < m_NrChannels; k++) {
+	     //if(gEvent[i][j].TimeTag < tts && gEvent[i][j].TimeTag > 0L){
+             //   tts = gEvent[i][j].TimeTag;
+	     //}
+
+             sdata += to_string( gEvent[k][j].Charge ) + " " ;
+	  }
+	  sdata += to_string(gEvent[i][j].TimeTag) + "\n";	
+ 
+       }
+   }
+ 
+/*
+
+   for(uint32_t j = 0, k = 0; j < NumEvents[k] && k < 8; j++, ++k) {
+      for (uint32_t i2 = 0; i2 < 8; i2++) {
+
+	  if(gEvent[8*i2+i2][j].TimeTag < tts && gEvent[8*i2+i2][j].TimeTag > 0L){
+             tts = gEvent[8*i2+i2][j].TimeTag;
+	  }
+
+          sdata += to_string( gEvent[8*i2+0][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+1][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+2][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+3][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+4][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+5][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+6][j].Charge ) + " " 
+                +  to_string( gEvent[8*i2+7][j].Charge ) + " "; 
+      }
+   }
+   */
+
+   //sdata += to_string(tts);
+   cout << "string length: " << sdata.length() << endl; 
+   //cout << sdata << endl;;
+   std::ofstream dataD("temp2", std::ofstream::out | std::ofstream::app);
+   dataD << sdata << endl;
+   dataD.close();
 
  }
 
@@ -698,39 +849,39 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
    switch (err) {
 	case 0:
 	break;
-	case -1:  s1 = " Communication error "; 		break;
-	case -2:  s1 = " Unspecified error " ; 			break;
-	case -3:  s1 = " Invalid parameter " ; 			break;
-	case -4:  s1 = " Invalid Link Type "; 			break;
-	case -5:  s1 = " Invalid device handle ";		break;
-	case -6:  s1 = " Maximum number of devices exceeded ";	break;
-	case -8:  s1 = " The interrupt level is not allowed ";	break;
-	case -9:  s1 = " The event number is bad "; 		break;
-	case -10: s1 = " Unable to read the registry ";		break;
-	case -11: s1 = " Unable to write into the registry ";	break;
-	case -13: s1 = " The channel number is invalid ";	break;
-	case -14: s1 = " The Channel is busy "; 		break;
-	case -15: s1 = " Invalid FPIO Mode "; 			break;
-	case -16: s1 = " Wrong acquisition mode " ; 		break;
-	case -18: s1 = " Communication Timeout " ; 		break;
-	case -19: s1 = " The buffer is invalid " ; 		break;
-	case -20: s1 = " The event is not found " ; 		break;
-	case -21: s1 = " The vent is invalid " ; 		break;
-	case -22: s1 = " Out of memory " ; 			break;
-	case -23: s1 = " Unable to calibrate the board " ; 	break;
-	case -24: s1 = " Unable to open the digitizer " ; 	break;
-	case -25: s1 = " The Digitizer is already open " ; 	break;
-	case -30: s1 = " Invalid Firmware License " ; 		break;
-	case -99: s1 = " The function is not yet implemented "; break;
-	case -26: s1 = " The Digitizer is not ready to operate ";		break;
-	case -28: s1 = " The digitizer flash memory is corrupted ";		break;
-	case -27: s1 = " The Digitizer has not the IRQ configured "; 		break;
-	case -17: s1 = " This function is not allowed for this module "; 	break;
-	case -7:  s1 = " The operation is not allowed on this type of board "; 	break;
+	case -1:  s1 = " Communication error "; 						break;
+	case -2:  s1 = " Unspecified error " ; 							break;
+	case -3:  s1 = " Invalid parameter " ; 							break;
+	case -4:  s1 = " Invalid Link Type "; 							break;
+	case -5:  s1 = " Invalid device m_Handle ";						break;
+	case -6:  s1 = " Maximum number of devices exceeded ";					break;
+	case -7:  s1 = " The operation is not allowed on this type of board "; 			break;
+	case -8:  s1 = " The interrupt level is not allowed ";					break;
+	case -9:  s1 = " The event number is bad "; 						break;
+	case -10: s1 = " Unable to read the registry ";						break;
+	case -11: s1 = " Unable to write into the registry ";					break;
+	case -13: s1 = " The channel number is invalid ";					break;
+	case -14: s1 = " The Channel is busy "; 						break;
+	case -15: s1 = " Invalid FPIO Mode "; 							break;
+	case -16: s1 = " Wrong acquisition mode " ; 						break;
+	case -17: s1 = " This function is not allowed for this module "; 			break;
+	case -18: s1 = " Communication Timeout " ; 						break;
+	case -19: s1 = " The buffer is invalid " ; 						break;
+	case -20: s1 = " The event is not found " ; 						break;
+	case -21: s1 = " The event is invalid " ; 						break;
+	case -22: s1 = " Out of memory " ; 							break;
+	case -23: s1 = " Unable to calibrate the board " ; 					break;
+	case -24: s1 = " Unable to open the digitizer " ; 					break;
+	case -25: s1 = " The Digitizer is already open " ; 					break;
+	case -26: s1 = " The Digitizer is not ready to operate ";				break;
+	case -28: s1 = " The digitizer flash memory is corrupted ";				break;
+	case -27: s1 = " The Digitizer has not the IRQ configured "; 				break;
 	case -29: s1 = " The digitizer dpp firmware is not supported in this lib version "; 	break;
+	case -30: s1 = " Invalid Firmware License " ; 						break;
 	case -31: s1 = " The digitizer is found in a corrupted status "; 			break;
 	case -32: s1 = " The given trace is not supported by the digitizer " ; 			break;
 	case -33: s1 = " The given probe is not supported for the given digitizer's trace "; 	break;
+	case -99: s1 = " The function is not yet implemented ";					break;
         default:  s1 = " Error unknown, check the library version, this was created for 2.7.5 ";break;	
    }	   
   
@@ -740,30 +891,6 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
  void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
 
 
-  if(m_Firmware == 0){	 
-  static UInt_t Nb, Ne, prevNe, prevNb;
-
-  fAcquisition->m_AcqStatusEntry2 = m_Events;
-  Nb += GetDataSize();
-  Ne  = GetNrEvents();
-
-  if (!Nb)
-     std::cout << "\t+ No data...\n";
-  else{
-     std::cout << "\t+ Reading: " << setw(5) << (float)(Nb-prevNb) / ((float)fAcquisition->m_ElapsedTimeMS*1.048576f) << " MB/s, " 
-               << "Trg Rate: " << (float)(Ne-prevNe) / (float)fAcquisition->m_ElapsedTimeMS << "kHz, " 
-	       << "Total events:" << m_Events <<  std::endl; 
-  }
-
-  prevNe = Ne;
-  prevNb = Nb;
-  
-
-  bool DEBUG_SHOW_DATA = 0;
-
-  if(DEBUG_SHOW_DATA) printf("--------\n");
-  
-  } else if(m_Firmware == 1){
 
   static UInt_t Nb, Ne, prevNe, prevNb;
   Nb += GetDataSize();
@@ -782,7 +909,6 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
   prevNe = Ne;
   prevNb = Nb;
 
-  }
 
   // fill histograms only in GUI version when fDisplay is not NULL
   if(fDisplay)
@@ -1041,8 +1167,10 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
     fout << "PulsePolarityDPP " << i << " " << m_PulsePolarityDPP[i] << endl;
               
  fout << "# ======= BaseLine settings ==========" << endl; 
+ fout << "# if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples" << endl;
  fout << "# BaseLine: baseline value per group " << endl;
- fout << "# syntax: BaseLineDPP <group> <value>" << endl;
+ fout << "# syntax: BaseLineDPP <group> <ifixed value>" << endl;
+ fout << "FixedBaseLineDPP " <<  m_FixedBaseLineDPP << endl;
  for(unsigned i = 0; i < m_NrGroups; i++)
     fout << "BaseLineDPP " << i << " " << m_BaseLineDPP[i] << endl;
 
@@ -1076,7 +1204,7 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
  fout << "TriggerSmoothingDPP " << m_TriggerSmoothingDPP << endl;
  fout << "# TriggerHoldOff: Trigger hold off (in steps of 16ns) " << endl;
  fout << "# syntax: TriggerHoldOffDPP     <group> <value>" << endl;
- for(unsigned i = 0; i < m_NrChannels; i++)
+ for(unsigned i = 0; i < m_NrGroups; i++)
     fout << "TriggerHoldOffDPP "<< i << " " << m_TriggerHoldOffDPP[i] << endl;
  fout << "# PreTriggerDPP: must be bigger than pregate +7 " << endl;
  fout << "# syntax: PreTriggerDPP     <group> <value>" << endl;
@@ -1130,12 +1258,18 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 	     else if( name == string("GroupEnableMaskDPP")	) {
 	        stringstream ss(value);
 		while (ss >> buf)  param.push_back(buf);
-		m_GroupEnableMaskDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+		if(gr < 8) 
+		   m_GroupEnableMaskDPP[ gr ] = val;
 	     }
 	     else if( name == string("DCoffsetDPP")	) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_DCoffsetDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+		if(gr < 8) 
+		   m_DCoffsetDPP[ gr ] = val;
 		}
 	     //else if( name == string("ChannelPulsPolarityDPP")){
 	     //   stringstream ss(value);
@@ -1170,45 +1304,60 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
  	     else if( name == string("IOLevel") 	) 	m_FPIOtype            = atoi( value.c_str() );
              else if( name == string("AcquisitionMode") ) 	m_AcqMode             = atoi( value.c_str() );
              else if( name == string("AcquisitionModeDPP") ) 	m_AcqModeDPP       = atoi( value.c_str() );
+             
              else if( name == string("BaseLineDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-	     	     m_BaseLineDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_BaseLineDPP[ gr ] = val;
 	     }
              else if( name == string("FixedBaseLineDPP") ) 	m_FixedBaseLineDPP       = atoi( value.c_str() );
              else if( name == string("GateWidthDPP")  ) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_GateWidthDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8)m_GateWidthDPP[ gr ] = val;
 	     }
              else if( name == string("ThresholdDPP")  ) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_ThresholdDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int ch = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+		if( ch < 64) m_ThresholdDPP[ ch ] = val;
 	     }
              else if( name == string("PulsePolarityDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_PulsePolarityDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_PulsePolarityDPP[ gr ] = val;
 	     }
              else if( name == string("PreGateDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_PreGateDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_PreGateDPP[ gr ] = val;
 	     }
              else if( name == string("EnableChargePedestalDPP")) m_EnableChargePedestalDPP = atoi( value.c_str() );
              else if( name == string("ChargeSensitivityDPP") )  m_ChargeSensitivityDPP     = atoi( value.c_str() );
              else if( name == string("PreTriggerDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_PreTriggerDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_PreTriggerDPP[ gr ] = val;
 	     }
              else if( name == string("TriggerModeDPP") )      	m_TriggerModeDPP           = atoi( value.c_str() );
              else if( name == string("TriggerSmoothingDPP") )   m_TriggerSmoothingDPP      = atoi( value.c_str() );
              else if( name == string("TriggerHoldOffDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
-		m_TriggerHoldOffDPP[ stoi(param.at(0)) ] = stoi( param.at(1) );
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_TriggerHoldOffDPP[ gr ] = val;
 	     }
              else if( name == string("ClockDelay") 	) 	m_Delay                    = atoi( value.c_str() );
              else if( name == string("ClockSource")	) 	m_Clock                    = atoi( value.c_str() );
@@ -1225,32 +1374,149 @@ void DCAEN1740D::RegisterDump(){
    FILE *fout;
    fout = fopen("register_dump.txt", "w");
 
-   fprintf(fout, "=== configuration settings ===\n");
-
-   unsigned int read, i3, address;
+   unsigned int read, i3;
    string readStr;
-
-   fprintf(fout, "RecordLengthDPP        = %d\n", m_RecordLengthDPP);
-   fprintf(fout, "DecimationFactor    = %d\n", m_DecimationFactor );
-   //fprintf(fout, "PostTrigger         = %d\n", m_PostTrigger);
-   fprintf(fout, "FPIOtype            = %d\n", m_FPIOtype);
-   fprintf(fout, "Max events transfer = %d\n", m_MaxEventsAggBLT);
-   fprintf(fout, "Acquisition control = %d\n", m_AcqMode);
-   //fprintf(fout, "ExtTriggerMode      = %d\n", m_ExtTriggerMode);
-   UInt_t mask = ((m_GroupEnableMaskDPP[3] << 3) | (m_GroupEnableMaskDPP[2] << 2) | (m_GroupEnableMaskDPP[1] << 1) | m_GroupEnableMaskDPP[0] ) & 0xF;
-   fprintf(fout, "EnableMask          = %d\n", mask);
-   for(i3=0; i3 < m_NrGroups; i3++) {
-       if (mask & (1<<i3)) {
-           fprintf(fout, "...... Group %d\n", i3);
-           fprintf(fout, "DCoffset[%d]          = %d\n", i3, m_DCoffsetDPP[i3]);
-           //fprintf(fout, "ChannelTriggerMode[%d]= %d\n", i3, m_ChannelTriggerMode[i3]);
-           fprintf(fout, "Threshold[%d]         = %d\n", i3, m_ThresholdDPP[i3]);
-           fprintf(fout, "GroupTrgEnableMask[%d]= %d\n", i3, m_SelfTriggerMaskDPP[i3]);
-           //fprintf(fout, "TriggerEdge          = %d\n",      m_TriggerEdge[i3]);
-        }
-    }
    
-   fprintf(fout, "\n=== Register readout ===\n");
+   uint32_t out, i, address;// ret;
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1030 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle,  0x1030 + 0x100*i, &out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+      else fprintf(fout, "(0x%X) GateWidth\t0x%X\n", address, out);
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1034 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X)  GateOffset\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1038 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X) GateBaseline\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x103C + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X)  PreTrigger\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout,"Errors during register dump.\n");
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1074 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X) TriggerHoldOff\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1080 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X) PulsePolarity\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+
+/*   
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1078 + 0x100*i;         
+       ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out); 
+       fprintf(fout, "(0x%X)  ShapedTrigger\t0x%X\n", address, out);
+       if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+*/    
+
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x1098 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X)  DCoffset\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+   for(i=0; i< m_NrGroups; i++){
+      uint32_t address = 0x10A8 + 0x100*i;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X)  ChannelEnableMask\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+
+   for(i=0; i<m_NrChannels; i++){
+      uint32_t a_gr = i / 8;
+      uint32_t a_ch = i % 8;
+      uint32_t address = 0x1000 + 0x100*a_gr + 0xD0 + 4*a_ch;
+      ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+      fprintf(fout, "(0x%X) TriggerThreshold\t0x%X\n", address, out);
+      if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+   }
+
+   address = 0x8000;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) Board Configuration\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x800C;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) AggregateOrganization\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x8020;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) EventsPerAggregate\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x8024;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   if(ret != CAEN_DGTZ_Success) {
+   fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret);
+   }
+   else fprintf(fout, "(0x%X) RecordLength\t0x%X\n", address, out);
+
+
+   address = 0x8040;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   if(ret != CAEN_DGTZ_Success)  fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret); 
+   else fprintf(fout, "(0x%X) DPPControl\t0x%X\n", address, out);
+
+   address = 0x8100;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) AcqControl\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x810C;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) GlobalTriggerMask\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x8120;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) GroupEnableMask\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0x814C;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) EventSize\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0xEF00;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) ReadoutControl\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+   address = 0xEF1C;
+   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+   fprintf(fout, "(0x%X) AggregateNumber per BLT\t0x%X\n", address, out);
+   if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+
+
+
+/*
    address = 0x1080;
    ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &read); //threshold
    if(ret) fprintf(fout, "ERROR Read Register %d\n", ret);
@@ -1371,6 +1637,7 @@ void DCAEN1740D::RegisterDump(){
    readStr = Dec2BinStr2((read & 0xFF000000) >> 24) + "'" + Dec2BinStr2((read & 0xFF0000) >> 16) + string("'") + Dec2BinStr2((read & 0xFF00) >> 8) + string("'") + Dec2BinStr2((read & 0xFF));
    fprintf(fout, "External Trigger Inhibit            (0x%X) \t= 0x%08X = %s\n", address, read, readStr.c_str() );
 
+   */
 fclose(fout);
 
 }
