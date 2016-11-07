@@ -118,7 +118,7 @@ void DAcquisition::BuildEvent(){
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
-  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->GetEvent();
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->BuildEvent();
   delete iter;
    	
  }
@@ -176,7 +176,7 @@ return kTRUE;
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
-  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->GnuplotOnline( m_Gnuplot );
+  while ( (elem = iter->Next()) > 0) ((DModule*) elem)->GnuplotOnline( m_Gnuplot);
  
   delete iter;
   a_gnuplot_prev = GetTimeMS();

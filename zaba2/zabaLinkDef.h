@@ -19,5 +19,6 @@
 #pragma link C++ class DGDisplay;
 #pragma link C++ class DDataSave;
 #pragma link C++ class DGHelp;
+#pragma link C++ class DKeyboard;
 
 #endif

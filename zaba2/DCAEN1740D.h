@@ -95,6 +95,7 @@ public:
  CAEN_DGTZ_EventInfo_t        EventInfo;
  CAEN_DGTZ_UINT16_EVENT_t    *Event16;
  CAEN_DGTZ_ErrorCode 	      ret;
+ uint32_t     		      NumEvents[64];
 
  _CAEN_DGTZ_DPP_QDC_Event_t     *gEvent[64];
  _CAEN_DGTZ_DPP_QDC_Waveforms_t *gWaveforms;
