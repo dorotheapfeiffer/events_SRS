@@ -145,7 +145,7 @@ int _CAEN_DGTZ_GetDPPEvents(int handle, char *buffer, uint32_t BufferSize, void 
                      exit(-1);
                 }
 	_CAEN_DGTZ_DPP_QDC_Event_t *ptr = (_CAEN_DGTZ_DPP_QDC_Event_t *)Events[ch];	
-	printf("ch = %d Events.SubChannel = %d\n", ch, ptr[j].SubChannel);
+	//printf("ch = %d Events.SubChannel = %d\n", ch, ptr[j].SubChannel);
 	NumEvents[ch]++;
 	}
     }

@@ -35,9 +35,9 @@ int main(int argc, char **argv) {
    dAcquisition->ReadVME(); 
    if(dKeyboard->m_display) dAcquisition->GnuplotOnline();
    dAcquisition->BuildEvent();
-   //dAcquisition->DataSave();
-   //dAcquisition->ShowData(); // no arguments because we do not use graphics in the szaba version, prints only on the terminal
-   int delay = 50; 
+   dAcquisition->DataSave();
+   dAcquisition->ShowData(); // no arguments because we do not use graphics in the szaba version, prints only on the terminal
+   int delay = 0; 
    std::this_thread::sleep_for(std::chrono::microseconds(5000*delay));
 
  }

@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.11.7	15:56:31
+# the file was created:  2016.11.14	17:58:8
 # Line starts with a '#' is a comment line
 #
 #
@@ -15,7 +15,7 @@ StopAfterFile 0
 StopAfterEvents 0
  
 # Save each file after reach the file size
-SaveFileSize 100
+SaveFileSize 400
  
 # Save each file after certain number of seconds
 SaveFileTime 3600
@@ -87,7 +87,7 @@ AcquisitionMode 0
 # ===== These options are only for DPP-QDC firmware =====
 # 
 # Acquisition DPP Mode could be MIXED = 0; or LIST = 1
-AcquisitionModeDPP 0
+AcquisitionModeDPP 1
 # PulsePolarityDPP per group, 1 negative, 0 positive
 # syntax: PulsePolarityDPP <group> <value>
 PulsePolarityDPP 0 0
@@ -101,7 +101,7 @@ PulsePolarityDPP 7 0
 # ======= BaseLine settings ==========
 # if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples
 # BaseLine: baseline value per group 
-# syntax: BaseLineDPP <group> <ifixed value>
+# syntax: BaseLineDPP <group> <fixed value>
 FixedBaseLineDPP 2
 BaseLineDPP 0 16
 BaseLineDPP 1 16
