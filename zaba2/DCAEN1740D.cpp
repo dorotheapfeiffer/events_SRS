@@ -31,7 +31,7 @@ static ULong_t gGetLongTimeADC(){
 return (t1.tv_sec) * 1000 + t1.tv_usec / 1000;
 }
 //===========================================================
-
+/*
 static	std::string mode(Int_t a){
 	if(a == 0)      return std::string(" [disabled]");
 	else if(a == 1) return std::string(" [acq only]");
@@ -45,18 +45,19 @@ static	std::string edge(Int_t a){
 	else if(a == 1) return std::string("fall");
 	else            return std::string("unknown");
 	}
- 	
+*/ 	
 static	std::string polarity(Int_t a){
 	if(a == 0)      return std::string("POS");
 	else if(a == 1) return std::string("NEG");
 	else            return std::string("unknown");
         }
+/*
 static	std::string iolevel(Int_t a){
 	if(a == 0)      return std::string("    NIM");
 	else if(a == 1) return std::string("    TTL");
 	else            return std::string("unknown");
 	}
-
+*/
 static	std::string acqmode(Int_t a){
 	if(a == 0)      return std::string(" SOFT ");
 	else if(a == 1) return std::string(" HARD ");
@@ -69,7 +70,7 @@ static	std::string acqmodedpp(Int_t a){
 	else            return std::string("unknown");
 	}
 //===========================================================
-
+/*
 static std::string Dec2BinStr2(Char_t dec){
    std::string strBin;
   
@@ -80,7 +81,9 @@ static std::string Dec2BinStr2(Char_t dec){
 
 return strBin;
 }
+*/
 //===========================================================
+/*
 static std::string Dec2BinStr(Char_t dec){
   std::string strBin;
 
@@ -91,7 +94,7 @@ static std::string Dec2BinStr(Char_t dec){
 
 return strBin;
 }
-
+*/
 //===========================================================
 
 
@@ -153,6 +156,7 @@ using namespace std;
   m_Events		= 0;
   m_dataSizeByte	= 0;
   m_EventsInBuffer	= 0;
+  m_BufferPos		= 0;
 /*
  for(UInt_t i = 0; i < m_NrGroups; i++){
      m_TriggerEdge[i]   	 = 0;
@@ -194,8 +198,9 @@ using namespace std;
     m_DisTrigHist		= 0;  // default is 1 
     m_TriggerModeDPP		= 0;
     m_TriggerSmoothingDPP	= 0;
-    m_FixedBaseLineDPP		= 2;
+    m_FixedBaseLineDPP		= 99;
     m_MaxEventsAggBLT 		= 1;
+    m_savingformat		= 0;
     m_Name = string(mdesc);
 
 
@@ -318,8 +323,8 @@ void DCAEN1740D::InitModule() {
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetSWTriggerMode " << CheckError(ret) << std::endl;
 
     /* Set the max number of events/aggregates to transfer in a sigle readout */
-    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, MAX_AGGR_NUM_PER_BLOCK_TRANSFER); 
-    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, 200); 
+    //ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, MAX_AGGR_NUM_PER_BLOCK_TRANSFER); 
+    ret = CAEN_DGTZ_SetMaxNumAggregatesBLT(m_Handle, 500); 
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetMaxNumAggregatesBLT " << CheckError(ret) << std::endl;
 
     /* Set the start/stop acquisition control */
@@ -331,15 +336,15 @@ void DCAEN1740D::InitModule() {
        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8074, m_TriggerHoldOffDPP[i]);
        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Trigger Hold Off " << CheckError(ret) << std::endl;
     }
+
     /* Pulse polarity */
-    /*
     for(unsigned i = 0; i < m_NrGroups; i++) {
-       uint32_t address = 0x1080 + 0x100*i;
+       uint32_t address = 0x1040 + 0x100*i;
        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_PulsePolarityDPP[i]);
        cout << i << " address:" << hex << address << dec << " pulspolarity:" << m_PulsePolarityDPP[i] << endl;
        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] PulsePolarityDPP " << CheckError(ret) << std::endl;
     }
-*/
+
 
     uint32_t DppCtrl1 	      = 0;
     DppCtrl1 = ( ((m_ChargeSensitivityDPP    & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
@@ -499,12 +504,13 @@ void DCAEN1740D::InitModule() {
   
   ret = CAEN_DGTZ_ReadData(m_Handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, m_localBuffer, &m_Size);
   CheckError(ret);
-  //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
+  if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
 
-  std::cout << "[DEBUG] read data, m_Size = " << m_Size << std::endl;
   if (m_Size == 0) return; // no data collected
 
-  for(uint32_t i = 0; i < 64; i++) {
+  // this 2 for loops are necessary because the values of chare and the value of subchannel stay from the prevous readout...
+  //for(uint32_t i = 0; i < NumEvents[i] && i < 64; i++) { 
+  for(uint32_t i = 0; i < m_NrChannels; i++) {
       for (uint32_t j = 0; j < NumEvents[i]; j++) {
 	   gEvent[i][j].Charge = 0; 		  
 	   gEvent[i][j].SubChannel = 0;
@@ -512,19 +518,9 @@ void DCAEN1740D::InitModule() {
        }
   }
  
-/*
-  for(uint32_t i = 0; i < NumEvents[i] && i < 64; i++) {
-      for (uint32_t j = 0; j < m_NrChannels; j++) {
-	   cout << "i= " << i << "\tj= " << j << endl;   
-	   gEvent[j][i].Charge = 0; 		  
-	   gEvent[j][i].SubChannel = 0;
-           gEvent[j][i].TimeTag = 0;
-       }
-  }
- */
 
   int a_ret = _CAEN_DGTZ_GetDPPEvents(m_Handle, m_localBuffer, m_Size, (void **)gEvent, NumEvents); 
-
+/*
   printf("----- events ----- \n");
   for(int i = 0; i < 32; i++)
      cout << NumEvents[i] << " ";
@@ -532,50 +528,11 @@ void DCAEN1740D::InitModule() {
   for(int i = 32; i < 64; i++)
      cout << NumEvents[i] << " ";
      cout << endl;  
-
-
- 
+*/
 
   if(a_ret != 0) std::cerr << "[ERROR] in GetDPPEvents " << std::endl;
   else {
 
-
-  p_queue singleEventQueue(compare);
-  
-   for (uint32_t i = 0; i < m_NrChannels; i++) {
-      //cout << "====== i: NumEvents["<<i<<"] " << NumEvents[i] << endl;;	   
-      for(uint32_t j = 0; j < NumEvents[i]; j++) {
-	   uint16_t Charge     = gEvent[i][j].Charge; 		  
-	   uint16_t SubChannel = uint16_t(8 * (i / 8)) + gEvent[i][j].SubChannel;
-           uint64_t TimeStamp  = gEvent[i][j].TimeTag;
-	   cout << "i= " << i << " j= " << j << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;   
-	   singleEventQueue.push( std::make_tuple(SubChannel, Charge, TimeStamp) );
-      }
-   }
-
-
-
-
-  std::ofstream dataf("temp1", std::ofstream::out | std::ofstream::app);
-/*
-  for(uint32_t i=0, j = 0; i < NumEvents[j] && j < 8; i++, ++j) {
-      for (uint32_t k = 0; k < 8; k++) {
-	   uint16_t Charge     = gEvent[8*k+k][j].Charge; 		  
-	   uint16_t SubChannel = gEvent[8*k+k][j].SubChannel;
-           uint64_t TimeStamp  = gEvent[8*k+k][j].TimeTag;
-	   cout << "i= " << i << " j= " << j << " k= " << k << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;   
-	   singleEventQueue.push( std::make_tuple(SubChannel, Charge, TimeStamp) );
-       }
-  }
-*/
-  
-  uint32_t i = 0;
-  while(singleEventQueue.size() != 0) {
-     dataf << i++ << " " << get<0>(singleEventQueue.top()) << " "  << get<1>(singleEventQueue.top()) << " " << get<2>(singleEventQueue.top()) << endl;
-     //cout << i++ << " " << get<0>(singleEventQueue.top()) << " "  << get<1>(singleEventQueue.top()) << " " << get<2>(singleEventQueue.top()) << endl;
-     singleEventQueue.pop();
-  }
-  dataf.close();
 
   
 //=============================================================================================================================
@@ -605,7 +562,6 @@ void DCAEN1740D::InitModule() {
      for (uint32_t i = 0; i < m_NrChannels; ++i)
 	 totalEvents += NumEvents[i];
 
-     cout << "total events: " << totalEvents<< endl;
      m_Events += totalEvents;	     	 
      m_dataSizeByte += m_Size;
 
@@ -616,8 +572,8 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
 
   // this function could possibly goes to separate thread...
 
-  if( m_Size == 0) return; // no data to display, return
-  UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot  
+  if( m_Size == 0 ) return; // no data to display, return
+  //UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot  
 
   DKeyboard *dKeyboard = &DKeyboard::GetInstance();
 
@@ -625,31 +581,26 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
   //read first the gnuplot documentation
   static int first_time = 1;
   if(first_time){
-  gp << "set xrange  [" << 0 << ":" << m_RecordLengthDPP << "]\n";
-  gp << "set xtics nomirror tc lt 0\n";
-  gp << "set x2range ["<< 0 << ":" << 16*m_RecordLengthDPP << "]\n";
-  gp << "set x2tics nomirror tc lt 0\n";
-  gp << "set yrange  [0:4300] writeback\n";
-  gp << "set ytics nomirror tc lt 0\n";
-  gp << "set y2range [-2.2:2.2] writeback\n";
-  gp << "set y2tics nomirror tc lt 0\n";
-  gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
-  gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
-  gp << "set style line 1 lt 1 lw 1 \n";
-  gp << "set style line 2 lt 2 lw 1 \n";
-  gp << "set style line 3 lt 3 lw 1 \n";
-  gp << "set style line 4 lt 4 lw 1 \n";
-  first_time = 0;
+     gp << "set xrange  [" << 0 << ":" << m_RecordLengthDPP << "]\n";
+     gp << "set xtics nomirror tc lt 0\n";
+     gp << "set x2range ["<< 0 << ":" << 16*m_RecordLengthDPP << "]\n";
+     gp << "set x2tics nomirror tc lt 0\n";
+     gp << "set yrange  [0:4300] writeback\n";
+     gp << "set ytics nomirror tc lt 0\n";
+     gp << "set y2range [-2.2:2.2] writeback\n";
+     gp << "set y2tics nomirror tc lt 0\n";
+     gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
+     gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
+     gp << "set style line 1 lt 1 lw 1 \n";
+     gp << "set style line 2 lt 2 lw 1 \n";
+     gp << "set style line 3 lt 3 lw 1 \n";
+     gp << "set style line 4 lt 4 lw 1 \n";
+     first_time = 0;
   }
+
   std::string gp_command = "";
 
-  //std::ofstream gplot1("temp/dpp.txt", std::ofstream::out | std::ofstream::ate);
-  //if(!gplot1.is_open()) {
-  //  std::cout << "[ ERROR ] could not open the file temp/dpp.txt " << std::endl;
-  //}
-
   gp_command += string("plot ");
-  uint32_t col = 1;
 
   cout << endl;  
   for(int i = 0; i < 32; i++)
@@ -661,7 +612,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
   
     for(UInt_t i = 0; i < m_NrChannels; i++){
 	//for(int j=0; j<NumEvents[i]; j++) {
-	    uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
+	    //uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
 	    uint32_t SubChannel = gEvent[i][0].SubChannel & 0xFFFF;
             if( dKeyboard->m_ch[i] && SubChannel == i){
             cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << endl;
@@ -689,7 +640,6 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
            
     }
 
-    //gplot1.close();
     //cout << "gp_command: " << gp_command << endl; // this is for test only, to check if the command is correct
     if (gp_command.length() > 5) gp << gp_command << endl;
 
@@ -697,34 +647,41 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
 //-----------------------------------------------------------------------------
 void DCAEN1740D::StartAcq(){
 
- std::cout << "[DEBUG] DCAEN1740D::StartAcq\n";       	
+ //std::cout << "[DEBUG] DCAEN1740D::StartAcq\n";       	
  ShowSettings();
  InitModule(); 
 
 
-    std::cout << "Alocate Buffer....."; 	 
+    //std::cout << "Alocate Buffer....."; 	 
     ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_MallocReadoutBuffer(m_Handle, &m_localBuffer, &m_Size));
-    if (ret) std::cout << "Cannot allocate " << &m_Size << " bytes for the acquisition buffer! Exiting..." << std::endl;
+    if (ret){
+	    std::cout << "Cannot allocate " << &m_Size << " bytes for the acquisition buffer! Exiting..." << std::endl;
+	    exit(0);
+    }
     else     std::cout << "Allocated " << &m_Size << " bytes for readout buffer" << std::endl;
 
-    std::cout << "Alocate gEvents....."; 	 
+    //std::cout << "Alocate gEvents....."; 	 
     for (unsigned i= 0; i < m_NrChannels; ++i) {
 	 int allocated_size = MAX_AGGR_NUM_PER_BLOCK_TRANSFER * MAX_EVENT_QUEUE_DEPTH * sizeof(_CAEN_DGTZ_DPP_QDC_Event_t);
 	 gEvent[i] = (_CAEN_DGTZ_DPP_QDC_Event_t *)malloc(allocated_size);
          
          if (gEvent[i] == NULL) { 
             std::cout << "Cannot allocate memory for event list for channel " << i << "\n";
+	    exit(0);
 	 }
     }
 
-    std::cout << "Alocate DPPWaveforms (gWaveforms).....\n"; 	 
+    //std::cout << "Alocate DPPWaveforms (gWaveforms).....\n"; 	 
     ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_MallocDPPWaveforms(m_Handle, &gWaveforms, &gAllocatedSize));
     if (ret != CAEN_DGTZ_Success) std::cout << "Cannot allocate DPPWaveFormss " << ret << std::endl;
 
 
  std::cout << "[DEBUG] Send software trigger.....\n"; 	 
  ret = CAEN_DGTZ_SWStartAcquisition(m_Handle);
- if (ret != CAEN_DGTZ_Success) std::cout << "Cannot start the acquisition " << ret << std::endl;
+ if (ret != CAEN_DGTZ_Success) {
+	 std::cout << "Cannot start the acquisition " << ret << std::endl;
+	 exit(0);
+ }
 
 }
 
@@ -733,11 +690,7 @@ void DCAEN1740D::StopAcq(){
 
   ret = CAEN_DGTZ_SWStopAcquisition(m_Handle);
   CheckError(ret);
-  //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SWStopAcquisition, error code = " << ret << "\n"; return; }
-
-  //ret = CAEN_DGTZ_SWStopAcquisition(m_Handle);
-  //ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_FreeReadoutBuffer(&m_localBuffer));
-  //if(gWaveforms) free(gWaveforms);
+  if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SWStopAcquisition, error code = " << ret << "\n"; return; }
 
   for(int i = 0; i < MAX_CHANNELS; ++i) {
      if (gEvent[i] != NULL)
@@ -751,11 +704,10 @@ void DCAEN1740D::StopAcq(){
 
   ret = CAEN_DGTZ_ClearData(m_Handle);
   CheckError(ret);
-  //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ClearData, error code = " << ret << "\n"; return; }
+  if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ClearData, error code = " << ret << "\n"; return; }
 
- ret = CAEN_DGTZ_Reset(m_Handle);                                              
- CheckError(ret);
- // stop the module	
+  ret = CAEN_DGTZ_Reset(m_Handle);                                              
+  CheckError(ret);
 }
 
 //-----------------------------------------------------------------------------
@@ -776,50 +728,96 @@ void DCAEN1740D::StopAcq(){
 
 void DCAEN1740D::BuildEvent(){
 
-   std::string	sdata = "";
-   uint64_t	tts = 0xFFFFFFFFFFFFFFFF;
+   			   // 0 - no saving, 
+                           // 1-saving LIST short, forma1 < col1 = channel, col2 = charge, col3 = timestamp >
+			   // 2-saving LIST (long format), ready for Francesco's analysis in Matlab < col0...coln charge for each channel even if is 0, coln+1 timestamp >
+			   // e.g 0 0 0 ..... 64 times .... timestamp
+			   //
+			   // 4-saving LIST binary short, the same like short but writen in binary format not a text 
+			   // 8-saving MIX2 full track+short format, only binary 
 
-   for (uint32_t i = 0; i < 64; i++) {
-      for(uint32_t j = 0; j < NumEvents[i]; j++) {
-          for(uint32_t k = 0; k < m_NrChannels; k++) {
-	     //if(gEvent[i][j].TimeTag < tts && gEvent[i][j].TimeTag > 0L){
-             //   tts = gEvent[i][j].TimeTag;
-	     //}
+   m_savingformat  = 4; //for test only
+   if( m_savingformat == 0) return; 
+   //---------------------------------------------------------------------------------------------------------------------------
+   if( m_savingformat == 1){
+     p_queue pEventQueue(compare);
+  
+     for (uint32_t i = 0; i < m_NrChannels; i++) {
+         for(uint32_t j = 0; j < NumEvents[i]; j++) {
+	     uint16_t Charge     = gEvent[i][j].Charge; 		  
+	     uint16_t SubChannel = uint16_t(8 * (i / 8)) + gEvent[i][j].SubChannel;
+             uint64_t TimeStamp  = gEvent[i][j].TimeTag;
+	     pEventQueue.push( std::make_tuple(SubChannel, Charge, TimeStamp) );
+         }
+     }
 
-             sdata += to_string( gEvent[k][j].Charge ) + " " ;
-	  }
-	  sdata += to_string(gEvent[i][j].TimeTag) + "\n";	
- 
+   while(pEventQueue.size() != 0) {
+     m_StringBuffer1 +=  to_string(get<0>(pEventQueue.top())) + " "  + to_string(get<1>(pEventQueue.top()) ) + " " +to_string(get<2>(pEventQueue.top())) + "\n";
+     pEventQueue.pop();
+   }
+
+   }
+   //--------- end of m_savingformat == 1   ------------------------------------------------------------------------------------
+   //---------------------------------------------------------------------------------------------------------------------------
+   if( m_savingformat == 2){  // 3 columns, 1-channel, 2-charge, 3-timestamp
+       static uint32_t		flag = 1;	
+       uint64_t     		gExtendedTimeTag[64];
+       uint64_t     		gETT[64];
+       uint64_t     		gPrevTimeTag[64];
+      
+       if(flag == 1){
+          flag = 0;	   
+          memset(gExtendedTimeTag, 0, 64*sizeof(uint64_t));
+          memset(gETT,0, 64*sizeof(uint64_t));
+          memset(gPrevTimeTag, 0, 64*sizeof(uint64_t));
        }
-   }
+
+
+       m_StringBuffer2.clear();	
+
+       for (uint32_t i = 0; i < 64; i++) {
+           for(uint32_t j = 0; j < NumEvents[i]; j++) {
+              for(uint32_t k = 0; k < m_NrChannels; k++) {
+                 m_StringBuffer2 += to_string( gEvent[k][j].Charge ) + " " ;
+	      }
+
+	   if (gEvent[i][j].TimeTag < gPrevTimeTag[i])
+	       gETT[i]++;
+
+	   gExtendedTimeTag[i] = (gETT[i] << 32) + (uint64_t)(gEvent[i][j].TimeTag);
+
+	   m_StringBuffer2 += to_string(gEvent[i][j].TimeTag) + " ";	
+	   m_StringBuffer2 += to_string(gExtendedTimeTag[i]) + "\n";	
  
-/*
-
-   for(uint32_t j = 0, k = 0; j < NumEvents[k] && k < 8; j++, ++k) {
-      for (uint32_t i2 = 0; i2 < 8; i2++) {
-
-	  if(gEvent[8*i2+i2][j].TimeTag < tts && gEvent[8*i2+i2][j].TimeTag > 0L){
-             tts = gEvent[8*i2+i2][j].TimeTag;
-	  }
-
-          sdata += to_string( gEvent[8*i2+0][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+1][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+2][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+3][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+4][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+5][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+6][j].Charge ) + " " 
-                +  to_string( gEvent[8*i2+7][j].Charge ) + " "; 
-      }
+           gPrevTimeTag[i]   = gEvent[i][j].TimeTag;
+           }
+       }
+ 
+   m_StringBufferSize2 = m_StringBuffer2.length(); 
    }
-   */
+   //--------- end of m_savingformat == 2   ------------------------------------------------------------------------------------
+   //---------------------------------------------------------------------------------------------------------------------------
+   if( m_savingformat == 4){  // like list2 but binary
+     for (uint32_t i = 0; i < m_NrChannels; i++) {
+         //cout << "====== i: NumEvents["<<i<<"] " << NumEvents[i] << endl;;	   
+         for(uint32_t j = 0; j < NumEvents[i]; j++) {
+	     uint16_t Charge     = gEvent[i][j].Charge; 		  
+	     uint16_t SubChannel = uint16_t(8 * (i / 8)) + gEvent[i][j].SubChannel;
+             uint64_t TimeStamp  = gEvent[i][j].TimeTag;
+	     //cout << "i= " << i << " j= " << j << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;   
+	     memcpy(m_Buffer + m_BufferPos, &Charge,     sizeof(uint16_t));
+	     m_BufferPos += sizeof(uint16_t);
+	     memcpy(m_Buffer + m_BufferPos, &SubChannel, sizeof(uint16_t));
+	     m_BufferPos += sizeof(uint16_t);
+	     memcpy(m_Buffer + m_BufferPos, &TimeStamp,  sizeof(uint64_t));
+	     m_BufferPos += sizeof(uint64_t);
+         }
+     }
+   }
+   //--------- end of m_savingformat == 4   ------------------------------------------------------------------------------------
+   //---------------------------------------------------------------------------------------------------------------------------
+   //if( m_savingformat == 8) // need to be implemented
 
-   //sdata += to_string(tts);
-   cout << "string length: " << sdata.length() << endl; 
-   //cout << sdata << endl;;
-   std::ofstream dataD("temp2", std::ofstream::out | std::ofstream::app);
-   dataD << sdata << endl;
-   dataD.close();
 
  }
 
@@ -892,19 +890,14 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
 
 
 
-  static UInt_t Nb, Ne, prevNe, prevNb;
-  Nb += GetDataSize();
+  UInt_t Nb = 0, Ne, prevNe = 0, prevNb = 0;
+  Nb  = GetDataSize();
   Ne  = GetNrEvents();
-  uint32_t a_TotEvCnt = 0;
+  //uint32_t a_TotEvCnt = 0;
 
-  std::cout << "*********** statistics ***************\n";
-  std::cout << "======================================\n";
-  std::cout << "Elapsed time\t= " << (fAcquisition->m_ElapsedTimeMS*1.048576f)  << std::endl;
-  //std::cout << "Readout Loops\t= %d\n"    << gLoops          << std::endl;
-  std::cout << "Bytes read\t= "       << Nb  << std::endl;
-  std::cout << "Events\t= "          << Ne  << std::endl;
-  std::cout << "Readout Rate\t= \n\n" <<  ((float)Nb / 1024 / ((fAcquisition->m_ElapsedTimeMS*1.048576f)) )<< std::endl;
-  std::cout << "*********** end of printout ***************\n";
+  std::cout << "\tReading bytes =\t" << ( (float)(Nb-prevNb) / 1024 / 1024 / fAcquisition->m_ElapsedAcqTime*1.048576f )  << " [MB/s]" << std::endl;
+  std::cout << "\tEvents =\t"      << Ne  << std::endl;
+  std::cout << "\tRate =\t\t"        <<  ((float)Ne / ((fAcquisition->m_ElapsedAcqTime*1.048576f))/1000 ) << "[Kevt/s]"<< std::endl;
 
   prevNe = Ne;
   prevNb = Nb;
@@ -920,7 +913,6 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
 
 //-----------------------------------------------------------------------------
 void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
-    return;
    // write data to buffer only when the IRQ happend, otherwise return 
    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
    // If you want to simulate events you have to comment this line, m_IRQ = 1;
@@ -928,7 +920,7 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
    if( !VME_CRATE ) m_IRQ = 1; 
    if( fAcquisition->m_EmptyBuffer ) m_IRQ = 1; 
    //std::cout << "[DEBUG] 2 DCAEN1740D::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
-   if(!m_IRQ) return;
+   //if(!m_IRQ) return;
       m_IRQ = 0;
    //std::cout << "[DEBUG] 3 DCAEN1740D::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
 
@@ -941,15 +933,23 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
    gElapsedTimeADC = gCurrentTimeADC - gPrevRateTimeADC;    // calcullate elapsed time
 
    //memcpy((void*)m_Buffer + m_BufferPos, (void*)m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
-   memcpy(m_Buffer + m_BufferPos, m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
-   m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
+   //memcpy(m_Buffer + m_BufferPos, m_localBuffer, m_dataSizeByte); // copy data from local buffor to main beffor
+   //m_BufferPos += (m_dataSizeByte);                                 // move the position of the buffer
 
    // ==========================================================================
    // check if the buffer is full and has to be writen to file
-   if( m_BufferPos > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
+   //cout << "m_BufferPos " << m_BufferPos << ",\tsize "<<  UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) << endl;
+   if( m_BufferPos  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
        }
 
+   if( m_StringBuffer1.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
+       m_saveAfterSize = kTRUE;
+       }
+
+   if( m_StringBuffer2.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
+       m_saveAfterSize = kTRUE;
+       }
   // ===========================================================================
   // check the elapsed time
   // cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fAcquisition->m_SaveFileTimeEntry << endl;
@@ -977,19 +977,56 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
     //    std::cout << mbstr << '\n';
    // }
 
-    string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
-	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".bin");    
-
     // take the time now
     fAcquisition->m_TimeNow = std::time(NULL);
     std::string s1 = string(ctime(&fAcquisition->m_TimeNow));
 
-    std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
-    if(!DataFile.is_open()) {
-       std::cout << "[ ERROR ] could not open the file... " << filename << std::endl;
-       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+
+    if( m_savingformat == 1){ 
+       string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
+	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".lst1");    
+       std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
+       if(!DataFile.is_open()) {
+          std::cerr << "[ ERROR ] could not open the file... " << filename << std::endl;
+          *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+	  return;
        }
-    else {
+       DataFile << m_StringBuffer1; 
+       DataFile.close();
+       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
+       *fAcquisition->fLog << "\t\t\t\tAcq time: " << fAcquisition->m_TimeNow - fAcquisition->m_StartAcqTime << "s, " 
+                         << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+       std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
+       std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+    }
+
+    if( m_savingformat == 2){ 
+       string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
+	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".lst2");    
+       std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
+       if(!DataFile.is_open()) {
+          std::cerr << "[ ERROR ] could not open the file... " << filename << std::endl;
+          *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+	  return;
+       }
+       DataFile << m_StringBuffer2; 
+       DataFile.close();
+       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
+       *fAcquisition->fLog << "\t\t\t\tAcq time: " << fAcquisition->m_TimeNow - fAcquisition->m_StartAcqTime << "s, " 
+                         << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+       std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
+       std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+    }
+
+    if( m_savingformat == 4){ 
+       string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
+	    + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".bin");    
+       std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
+       if(!DataFile.is_open()) {
+          std::cerr << "[ ERROR ] could not open the file... " << filename << std::endl;
+          *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+	  return;
+       }
        DataFile.write((char*)m_Buffer, m_BufferPos); 
        DataFile.close();
        *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
@@ -997,8 +1034,29 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
                          << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
        std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
        std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
-      }
+    }
 
+    if( m_savingformat == 8){ 
+       string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
+	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".mix");    
+       std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
+       if(!DataFile.is_open()) {
+          std::cerr << "[ ERROR ] could not open the file... " << filename << std::endl;
+          *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+	  return;
+       }
+       DataFile.write((char*)m_Buffer, m_BufferPos); 
+       DataFile.close();
+       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
+       *fAcquisition->fLog << "\t\t\t\tAcq time: " << fAcquisition->m_TimeNow - fAcquisition->m_StartAcqTime << "s, " 
+                         << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+       std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
+       std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
+    }
+
+
+
+      
  // ===============================================================================
  // some cleaning after saving and writing message to the std output
     m_BufferPos = 0;
@@ -1169,7 +1227,7 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
  fout << "# ======= BaseLine settings ==========" << endl; 
  fout << "# if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples" << endl;
  fout << "# BaseLine: baseline value per group " << endl;
- fout << "# syntax: BaseLineDPP <group> <ifixed value>" << endl;
+ fout << "# syntax: BaseLineDPP <group> <fixed value>" << endl;
  fout << "FixedBaseLineDPP " <<  m_FixedBaseLineDPP << endl;
  for(unsigned i = 0; i < m_NrGroups; i++)
     fout << "BaseLineDPP " << i << " " << m_BaseLineDPP[i] << endl;
@@ -1310,9 +1368,15 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		while (ss >> buf) param.push_back(buf);
 		int gr = stoi( param.at(0) );
 		int val= stoi( param.at(1) );
-	     	if(gr < 8) m_BaseLineDPP[ gr ] = val;
+	     	if(gr < 8 && m_FixedBaseLineDPP == 0) m_BaseLineDPP[ gr ] = val;
 	     }
-             else if( name == string("FixedBaseLineDPP") ) 	m_FixedBaseLineDPP       = atoi( value.c_str() );
+             else if( name == string("FixedBaseLineDPP") ){
+	     	m_FixedBaseLineDPP = atoi( value.c_str() );
+		if(m_FixedBaseLineDPP == 1)      for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 4;
+	        else if(m_FixedBaseLineDPP == 2) for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 16;	
+	        else if(m_FixedBaseLineDPP == 3) for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 64;	
+	        else if(m_FixedBaseLineDPP == 4) for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 256;
+	     }	
              else if( name == string("GateWidthDPP")  ) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1374,7 +1438,7 @@ void DCAEN1740D::RegisterDump(){
    FILE *fout;
    fout = fopen("register_dump.txt", "w");
 
-   unsigned int read, i3;
+   //unsigned int read, i3;
    string readStr;
    
    uint32_t out, i, address;// ret;
@@ -1414,7 +1478,7 @@ void DCAEN1740D::RegisterDump(){
    }
 
    for(i=0; i< m_NrGroups; i++){
-      uint32_t address = 0x1080 + 0x100*i;
+      uint32_t address = 0x1040 + 0x100*i;
       ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
       fprintf(fout, "(0x%X) PulsePolarity\t0x%X\n", address, out);
       if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");

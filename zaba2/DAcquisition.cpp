@@ -192,14 +192,17 @@ return kTRUE;
   
   if (m_ElapsedTimeMS < 1000)
       return;
-
-  std::cout << "[MESSAGE] ACQ time: " << std::difftime(std::time(NULL), m_StartAcqTime) << " s.\n"; 
+  m_ElapsedAcqTime = std::difftime(std::time(NULL), m_StartAcqTime);
+  std::cout << "======================================\n";
+  std::cout << "[MESSAGE] ACQ time: " << m_ElapsedAcqTime << " [sec] \n"; 
 
   TObject   *elem;
   TIterator *iter;
   iter = fModuleList->MakeIterator();
   while ( (elem = iter->Next()) > 0) ((DModule*) elem)->ShowData(d, this);
- 
+
+  std::cout << std::endl;
+
   delete iter;
   m_PrevTimeMS = m_CurrentTimeMS;
 }
@@ -223,10 +226,15 @@ void DAcquisition::StartAcq(){
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterEventsEntry << ", 0 means forever" << std::endl;
+  *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_SaveFileSizeEntry << ", 0 means forever" << std::endl;
+  *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_SaveFileTimeEntry << ", 0 means forever" << std::endl;
   std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Start acquisition ----- " << std::endl;
-  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
-  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
-  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterEventsEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after time[s]      " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after nr of file   " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after n of events  " << m_StopAfterEventsEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after f. size " << m_SaveFileSizeEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after time[s] " << m_SaveFileTimeEntry << ", 0 means forever" << std::endl;
+
 
   iter->Reset();
   m_StartAcqTime = std::time(NULL);

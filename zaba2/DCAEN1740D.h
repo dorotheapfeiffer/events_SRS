@@ -103,7 +103,12 @@ public:
  uint32_t                       gAllocatedSize;
 
  Char_t			*m_localBuffer; 
+ std::string		m_StringBuffer1; 
+ std::string		m_StringBuffer2; 
+ std::string		m_StringBufferSize1; 
+ std::string		m_StringBufferSize2; 
  Char_t			m_Buffer[500*1024*1024]; 
+ 
  UInt_t			m_EventsInBuffer;
  UInt_t			m_Size;
  UInt_t			m_BufferPos;
@@ -111,7 +116,7 @@ public:
  UInt_t			m_dataSizeByte;
  UInt_t			m_IRQ;
  UInt_t			m_Events;
- 
+ UInt_t			m_savingformat; 
  //std::queue<AEvent *>   m_QueEvents;                // List of all events saved by the digitizer during one dataread
  std::queue< int >   	  m_QueEvents;                // List of all events saved by the digitizer during one dataread
 

@@ -38,38 +38,22 @@
 (0x1574) TriggerHoldOff	0x0
 (0x1674) TriggerHoldOff	0x0
 (0x1774) TriggerHoldOff	0x0
-(0x1080) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1180) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1280) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1380) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1480) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1580) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1680) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1780) PulsePolarity	0xFFFFFFFF
-Errors during register dump.
-(0x1098)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1198)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1298)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1398)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1498)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1598)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1698)  DCoffset	0xFFFFFFFF
-Errors during register dump.
-(0x1798)  DCoffset	0xFFFFFFFF
-Errors during register dump.
+(0x1040) PulsePolarity	0x200005
+(0x1140) PulsePolarity	0x200005
+(0x1240) PulsePolarity	0x200005
+(0x1340) PulsePolarity	0x200005
+(0x1440) PulsePolarity	0x200005
+(0x1540) PulsePolarity	0x200005
+(0x1640) PulsePolarity	0x200005
+(0x1740) PulsePolarity	0x200005
+(0x1098)  DCoffset	0x8000
+(0x1198)  DCoffset	0x8000
+(0x1298)  DCoffset	0x8000
+(0x1398)  DCoffset	0x8000
+(0x1498)  DCoffset	0x8000
+(0x1598)  DCoffset	0x8000
+(0x1698)  DCoffset	0x8000
+(0x1798)  DCoffset	0x8000
 (0x10A8)  ChannelEnableMask	0xFF
 (0x11A8)  ChannelEnableMask	0xFF
 (0x12A8)  ChannelEnableMask	0xFF
@@ -142,7 +126,7 @@ Errors during register dump.
 (0x17E4) TriggerThreshold	0xA
 (0x17E8) TriggerThreshold	0xA
 (0x17EC) TriggerThreshold	0xA
-(0x8000) Board Configuration	0xD0110
+(0x8000) Board Configuration	0xC0110
 (0x800C) AggregateOrganization	0x3
 (0x8020) EventsPerAggregate	0x1
 (0x8024) Errors during register dump --------- ret(-1)
@@ -152,4 +136,4 @@ Errors during register dump.
 (0x8120) GroupEnableMask	0xFF
 (0x814C) EventSize	0x0
 (0xEF00) ReadoutControl	0x10
-(0xEF1C) AggregateNumber per BLT	0xC8
+(0xEF1C) AggregateNumber per BLT	0x1F4

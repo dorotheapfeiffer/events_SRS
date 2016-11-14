@@ -20,5 +20,6 @@
 #pragma link C++ class DDataSave;
 #pragma link C++ class DGHelp;
 #pragma link C++ class DKeyboard;
+#pragma link C++ class DAcqInfo;
 
 #endif
