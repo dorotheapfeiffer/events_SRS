@@ -455,6 +455,142 @@ int configure_digitizer(int handle, int EquippedGroups, BoardParameters *params)
        return -1;
     }
 
+//////////////////////////////////////////////////////////////
+//
+// register dump, this part you can delete is for test only.
+  FILE *fout;
+  fout = fopen("register_dump.txt", "w");
+
+    uint32_t out;	
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1030 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X) GateWidth\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1034 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X)  GateOffset\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1038 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X) GateBaseline\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x103C + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X)  PreTrigger\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1074 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X) TriggerHoldOff\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+  
+/*
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1078 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X)  ShapedTrigger\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+*/
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x1098 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X)  DCoffset\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+    for(i=0; i<8; i++){ 
+       uint32_t address = 0x10A8 + 0x100*i;	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X)  ChannelEnableMask\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+
+    for(i=0; i<64; i++){
+       uint32_t address = 0x1000 + 0x100*(i/8) + 0xD0 + 4*(i%8);	    
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       fprintf(fout, "(0x%X) TriggerThreshold\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+    }
+
+    uint32_t address = 0x8000;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) Board Configuration\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0x800C;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) AggregateOrganization\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0x8020;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) EventsPerAggregate\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+  //  address = 0x8024;
+  //  ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+  //  if(ret != CAEN_DGTZ_Success) {
+  //     fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret);
+  //     ret = 0;
+  //  }
+  //  else fprintf(fout, "(0x%X) RecordLength\t0x%X\n", address, out);
+
+   
+    for(i = 0; i < 8; i++){ 
+       address = 0x1040 + 0x100*i;
+       ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+       if(ret != CAEN_DGTZ_Success) { fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret); ret = 0;}
+       else fprintf(fout, "(0x%X) DPPControl gr%d\t0x%X\n",address, i, out);
+    }
+
+    address = 0x8100;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) AcqControl\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0x810C;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) GlobalTriggerMask\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0x8120;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) GroupEnableMask\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0x814C;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) EventSize\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0xEF00;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) ReadoutControl\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+    address = 0xEF1C;
+    ret |= CAEN_DGTZ_ReadRegister(handle, address, &out); 
+    fprintf(fout, "(0x%X) AggregateNumber per BLT\t0x%X\n", address, out);
+    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
+
+fclose(fout);
+
+
+
     return 0;
 }
 
@@ -508,7 +644,7 @@ int run_acquisition() {
           printf("Errro during _CAEN_DGTZ_GetDPPEvents() call (ret = %d): exiting ....\n", ret);
           exit(-1);
         }
-
+/*
 	uint32_t i2 = 0;
 	uint32_t k = 0;
         for(j=0; j<NumEvents[k] && k < 8; j++, ++k) {
@@ -519,7 +655,7 @@ int run_acquisition() {
 		  gEvent[8*i2+4][j].Charge & 0xFFFF, gEvent[8*i2+5][j].Charge & 0xFFFF, gEvent[8*i2+6][j].Charge & 0xFFFF, gEvent[8*i2+7][j].Charge & 0xFFFF );
 	    }
 	}
-
+*/
 
         /* Loop over all channels and events */
         for (i=0; i < gEquippedChannels; ++i) {              

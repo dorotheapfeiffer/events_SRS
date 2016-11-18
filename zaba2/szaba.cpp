@@ -33,11 +33,12 @@ int main(int argc, char **argv) {
 
  while( dKeyboard->CheckKey() and dAcquisition->CheckCondition() ){
    dAcquisition->ReadVME(); 
-   if(dKeyboard->m_display) dAcquisition->GnuplotOnline();
+   //if(dKeyboard->m_display) dAcquisition->GnuplotOnline();
+   //dAcquisition->GnuplotOnline();
    dAcquisition->BuildEvent();
    dAcquisition->DataSave();
    dAcquisition->ShowData(); // no arguments because we do not use graphics in the szaba version, prints only on the terminal
-   int delay = 0; 
+   int delay = 10; 
    std::this_thread::sleep_for(std::chrono::microseconds(5000*delay));
 
  }
