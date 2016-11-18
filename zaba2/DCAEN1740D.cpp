@@ -70,7 +70,7 @@ static	std::string acqmodedpp(Int_t a){
 	else            return std::string("unknown");
 	}
 //===========================================================
-/*
+
 static std::string Dec2BinStr2(Char_t dec){
    std::string strBin;
   
@@ -81,7 +81,7 @@ static std::string Dec2BinStr2(Char_t dec){
 
 return strBin;
 }
-*/
+
 //===========================================================
 /*
 static std::string Dec2BinStr(Char_t dec){
@@ -338,28 +338,31 @@ void DCAEN1740D::InitModule() {
     }
 
     /* Pulse polarity */
-    for(unsigned i = 0; i < m_NrGroups; i++) {
+/*    for(unsigned i = 0; i < m_NrGroups; i++) {
        uint32_t address = 0x1040 + 0x100*i;
        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_PulsePolarityDPP[i]);
        cout << i << " address:" << hex << address << dec << " pulspolarity:" << m_PulsePolarityDPP[i] << endl;
        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] PulsePolarityDPP " << CheckError(ret) << std::endl;
     }
+*/
 
-
+    for(unsigned i = 0; i < m_NrGroups; i++) {
     uint32_t DppCtrl1 	      = 0;
     DppCtrl1 = ( ((m_ChargeSensitivityDPP    & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
                  ((m_EnTestPulses            & 0x0) <<  4)   |  // 0 - disable, 1 - enable
                  ((m_TestPulsesRate          & 0x3) <<  5)   |  // 0x3 = 1MHz
                  ((m_EnableChargePedestalDPP & 0x1) <<  8)   |  // if 1 1024 is added to the charge (useful when energy close to zero)
                  ((m_TriggerSmoothingDPP     & 0x0) << 12)   |  // smoothing signal, 0x0 - no smoothing 
-                 ((0x0 			     & 0x1) << 16)   |  // 0 - positive, 1 negatize
+                 ((m_PulsePolarityDPP[i]     & 0x1) << 16)   |  // 0 - positive, 1 negatize
                  ((m_TriggerModeDPP          & 0x3) << 18)   |  // 0x00 normal self trigger, 0x01 paired mode, read the documentation 
                  ((m_FixedBaseLineDPP        & 0x7) << 20)   |  // 0-fixed, 1-4smp, 2-16smps, 3-64samples 
                  ((m_DisSelfTrigger          & 0x1) << 24)   |  // 
 		 ((m_DisTrigHist             & 0x1) << 30)   ); // trigger histeresis, disable
 
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8040, DppCtrl1);
+    uint32_t address = 0x1040 + 0x100*i;
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, address, DppCtrl1);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] DppCtrl1 " << CheckError(ret) << std::endl;
+    }
 
     /* Set Pre Trigger (in samples) */
     // this is if you want to set all channels with one value 
@@ -382,14 +385,15 @@ void DCAEN1740D::InitModule() {
 
     /* Set Baseline (used in fixed baseline mode only) */
     // this is if you want to set all channels with one value 
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_FixedBaseLineDPP);
+    //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_FixedBaseLineDPP);
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, 64);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Baseline " << CheckError(ret) << std::endl;
-/*
+
     for(unsigned i = 0; i < m_NrGroups; i++) {
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1038 + 0x100*i, m_BaseLineDPP[i]);
-          if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
+        //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1038 + 0x100*i, m_BaseLineDPP[i]);
+        //  if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
     }
-*/
+
     /* Set Gate Width (in samples) */
     for(unsigned i = 0; i < m_NrGroups; i++) {
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1030 + 0x100*i, m_GateWidthDPP[i]);
@@ -505,7 +509,7 @@ void DCAEN1740D::InitModule() {
   ret = CAEN_DGTZ_ReadData(m_Handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, m_localBuffer, &m_Size);
   CheckError(ret);
   if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
-
+  //cout << " mSize:"  << m_Size ;
   if (m_Size == 0) return; // no data collected
 
   // this 2 for loops are necessary because the values of chare and the value of subchannel stay from the prevous readout...
@@ -571,7 +575,7 @@ void DCAEN1740D::InitModule() {
 void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
 
   // this function could possibly goes to separate thread...
-
+  //static flag = 0;
   if( m_Size == 0 ) return; // no data to display, return
   //UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot  
 
@@ -601,7 +605,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
   std::string gp_command = "";
 
   gp_command += string("plot ");
-
+/*
   cout << endl;  
   for(int i = 0; i < 32; i++)
      cout << dKeyboard->m_ch[i] << " ";
@@ -609,25 +613,26 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
   for(int i = 32; i < 64; i++)
      cout << dKeyboard->m_ch[i] << " ";
      cout << endl;  
-  
-    for(UInt_t i = 0; i < m_NrChannels; i++){
-	//for(int j=0; j<NumEvents[i]; j++) {
+  */
+    for(UInt_t i = 0; i < m_NrChannels; ++i){
+	for(int j=0; j<NumEvents[i]; ++j) {
+            //cout << "event i: "<< i << "\tj: " << j << endl;		 
 	    //uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
-	    uint32_t SubChannel = gEvent[i][0].SubChannel & 0xFFFF;
+	    uint32_t SubChannel = gEvent[i][j].SubChannel & 0xFFFF;
+            //cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << endl;
             if( dKeyboard->m_ch[i] && SubChannel == i){
-            cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << endl;
 		    
-                _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][0], gWaveforms);
+                _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][j], gWaveforms);
 	     
 	        std::string fname = string("temp/ch") + to_string(i);
-                //cout << "event i: "<< i << "\tj: " << 0 << "\tfname: " << fname << endl;		 
                 std::ofstream gpfile(fname, std::ofstream::out | std::ofstream::ate);
 	        for(uint32_t k = 0; k < gWaveforms->Ns; k++){ 
-                   //cout << gWaveforms->Trace1[k] << endl;
                     gpfile << gWaveforms->Trace1[k] << " ";                  // signal           column 1
                     gpfile << 2000 + 200 * gWaveforms->DTrace1[k] << " ";    // gate             column 2
+                    gpfile << 1000 + 200 * gWaveforms->DTrace2[k] << " ";    // trigger             column 2
 		    gpfile << 500  + 200 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
-		    gpfile << gWaveforms->Trace1[0] + m_ThresholdDPP[i] << " "; // trigger          column 4
+		    gpfile << 100  + 200 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
+		    //gpfile << gWaveforms->Trace1[0] + m_ThresholdDPP[i] << " "; // trigger          column 4
 	            gpfile << endl;
 	         }
                  gpfile.close();
@@ -635,13 +640,13 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
                  gp_command += string("'") + fname + string("' u 2 w l ls 2 t 'gt") + to_string(i) + string("', ");		
                  gp_command += string("'") + fname + string("' u 3 w l ls 3 t 'ho") + to_string(i) + string("', ");		
                  gp_command += string("'") + fname + string("' u 4 w l ls 4 t 'th") + to_string(i) + string("', ");		
-	   }
-
-           
+	   } 
+    if (gp_command.length() > 5) gp << gp_command << endl;
+       }
     }
 
     //cout << "gp_command: " << gp_command << endl; // this is for test only, to check if the command is correct
-    if (gp_command.length() > 5) gp << gp_command << endl;
+    //if (gp_command.length() > 5) gp << gp_command << endl;
 
 }
 //-----------------------------------------------------------------------------
@@ -736,7 +741,7 @@ void DCAEN1740D::BuildEvent(){
 			   // 4-saving LIST binary short, the same like short but writen in binary format not a text 
 			   // 8-saving MIX2 full track+short format, only binary 
 
-   m_savingformat  = 4; //for test only
+   m_savingformat  =1; //for test only
    if( m_savingformat == 0) return; 
    //---------------------------------------------------------------------------------------------------------------------------
    if( m_savingformat == 1){
@@ -772,8 +777,6 @@ void DCAEN1740D::BuildEvent(){
           memset(gPrevTimeTag, 0, 64*sizeof(uint64_t));
        }
 
-
-       m_StringBuffer2.clear();	
 
        for (uint32_t i = 0; i < 64; i++) {
            for(uint32_t j = 0; j < NumEvents[i]; j++) {
@@ -982,7 +985,8 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
     std::string s1 = string(ctime(&fAcquisition->m_TimeNow));
 
 
-    if( m_savingformat == 1){ 
+   if( m_savingformat == 1){ 
+   //if( true ){
        string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
 	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".lst1");    
        std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
@@ -1001,6 +1005,7 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
     }
 
     if( m_savingformat == 2){ 
+   //if( true ){
        string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
 	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".lst2");    
        std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
@@ -1019,6 +1024,7 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
     }
 
     if( m_savingformat == 4){ 
+    //if( false){ 
        string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
 	    + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".bin");    
        std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
@@ -1059,6 +1065,8 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
       
  // ===============================================================================
  // some cleaning after saving and writing message to the std output
+    m_StringBuffer1.clear();	
+    m_StringBuffer2.clear();	
     m_BufferPos = 0;
     m_fileEvents = m_Events;
     fAcquisition->m_NrOfSavedFiles++;
@@ -1476,14 +1484,14 @@ void DCAEN1740D::RegisterDump(){
       fprintf(fout, "(0x%X) TriggerHoldOff\t0x%X\n", address, out);
       if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
    }
-
+/*
    for(i=0; i< m_NrGroups; i++){
       uint32_t address = 0x1040 + 0x100*i;
       ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
       fprintf(fout, "(0x%X) PulsePolarity\t0x%X\n", address, out);
       if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
    }
-
+*/
 
 /*   
     for(i=0; i<8; i++){ 
@@ -1534,18 +1542,29 @@ void DCAEN1740D::RegisterDump(){
    fprintf(fout, "(0x%X) EventsPerAggregate\t0x%X\n", address, out);
    if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
 
+
+/* Error in the firmware, this register cannot be red. check the new firmware if exist
    address = 0x8024;
    ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
    if(ret != CAEN_DGTZ_Success) {
    fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret);
    }
    else fprintf(fout, "(0x%X) RecordLength\t0x%X\n", address, out);
+*/
 
-
-   address = 0x8040;
-   ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
-   if(ret != CAEN_DGTZ_Success)  fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret); 
-   else fprintf(fout, "(0x%X) DPPControl\t0x%X\n", address, out);
+   for(i = 0; i < m_NrGroups; i++){
+       address = 0x1040 + 0x100*i;
+       ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
+       if(ret != CAEN_DGTZ_Success)  fprintf(fout, "(0x%X) Errors during register dump --------- ret(%d)\n", address, ret); 
+       else {
+        std::string s = Dec2BinStr2( (out & 0xFF000000) >>  24 ) + "'" + 
+                        Dec2BinStr2( (out & 0x00FF0000) >>  16 ) + "'" + 
+                        Dec2BinStr2( (out & 0x0000FF00) >>   8 ) + "'" + 
+                        Dec2BinStr2( (out & 0x000000FF) >>   0 );
+	fprintf(fout, "(0x%X) DPPControl gr%d\t0x%X %s\n",address, i, out, s.c_str());
+	}	
+   }
+   
 
    address = 0x8100;
    ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);

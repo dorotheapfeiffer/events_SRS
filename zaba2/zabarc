@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2016.11.14	17:58:8
+# the file was created:  2016.11.3	15:21:57
 # Line starts with a '#' is a comment line
 #
 #
@@ -15,7 +15,7 @@ StopAfterFile 0
 StopAfterEvents 0
  
 # Save each file after reach the file size
-SaveFileSize 400
+SaveFileSize 100
  
 # Save each file after certain number of seconds
 SaveFileTime 3600
@@ -32,7 +32,7 @@ DataPath /home/dlab/dg_epool/zaba2/data
 #     then only the number will be increased, so 001, 002, 003, 004
 FileName data
  
-[CAEN 1740D.142]
+[CAEN 1740D.137]
 # ======= Channel input signal settings ==========
 RecordLengthDPP 512
 # you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
@@ -69,14 +69,14 @@ SaveChannels 7
 # ====== Trigger Configuration ==========
 # Global trigger can be built from logic OR all indyvidual channel triggers. This option allows you to set which indyvidual 
 # trigger will contribute to build the global one. This is set by indyvidual group. Every group consist of 8 channels
-SelfTriggerMaskGr0 11111111
-SelfTriggerMaskGr1 11111111
-SelfTriggerMaskGr2 11111111
-SelfTriggerMaskGr3 11111111
-SelfTriggerMaskGr4 11111111
-SelfTriggerMaskGr5 11111111
-SelfTriggerMaskGr6 11111111
-SelfTriggerMaskGr7 11111111
+SelfTriggerMaskGr0 10000000
+SelfTriggerMaskGr1 00000000
+SelfTriggerMaskGr2 00000000
+SelfTriggerMaskGr3 00000000
+SelfTriggerMaskGr4 00000000
+SelfTriggerMaskGr5 00000000
+SelfTriggerMaskGr6 00000000
+SelfTriggerMaskGr7 00000000
 # 
 # All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 0
 IOLevel 0
@@ -99,10 +99,8 @@ PulsePolarityDPP 5 0
 PulsePolarityDPP 6 0
 PulsePolarityDPP 7 0
 # ======= BaseLine settings ==========
-# if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples
 # BaseLine: baseline value per group 
-# syntax: BaseLineDPP <group> <fixed value>
-FixedBaseLineDPP 2
+# syntax: BaseLineDPP <group> <value>
 BaseLineDPP 0 16
 BaseLineDPP 1 16
 BaseLineDPP 2 16
@@ -221,6 +219,62 @@ TriggerHoldOffDPP 4 0
 TriggerHoldOffDPP 5 0
 TriggerHoldOffDPP 6 0
 TriggerHoldOffDPP 7 0
+TriggerHoldOffDPP 8 0
+TriggerHoldOffDPP 9 0
+TriggerHoldOffDPP 10 0
+TriggerHoldOffDPP 11 0
+TriggerHoldOffDPP 12 0
+TriggerHoldOffDPP 13 0
+TriggerHoldOffDPP 14 0
+TriggerHoldOffDPP 15 0
+TriggerHoldOffDPP 16 0
+TriggerHoldOffDPP 17 0
+TriggerHoldOffDPP 18 5
+TriggerHoldOffDPP 19 10
+TriggerHoldOffDPP 20 10
+TriggerHoldOffDPP 21 10
+TriggerHoldOffDPP 22 10
+TriggerHoldOffDPP 23 10
+TriggerHoldOffDPP 24 10
+TriggerHoldOffDPP 25 10
+TriggerHoldOffDPP 26 10
+TriggerHoldOffDPP 27 10
+TriggerHoldOffDPP 28 10
+TriggerHoldOffDPP 29 10
+TriggerHoldOffDPP 30 10
+TriggerHoldOffDPP 31 10
+TriggerHoldOffDPP 32 10
+TriggerHoldOffDPP 33 10
+TriggerHoldOffDPP 34 10
+TriggerHoldOffDPP 35 10
+TriggerHoldOffDPP 36 10
+TriggerHoldOffDPP 37 10
+TriggerHoldOffDPP 38 10
+TriggerHoldOffDPP 39 10
+TriggerHoldOffDPP 40 10
+TriggerHoldOffDPP 41 10
+TriggerHoldOffDPP 42 10
+TriggerHoldOffDPP 43 10
+TriggerHoldOffDPP 44 10
+TriggerHoldOffDPP 45 10
+TriggerHoldOffDPP 46 10
+TriggerHoldOffDPP 47 10
+TriggerHoldOffDPP 48 10
+TriggerHoldOffDPP 49 10
+TriggerHoldOffDPP 50 10
+TriggerHoldOffDPP 51 10
+TriggerHoldOffDPP 52 10
+TriggerHoldOffDPP 53 10
+TriggerHoldOffDPP 54 10
+TriggerHoldOffDPP 55 10
+TriggerHoldOffDPP 56 10
+TriggerHoldOffDPP 57 10
+TriggerHoldOffDPP 58 10
+TriggerHoldOffDPP 59 10
+TriggerHoldOffDPP 60 10
+TriggerHoldOffDPP 61 10
+TriggerHoldOffDPP 62 10
+TriggerHoldOffDPP 63 10
 # PreTriggerDPP: must be bigger than pregate +7 
 # syntax: PreTriggerDPP     <group> <value>
 PreTriggerDPP 0 50
