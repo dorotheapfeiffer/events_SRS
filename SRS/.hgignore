@@ -1,0 +1,29 @@
+#ignore emacs backup and lock files:
+~
+\#
+#ignore any build output and user files:
+^build/.*
+^rundir/.*
+^data/.*
+^temp/.*
+^CMakeFile/.*
+#a protection against adding in build output:
+\.so$
+\.dylib$
+\.o$
+\.obj$
+\.lo$
+\.so$
+\.a$
+\.pyc$
+\.pyo$
+\.exe$
+\.gch$
+\.out$
+\.pcm$
+\.DS_Store$
+\.project$
+\.cdtproject$
+\.cproject$
+\.csettings$
+\CMakeCache.txt$
