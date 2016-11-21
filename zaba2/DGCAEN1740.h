@@ -12,6 +12,7 @@ private:
  enum Widget{
 	 eRecordLength = 1,
 	 ePostTrigger,
+	 eGPIO,
          eGroupEnableMask = 10,
          eDCoffset = 20,	 
 	 eSaveChannel = 30,
@@ -29,6 +30,7 @@ private:
 
   TObjArray		*fWidgetList;
 
+  TGLayoutHints		*fL00;
   TGLayoutHints		*fL0;
   TGLayoutHints		*fL1;
   TGLayoutHints		*fL2;
@@ -43,7 +45,7 @@ private:
  
   TGTab			*fTab; 
   TGCompositeFrame	*fNrTab[4];
-  TGCompositeFrame	*fFrame;
+  TGCompositeFrame	*fGF1_01, *fGF1_02;
   TGGroupFrame		*fGF0_0, *fGF0_1, *fGF0_2, *fGF0_3, *fGF0_4;	
   TGGroupFrame		*fGF1_0, *fGF1_1, *fGF1_2, *fGF1_3, *fGF1_4;	
   TGGroupFrame		*fGF2_0, *fGF2_1;
@@ -67,6 +69,7 @@ private:
   TGComboBox		*fRunSyncMode;
   TGComboBox		*fClock;
   TGNumberEntry		*fDelay;
+  TGTextButton		*fFPIOButton;
 
 public:
   DGCAEN1740(DModule *module); 
