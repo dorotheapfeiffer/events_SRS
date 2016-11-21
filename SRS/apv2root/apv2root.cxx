@@ -26,6 +26,7 @@ std::string fileName = "";
 std::string pedestalName = "";
 unsigned long counter = 0;
 int eventNr = 0;
+int uTPCThreshold = 0;
 int limit = 0;
 float zsCut = 0;
 
@@ -34,17 +35,14 @@ bool rdFound = false;
 bool rpFound = false;
 bool nFound = false;
 bool cFound = false;
+bool uFound = false;
 
 int printUsage(std::string errorMessage);
 
 int main(int argc, char**argv)
 {
 
-	if (argc == 1 || argc % 2 == 0)
-	{
-		return printUsage("Wrong number of arguments!");
-	}
-	for (int i = 1; i < argc; i += 2)
+	for (int i = 1; i < argc; i+=2)
 	{
 		if (strncmp(argv[i], "-rd", 3) == 0)
 		{
@@ -72,12 +70,21 @@ int main(int argc, char**argv)
 			cFound = true;
 			zsCut = atof(argv[i + 1]);
 		}
+		else if (strncmp(argv[i], "-utpc", 5) == 0)
+		{
+			uFound = true;
+			uTPCThreshold = atof(argv[i + 1]);
+
+		}
 		else
 		{
 			return printUsage("Wrong type of argument!");
 		}
 	}
-
+	if (argc == 1 || argc % 2 == 0)
+	{
+		return printUsage("Wrong number of arguments!");
+	}
 	if (rpFound && pFound)
 	{
 		return printUsage("Wrong combination of arguments!");
@@ -88,7 +95,7 @@ int main(int argc, char**argv)
 		return printUsage("Wrong combination of arguments!");
 
 	}
-	if (rpFound && cFound)
+	if (rpFound && (cFound || uFound))
 	{
 		return printUsage("Wrong combination of arguments!");
 
@@ -108,11 +115,11 @@ int main(int argc, char**argv)
 		return printUsage("Wrong combination of arguments!");
 	}
 
-	if (fileName.find(".raw") ==std::string::npos)
+	if (fileName.find(".raw") == std::string::npos)
 	{
 		return printUsage("Wrong extension: .raw file required!");
 	}
-	if (pFound && pedestalName.find(".root") ==std::string::npos)
+	if (pFound && pedestalName.find(".root") == std::string::npos)
 	{
 		return printUsage("Wrong extension: .root file required!");
 	}
@@ -123,7 +130,6 @@ int main(int argc, char**argv)
 
 	time_t start = time(0);
 
-
 	if (isRawPedestal)
 	{
 		limit = 2;
@@ -132,22 +138,22 @@ int main(int argc, char**argv)
 	{
 		limit = 1;
 	}
-	RawdataParser *parser=0;
+	RawdataParser *parser = 0;
 	for (int z = 0; z < limit; z++)
 	{
 		eventNr = 0;
 		counter = 0;
 		in = fopen(fileName.c_str(), "rb");
-		if(!in)
+		if (!in)
 		{
 			std::stringstream message;
 			message << "File " << fileName << " does not exist!" << std::endl;
 			return printUsage(message.str());
 		}
-		if(z==0)
+		if (z == 0)
 		{
-			parser = new RawdataParser(fileName, pedestalName,
-						isRawPedestal, isPedestal, isZS, zsCut);
+			parser = new RawdataParser(fileName, pedestalName, isRawPedestal,
+					isPedestal, isZS, zsCut, uFound, uTPCThreshold);
 
 		}
 		else
@@ -156,8 +162,6 @@ int main(int argc, char**argv)
 			isRawPedestal = false;
 			parser->SetRunFlags(isRawPedestal, isPedestal);
 		}
-
-
 
 		if (in)
 		{
@@ -219,17 +223,27 @@ int printUsage(std::string errorMessage)
 	std::cout << "\nERROR: " << errorMessage << std::endl;
 
 	printf("\nUsages:\n");
-	printf("1a) analyse non zero-suppressed pedestal data:\n\traw2root -rp pedestal.raw [-n events]\n");
-	printf("1b) analyse non zero-suppressed data and subtract pedestal:\n\traw2root -rd data.raw -r pedestal.root -c ZSCut [-n events]\n");
-	printf("2) analyse zero-suppressed data:\n\traw2root -rd data.raw [-n events]\n");
+	printf(
+			"1a) analyse non zero-suppressed pedestal data:\n\traw2root -rp pedestal.raw [-n events]\n");
+	printf(
+			"1b) analyse non zero-suppressed data and subtract pedestal:\n\traw2root -rd data.raw -r pedestal.root -c ZSCut [-n events] [-utpc]\n");
+	printf(
+			"2) analyse zero-suppressed data:\n\traw2root -rd data.raw [-n events]  [-utpc]\n");
 
 	printf("\nFlags:\n");
-	printf("-rd: raw data file with the extension .raw\n\tUsed for non-zero suppressed and zero suppressed data\n\tThe data file was created by DATE.\n");
-	printf("-rp: raw pedestal file with the extension .raw\n\tUsed only for non-zero suppressed data.\n\tThe pedestal file was created by DATE.\n");
-	printf("-p: pedestal root file with the extension .root\n\tUsed only for non-zero suppressed data.\n\tThis file has to be created with raw2root in step 1a)\n");
-	printf("-c: zero-supression cut for non-zero supressed data.\n\tA threshold is calculated by multiplying the pedestal noise with the cut value for each strip.\n\t"
-			"Per event it is checked whether the mean strip ADC is over the threshold, in which case the strip is included in the data.\n");
-	printf("-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n\n");
+	printf(
+			"-rd: raw data file with the extension .raw\n\tUsed for non-zero suppressed and zero suppressed data\n\tThe data file was created by DATE.\n");
+	printf(
+			"-rp: raw pedestal file with the extension .raw\n\tUsed only for non-zero suppressed data.\n\tThe pedestal file was created by DATE.\n");
+	printf(
+			"-p: pedestal root file with the extension .root\n\tUsed only for non-zero suppressed data.\n\tThis file has to be created with raw2root in step 1a)\n");
+	printf(
+			"-c: zero-supression cut for non-zero supressed data.\n\tA threshold is calculated by multiplying the pedestal noise with the cut value for each strip.\n\t"
+					"Per event it is checked whether the mean strip ADC is over the threshold, in which case the strip is included in the data.\n");
+	printf(
+			"-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n");
+	printf("-utpc: Add uTPC analysis. Optional argument.\n\n");
+
 	return -1;
 }
 

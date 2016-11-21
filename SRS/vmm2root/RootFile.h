@@ -13,8 +13,7 @@
 #include "TString.h"
 
 #define NFEC 4
-#define NAPV 16
-#define MAXCHANNELHIT 1000
+const long max_hit = 10000000000;
 
 using namespace std;
 
@@ -42,7 +41,7 @@ private:
     TTree * fHitTree;
     TString fFileName;
 
-    unsigned short m_nch;
+    unsigned long m_nch;
 
     signed int m_timestamp; 		//Unix time stamp
     unsigned int m_us;
@@ -57,6 +56,8 @@ private:
     
     unsigned short * m_vmmID;        // vmmID
     unsigned short * m_chNo;        // Strip Number
+    unsigned short * m_x;
+    unsigned short * m_y;
 
     short * m_adc;     //ADC value
     short * m_tdc;     //TDC value

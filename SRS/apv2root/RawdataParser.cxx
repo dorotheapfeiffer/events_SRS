@@ -2,7 +2,8 @@
 #include "TMath.h"
 
 RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
-		bool isRawPedestal, bool isPedestal, bool isZS, float zsCut) :
+		bool isRawPedestal, bool isPedestal, bool isZS, float zsCut,
+		bool isUTPC, int uTPCThreshold) :
 		isRawPedestalRun(isRawPedestal), isPedestalRun(isPedestal), isZSRun(
 				isZS), fZsCut(zsCut)
 {
@@ -17,11 +18,18 @@ RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 	else
 	{
 		std::stringstream ending;
-		ending << ".root";
+		if (isUTPC)
+		{
+			ending << "_uTPC_" << uTPCThreshold << ".root";
+		}
+		else
+		{
+			ending << ".root";
+		}
 		fileName.replace(fileName.size() - 4, fileName.size(), ending.str());
 	}
 	fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
-			isZSRun);
+			isZSRun, isUTPC, uTPCThreshold);
 
 }
 
@@ -40,9 +48,8 @@ void RawdataParser::SetRunFlags(bool isRawPedestal, bool isPedestal)
 	fRoot->SetRunFlags(isRawPedestalRun, isPedestalRun);
 }
 
-unsigned int RawdataParser::AnalyzeWord(unsigned int eventID,
-		unsigned int rawdata, unsigned int rawdata_before,
-		unsigned int rawdata_before_two)
+int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
+		int rawdata_before_two)
 {
 	//printf("32 bits raw data [%.8x]\n", rawdata_before);
 
@@ -145,7 +152,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int eventID,
 	{
 		wordCountEquipmentHeader++;
 
-		if(wordCountEquipmentHeader == 18)
+		if (wordCountEquipmentHeader == 18)
 		{
 			unixtimestamp = rawdata_before;
 			timestamp_us = rawdata;
@@ -181,10 +188,10 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int eventID,
 		else if (wordCountEvent > 2)
 		{
 
-			unsigned int data1 = (rawdata_before >> 24) & 0xff;
-			unsigned int data2 = (rawdata_before >> 16) & 0xff;
-			unsigned int data3 = (rawdata_before >> 8) & 0xff;
-			unsigned int data4 = rawdata_before & 0xff;
+			int data1 = (rawdata_before >> 24) & 0xff;
+			int data2 = (rawdata_before >> 16) & 0xff;
+			int data3 = (rawdata_before >> 8) & 0xff;
+			int data4 = rawdata_before & 0xff;
 			fRawData16bits[0] = ((data2 << 8) | data1);
 			fRawData16bits[1] = ((data4 << 8) | data3);
 
@@ -215,7 +222,7 @@ void RawdataParser::AnalyzeEventZS()
 		//std::cout << "time bins " << numTimeBins << std::endl;
 	}
 
-	for (unsigned int i = 0; i <= 1; i++)
+	for (int i = 0; i <= 1; i++)
 	{
 		if (idata >= 4)
 		{
@@ -223,7 +230,6 @@ void RawdataParser::AnalyzeEventZS()
 			if (((idata - 4) % (numTimeBins + 1)) == 0)
 			{
 				chNo = fRawData16bits[idata % 2];
-				//printf("adcbin %d,  chno %d, stripNo %d\n",adcbin, chNo,stripNo);
 			}
 			else
 			{
@@ -244,17 +250,25 @@ void RawdataParser::AnalyzeEventZS()
 					timeBinMaxADC = (idata - 4) % (numTimeBins + 1);
 
 				}
+
 				timeBinADCs.push_back(data);
 				//printf("%f\n", data);
 
 			}
 			if (((idata - 4) % (numTimeBins + 1)) == numTimeBins)
 			{
-				if (timeBinADCs.size() > 0)
+				if (timeBinADCs.size() > 0
+						&& fRoot->GetStripNumber(chNo) <= 127)
 				{
-					fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID, apvID,
-							fRoot->GetStripNumber(chNo), maxADC, timeBinMaxADC,
-							timeBinADCs);
+					/*
+					 for(int i=0; i<30-timeBinADCs.size();i++)
+					 {
+					 timeBinADCs.push_back(0);
+					 }
+					 */
+					fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
+							apvID, fRoot->GetStripNumber(chNo), maxADC,
+							timeBinMaxADC, timeBinADCs);
 				}
 				timeBinADCs.clear();
 				maxADC = 0;
@@ -438,7 +452,7 @@ void RawdataParser::ComputePedestalData(int theApvID)
 	{
 		std::vector<float> meanPedestal;
 
-		for (unsigned int timeBin = 0; timeBin < numTimeBins; timeBin++)
+		for (int timeBin = 0; timeBin < numTimeBins; timeBin++)
 		{
 			float rawdata = fRoot->GetStripData(stripNo, timeBin);
 			if (isPedestalRun)
@@ -459,7 +473,7 @@ void RawdataParser::ComputePedestalData(int theApvID)
 
 void RawdataParser::ComputeCorrectedData(int theApvID)
 {
-	for (unsigned int stripNo = 0; stripNo < NCH; stripNo++)
+	for (int stripNo = 0; stripNo < NCH; stripNo++)
 	{
 		maxADC = 0;
 		timeBinMaxADC = 0;
@@ -483,8 +497,8 @@ void RawdataParser::ComputeCorrectedData(int theApvID)
 						* fRoot->GetStripPedestalNoise(fecID, theApvID,
 								stripNo))
 		{
-			fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID, theApvID, stripNo, maxADC,
-					timeBinMaxADC, timeBinADCs);
+			fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
+					theApvID, stripNo, maxADC, timeBinMaxADC, timeBinADCs);
 		}
 		fRoot->ClearStripData(stripNo);
 	}
