@@ -7,7 +7,12 @@ static void Flip_Bit(ULong_t &val, int bit){
 	  val ^= (1LL << bit);
 }
 //===========================================================
- 
+static Int_t Get_Bit(ULong_t val, Int_t bit){
+   if( (1LL << bit) & val ) return 1;
+   else return 0;
+}
+//===========================================================
+
 
  ClassImp(DGCAEN1740)
 
@@ -19,6 +24,7 @@ static void Flip_Bit(ULong_t &val, int bit){
   DCAEN1740 *dCAEN1740 = (DCAEN1740 *) fModule;
 
                                                       // left - right - top - bottom
+  fL00  = new TGLayoutHints( kLHintsTop     | kLHintsLeft | kLHintsExpandY,    0,0,10,10);
   fL0   = new TGLayoutHints( kLHintsTop     | kLHintsLeft,                     2,2,2,2);
   fL1   = new TGLayoutHints( kLHintsTop     | kLHintsLeft | kLHintsExpandY,    2,2,2,2);
   fL2   = new TGLayoutHints( kLHintsTop     | kLHintsExpandX,                  2,2,2,2);
@@ -60,14 +66,21 @@ static void Flip_Bit(ULong_t &val, int bit){
   fGF0_3 = new TGGroupFrame(fNrTab[0], "Save");
   fNrTab[0]->AddFrame(fGF0_3, fL6);
   //------------------------------------------------------------------
-  fGF1_0 = new TGGroupFrame(fNrTab[1], "Groups", kVerticalFrame);
+  fGF1_0 = new TGGroupFrame(fNrTab[1], "Trigger mode", kHorizontalFrame);
   fNrTab[1]->AddFrame(fGF1_0, fL1);
+
+  fGF1_01 = new TGCompositeFrame(fGF1_0, 0, 0, kVerticalFrame);
+  fGF1_02 = new TGCompositeFrame(fGF1_0, 0, 0, kVerticalFrame);
+  fGF1_0->AddFrame(fGF1_01, fL00);
+  fGF1_0->AddFrame(fGF1_02, fL00);
+  fGF1_01->Resize();
+  fGF1_02->Resize();
 
   fGF1_1 = new TGGroupFrame(fNrTab[1], "Threshold" , kVerticalFrame);
   fNrTab[1]->AddFrame(fGF1_1, fL1);
 
-  fGF1_2 = new TGGroupFrame(fNrTab[1], "Mode" , kVerticalFrame);
-  fNrTab[1]->AddFrame(fGF1_2, fL1);
+  //fGF1_2 = new TGGroupFrame(fNrTab[1], "Mode" , kVerticalFrame);
+  //fNrTab[1]->AddFrame(fGF1_2, fL1);
 
   fGF1_4 = new TGGroupFrame(fNrTab[1], "Edge" , kVerticalFrame);
   fNrTab[1]->AddFrame(fGF1_4, fL1);
@@ -119,7 +132,7 @@ static void Flip_Bit(ULong_t &val, int bit){
 
   //first tab (channels) third group (Offset), counting from 0
   for(UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++){
-      fDCoffset[i] = new TGNumberEntry(fGF0_2, dCAEN1740->m_DCoffset[i], 5, eDCoffset, TGNumberFormat::kNESInteger, 
+      fDCoffset[i] = new TGNumberEntry(fGF0_2, dCAEN1740->m_DCoffset[i], 5, eDCoffset + i, TGNumberFormat::kNESInteger, 
 		        TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMinMax, 0, (dCAEN1740->m_DCoffset[i] * 2) - 1 );
       fGF0_2->AddFrame(fDCoffset[i], fL1);
       fDCoffset[i]->Resize();
@@ -137,7 +150,7 @@ static void Flip_Bit(ULong_t &val, int bit){
   }
 
   //first tab (channels) forth group (Save), counting from 0
-  fGF0_3->SetLayoutManager(new TGMatrixLayout(fGF0_3, dCAEN1740->m_NrGroups, dCAEN1740->m_NrChannels/8, 2, 2 ));
+  fGF0_3->SetLayoutManager(new TGMatrixLayout(fGF0_3, dCAEN1740->m_NrGroups, dCAEN1740->m_NrChannels/8, 2, 15 ));
   for(UInt_t i = 0; i < dCAEN1740->m_NrChannels; i++){
       char name[256];	  
       sprintf(name, "%d", i);
@@ -153,13 +166,13 @@ static void Flip_Bit(ULong_t &val, int bit){
   for(UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++){
      char name[256];	  
      sprintf(name, "TrGr.%d", i);
-     fGF1_0->AddFrame(new TGLabel(fGF1_0, new TGString(name) ), fL1);
+     fGF1_01->AddFrame(new TGLabel(fGF1_01, new TGString(name) ), fL1);
   }      
-  fGF1_0->AddFrame(new TGLabel(fGF1_0, new TGString("TgExt") ), fL1);
+  fGF1_01->AddFrame(new TGLabel(fGF1_01, new TGString("TgExt") ), fL1);
 
   //second tab (triggers) first group (Threshold), counting from 0
   for(UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++){
-      fThreshold[i] = new TGNumberEntry(fGF1_1, dCAEN1740->m_Threshold[i], 5, eThreshold, TGNumberFormat::kNESInteger, 
+      fThreshold[i] = new TGNumberEntry(fGF1_1, dCAEN1740->m_Threshold[i], 5, eThreshold + i, TGNumberFormat::kNESInteger, 
 		        TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMinMax, 0, (dCAEN1740->m_Threshold[i] * 2) - 1 );
       fGF1_1->AddFrame(fThreshold[i], fL1);
       fThreshold[i]->Resize(50,22);
@@ -170,13 +183,13 @@ static void Flip_Bit(ULong_t &val, int bit){
   fTriggerLevel->Resize(50, 22);
   fTriggerLevel->SetEnabled(kFALSE);
   fTriggerLevel->SetAlignment(kTextCenterX);
-  fTriggerLevel->SetText(" TTL ");
+  dCAEN1740->m_FPIOtype ? fTriggerLevel->SetText(" TTL ") : fTriggerLevel->SetText(" NIM "); 
 
 
   //second tab (triggers) third group (Mode), counting from 0
   for(UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++){
-      fChannelTriggerMode[i] = new TGComboBox(fGF1_2, eChannelTriggerMode + i);
-      fGF1_2->AddFrame(fChannelTriggerMode[i], fL1);
+      fChannelTriggerMode[i] = new TGComboBox(fGF1_02, eChannelTriggerMode + i);
+      fGF1_02->AddFrame(fChannelTriggerMode[i], fL1);
       fChannelTriggerMode[i]->AddEntry("Disabled", 0);
       fChannelTriggerMode[i]->AddEntry("Acq Only", 1);
       fChannelTriggerMode[i]->AddEntry("Ext Only", 2);
@@ -186,8 +199,8 @@ static void Flip_Bit(ULong_t &val, int bit){
       fChannelTriggerMode[i]->Resize(80, 22);
       fChannelTriggerMode[i]->Associate(this);
   } 
-  fExtTriggerMode = new TGComboBox(fGF1_2, eExtTriggerMode);
-  fGF1_2->AddFrame(fExtTriggerMode, fL1);
+  fExtTriggerMode = new TGComboBox(fGF1_02, eExtTriggerMode);
+  fGF1_02->AddFrame(fExtTriggerMode, fL1);
   fExtTriggerMode->AddEntry("Disabled", 0);
   fExtTriggerMode->AddEntry("Acq Only", 1);
   fExtTriggerMode->AddEntry("Ext Only", 2);
@@ -202,7 +215,7 @@ static void Flip_Bit(ULong_t &val, int bit){
      fTriggerEdge[i]->AddEntry("rising", 0); 
      fTriggerEdge[i]->AddEntry("falling", 1); 
      fTriggerEdge[i]->Select(dCAEN1740->m_TriggerEdge[i], kFALSE); 
-     fTriggerEdge[i]->Resize(50,22);
+     fTriggerEdge[i]->Resize(70,20);
      fTriggerEdge[i]->Associate(this);
   }
 
@@ -249,7 +262,12 @@ static void Flip_Bit(ULong_t &val, int bit){
   fGF2_0->AddFrame(fDelay, fL0);
   
   //third tab (option) first group (input/output), counting from 0
-
+  std::string gpio;
+  if(dCAEN1740->m_FPIOtype) gpio = ":TTL:"; else gpio = ":NIM:";
+  fFPIOButton = new TGTextButton(fGF2_1, gpio.c_str(),  eGPIO);
+  fGF2_1->AddFrame(fFPIOButton);
+  fClock->Resize(120, 22);
+  fClock->Associate(this);
   
 
  MapSubwindows();
@@ -257,7 +275,7 @@ static void Flip_Bit(ULong_t &val, int bit){
  MapWindow();
  Refresh();
  std::cout << "constructing DGCAEN1740 done!" << std::endl;
-// dCAEN1740->ShowSettings(); 
+ dCAEN1740->ShowSettings(); 
 
  RaiseWindow();
 }
@@ -273,39 +291,57 @@ static void Flip_Bit(ULong_t &val, int bit){
 }
 //-----------------------------------------------------------------------------
  void DGCAEN1740::Refresh() {
-  // Update display so it represents the actual contents of fModule.
+  // Update GUI so it represents the actual contents of fModule.
   // 
-  /*
-  DGCAEN1740 *dCAEN1740 = (DGCAEN1740 *) fModule;
+  DCAEN1740 *dCAEN1740 = (DCAEN1740 *) fModule;
 
- std::cout << " DGCAEN1740 refresh button status " << std::endl;
-  for (Int_t i = 0; i < 32; i++) {
-    if(dCAEN1740-> m_ThresholdOn[i]){ 
-       fThresholdOn[i]->SetState(EButtonState(1));
-       fThresholdValue[i]->SetState(EButtonState(1));
-       fThresholdValue[i]->SetHexNumber(dCAEN1740->m_ThresholdValue[i]);
-       }
-    else{ 
-       fThresholdOn[i]->SetState(EButtonState(0));
-       fThresholdValue[i]->SetState(EButtonState(0));
-       fThresholdValue[i]->SetHexNumber(0x1FFF);
-       }
-    
+  std::cout << " DGCAEN1740 refresh button status " << std::endl;
 
-   //   fThresholdValue[i]->SetHexNumber(0L);
-   //   }
-   // else{
-   //   fThresholdValue[i]->SetHexNumber(dCAEN1740->m_ThresholdValue[i]);
-   //   }
-  
- }
-  
- (dCAEN1740->m_IgnoreThreshold) ? fIgnoreThreshold->SetState(EButtonState(1)) : fIgnoreThreshold->SetState(EButtonState(0)); 
- (dCAEN1740->m_GateOutput)      ? fGateOutput->SetState(EButtonState(1))      : fGateOutput->SetState(EButtonState(0)); 
- (dCAEN1740->m_GateGenerator)   ? fGateGenerator->SetState(EButtonState(1))   : fGateGenerator->SetState(EButtonState(0)); 
+  for (UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++) {
+    if(dCAEN1740->m_GroupEnableMask[i] == 0){
+//       for(Int_t j = 0; j < 8; j++){	    
+// 	   fSaveChannel[i*8+j]->SetState( EButtonState( Get_Bit( dCAEN1740->m_SaveChannel, i*8+j ) ) );
+//           if(!fGroupEnableMask[i*8+j]->GetState() )
+//	     fSaveChannel[i*8+j]->SetEnabled(1);
+//           }
+
+       fDCoffset[i]->SetState( EButtonState(0) );
+       fChannelPulsePolarity[i]->SetEnabled(0);
+    }else{
+//       for(UInt_t j = 0; j < 8; j++){	    
+//          fSaveChannel[i*8+j]->SetState(EButtonState(Get_Bit( dCAEN1740->m_SaveChannel, i*8+j )));
+//          if(!fGroupEnableMask[i*8+j]->GetState() )
+//	     fSaveChannel[i*8+j]->SetEnabled(0);
+//           }
+       fDCoffset[i]->SetState( EButtonState(1) );
+       fChannelPulsePolarity[i]->SetEnabled(1);
+    }
+  }
+
+ //     dCAEN1740->m_GroupEnableMask[i] ? fSaveChannel[i]->SetState(EButtonState(1)) : fSaveChannel[i]->SetState(EButtonState(0));
+
+  for (UInt_t i = 0; i < dCAEN1740->m_NrGroups; i++) {
+      if(dCAEN1740->m_ChannelTriggerMode[i] == 0){
+	fTriggerEdge[i]->SetEnabled(0);      
+	fThreshold[i]->SetState(EButtonState(0));
+//        for(UInt_t j = 0; j < 8; j++){	    
+//           fSelfTriggerMask[i*8+j]->SetState(EButtonState(dCAEN1740->m_SelfTriggerMask[i*8+j]));
+//           if(!fSelfTriggerMask[i*8+j]->GetState() )
+//	     fSelfTriggerMask[i*8+j]->SetEnabled(0);
+//        }
+      }
+      else{
+	fTriggerEdge[i]->SetEnabled(1);      
+	fThreshold[i]->SetState(EButtonState(1));
+//        for(UInt_t j = 0; j < 8; j++){	    
+//           fSelfTriggerMask[i*8+j]->SetState(EButtonState(dCAEN1740->m_SelfTriggerMask[i*8+j]));
+//           if(!fSelfTriggerMask[i*8+j]->GetState() )
+//	     fSelfTriggerMask[i*8+j]->SetEnabled(1);
+//        }
+      }
+  }   
 
   DoRedraw();
-*/
 }
 //-----------------------------------------------------------------------------
  Bool_t DGCAEN1740::HandleTimer(TTimer *tim) {
@@ -323,6 +359,10 @@ static void Flip_Bit(ULong_t &val, int bit){
   case kC_COMMAND:
     switch(GET_SUBMSG(msg)) {
        case kCM_BUTTON:
+	  if(parm1 == eGPIO){
+             dCAEN1740->m_FPIOtype = (dCAEN1740->m_FPIOtype) ? 0 : 1 ;
+	     (dCAEN1740->m_FPIOtype) ? fFPIOButton->SetText(":TTL:") : fFPIOButton->SetText(":NIM:");
+	  }
        break;	       
        case kCM_COMBOBOX:
           if(parm1 == eRunSyncMode)
@@ -331,10 +371,14 @@ static void Flip_Bit(ULong_t &val, int bit){
 	     dCAEN1740->m_Clock = parm2;
 	  else if(parm1 >= eChannelPulsePolarity && parm1 < eChannelPulsePolarity + 8)
 	     dCAEN1740->m_ChannelPulsPolarity[parm1 - eChannelPulsePolarity] = parm2;
-          else if(parm1 >= eChannelTriggerMode && parm1 < eChannelTriggerMode + 8)
-	     dCAEN1740->m_ChannelTriggerMode[parm1 - eChannelTriggerMode] = parm2;	  
+          else if(parm1 >= eChannelTriggerMode && parm1 < eChannelTriggerMode + 8){
+	     dCAEN1740->m_ChannelTriggerMode[parm1 - eChannelTriggerMode] = parm2;
+	     dCAEN1740->m_SelfTriggerMask[parm1 - eChannelTriggerMode] = parm2;
+	  }  
           else if(parm1 >= eTriggerEdge && parm1 < eTriggerEdge + 8)
 	     dCAEN1740->m_TriggerEdge[parm1 - eTriggerEdge] = parm2;	  
+	  else if(parm1 == eExtTriggerMode)
+	     dCAEN1740->m_ExtTriggerMode = static_cast<UInt_t>(parm2);	  
           else
             std::cerr << "ERROR [DGCAEN1740::ProcessMessage] in text enter parm1: " << parm1 << std::endl;
 		  

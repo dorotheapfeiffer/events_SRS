@@ -8,7 +8,7 @@
 #include "CAENVMElib.h"
 #include "CAENDigitizer.h"
 #include "CAENDigitizerType.h"
-
+#include "_CAENDigitizer_DPP-QDC.h"
 
 #define MAX_BLT_SIZE (256*1024)
 
@@ -21,11 +21,12 @@ class DCAEN1740 : public DModule {
 private:
 public:
 
- Int_t			m_BaseAddress;
+ UInt_t			m_BaseAddress;
  Int_t			m_ModuleID;
 
  Int_t			m_Enabled;
  std::string		m_Name;
+ UInt_t			m_Firmware;
 
  UInt_t                 m_AcqMode;               // acq controlled on hardware(1) signal-IN or software mode (0)
  CAEN_DGTZ_RunSyncMode_t m_RunSyncMode;           // synchronization mode for the digitizer
@@ -49,13 +50,13 @@ public:
  UInt_t                 m_ChannelTriggerMode[8]; // group self trigger mode, each trigger from the group channel can generate also output trigger
  UInt_t                 m_Threshold[8];          // threshold for trigger, each for one  group 
  Double_t               m_Threshold_mV[8];       // threshold for trigger, each for one  group in mV
- UInt_t                 m_FPIOtype;              // I/O level of the digitizers (NIM or TTL)
+ UInt_t                 m_FPIOtype;              // I/O level of the digitizers (NIM=0 or TTL=1)
  UInt_t                 m_ChannelPulsPolarity[8];// Channel Pulse polarity (1 - POS or 0 - NEG) in the digitizer is individual per channel but I implemented it per group...
  UInt_t                 m_TriggerEdge[8];        // per group, not clear from the documentaion
  
  UInt_t                 m_Delay;                 // Delay in the daisy chain, for one digitizer = 0, for many the last one should be also 0.
  UInt_t                 m_SelfTriggerMask[64];   // decide which indyvidual trigger take part in generating global trigger, 
- 
+
   // indyvidual for each group
   // UInt_t                       mSuppresionMode;
   // UInt_t                       mCoincidenceWindow;
@@ -121,7 +122,7 @@ public:
 
 
   void 		RegisterDump();
-  void		CheckError(CAEN_DGTZ_ErrorCode);
+  std::string	CheckError(CAEN_DGTZ_ErrorCode);
   //ADC is 12-bits
   Double_t      ADC2mV(UInt_t counts){ return (counts - 2048) / 2.048 ; }
   UInt_t        mV2ADC(Double_t mV){ return mV * 2.048 + 2048; }

@@ -1,5 +1,5 @@
 # Configuration file for the data acquisition system
-# the file was created:  2016.8.18	16:10:34
+# the file was created:  2016.9.14	13:3:38
 # Line starts with a '#' is a comment line
 #
 #
@@ -78,7 +78,7 @@ TriggerSlopeGr4 0
 # 
 # Global trigger can be built from logic OR all indyvidual channel triggers. This option allows you to set which indyvidual 
 # trigger will contribute to build the global one. This is set by indyvidual group. Every group consist of 8 channels
-SelfTriggerMaskGr1 00000000
+SelfTriggerMaskGr1 10000000
 SelfTriggerMaskGr2 00000000
 SelfTriggerMaskGr3 00000000
 SelfTriggerMaskGr4 00000000
