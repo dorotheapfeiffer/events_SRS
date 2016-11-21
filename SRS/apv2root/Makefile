@@ -12,8 +12,7 @@ LIBS     = $(shell $(ROOTCONFIG) --glibs)
 %SOFLAGS  = -shared
 
 EXECUTABLE = apv2root
-TARGET     = lib$(EXECUTABLE).so
-INCLUDES   = $(wildcard *.h)
+INCLUDES   = $(wildcard R*.h)
 SOURCES    = $(wildcard *.cxx)
 OBJECTS    = $(SOURCES:.cxx=.o)
 DICT       = $(EXECUTABLE)Dict
@@ -28,23 +27,20 @@ forceall: clean executable
 executable: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS) $(DICTOBJ)
-	$(CXX) -v $(CXXFLAGS) -O2  -Wall $^ $(LIBS) -o $@ # This line works
+	$(CXX) -v $(CXXFLAGS) -std=c++11 -O2  -Wall $^ $(LIBS) -o $@ # This line works
 	
-
-target: $(TARGET)
-
-$(TARGET): $(OBJECTS) $(DICTOBJ)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -Wall $(LIBS) -o $@ $^
 
 objects: $(OBJECTS) $(DICTOBJ)
 
 %.o: %.cxx
-	$(CXX) $(CXXFLAGS) -O2 -Wall  -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -std=c++11 -O2 -Wall  -c -o $@ $<
 
 dictionary: $(DICTIONARY)
 
-$(DICTIONARY): $(INCLUDES) $(LINKDEF)
+$(DICTIONARY):  $(INCLUDES) $(LINKDEF)
 	$(ROOTCINT) -f $(DICTIONARY) -c -p $^
+#$(INCLUDES) $(LINKDEF)
+# -c -p $^
 
 clean:
 	rm -f $(EXECUTABLE) $(TARGET) $(OBJECTS) $(DICTIONARY) $(DICTOBJ) $(DICT)_rdict.pcm
