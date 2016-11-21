@@ -10,6 +10,7 @@
 #include "DV1718.h"
 #include "DMadc32.h"
 #include "DCAEN1740.h"
+#include "DCAEN1740D.h"
 #include "gnuplot-iostream.h"
 
 
@@ -60,6 +61,7 @@ public:
   DV1718		*fDV1718;		// Bridge VME_USB
   DMadc32		*fDMadc32;		// Mesytec pulse sensitive ADC
   DCAEN1740		*fDCAEN1740;
+  DCAEN1740D		*fDCAEN1740D;
 
   Gnuplot		m_Gnuplot;
 

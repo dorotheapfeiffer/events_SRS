@@ -58,6 +58,7 @@ public:
   virtual void ConfigureModule()  		{ std::cout << this << " DModule ConfigureModule called\n"; }
   virtual void StartAcq()	  		{ std::cout << this << " DModule StartAcq called\n"; }
   virtual void StopAcq()	  		{ std::cout << this << " DModule StopAcq called\n"; }
+  virtual void BuildEvent()	  		{ std::cout << this << " DModule BuildEvent called\n"; }
   virtual void GetEvent()	  		{ std::cout << this << " DModule GetEvent called\n"; }
   virtual void GnuplotOnline(Gnuplot &)		{ std::cout << this << " DModule GnuplotOnline called\n"; }
   virtual void Log(std::ofstream &)  		{ std::cout << this << " DModule Log called\n"; }

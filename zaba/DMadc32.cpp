@@ -505,19 +505,19 @@ void DMadc32::StopAcq(){
  }
 
 //-----------------------------------------------------------------------------
- void DMadc32::ShowData(DGDisplay *fDisplay, DMultiGrid *fMultiGrid) {
+ void DMadc32::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
 
   static UInt_t Nb, Ne, prevNe, prevNb;
 
-  fMultiGrid->m_AcqStatusEntry2 = m_Events;
+  fAcquisition->m_AcqStatusEntry2 = m_Events;
   Nb += GetDataSize();
   Ne  = GetNrEvents();
 
   if (!Nb)
      std::cout << "\t+ No data...\n";
   else{
-     std::cout << "\t+ Reading: " << setw(5) << (float)(Nb-prevNb) / ((float)fMultiGrid->m_ElapsedTimeMS*1.048576f) << " MB/s, " 
-               << "Trg Rate: " << (float)(Ne-prevNe) / (float)fMultiGrid->m_ElapsedTimeMS << "kHz, " 
+     std::cout << "\t+ Reading: " << setw(5) << (float)(Nb-prevNb) / ((float)fAcquisition->m_ElapsedTimeMS*1.048576f) << " MB/s, " 
+               << "Trg Rate: " << (float)(Ne-prevNe) / (float)fAcquisition->m_ElapsedTimeMS << "kHz, " 
 	       << "Total events:" << m_Events <<  std::endl; 
   }
 
@@ -587,18 +587,18 @@ void DMadc32::StopAcq(){
  }
 
 //-----------------------------------------------------------------------------
-void DMadc32::DataSave(DMultiGrid *fMultiGrid){
+void DMadc32::DataSave(DAcquisition *fAcquisition){
 
    // write data to buffer only when the IRQ happend, otherwise return 
    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
    // If you want to simulate events you have to comment this line, m_IRQ = 1;
-   //std::cout << "[DEBUG] 1 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
+   //std::cout << "[DEBUG] 1 DMadc32::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
    if( !VME_CRATE ) m_IRQ = 1; 
-   if( fMultiGrid->m_EmptyBuffer ) m_IRQ = 1; 
-   //std::cout << "[DEBUG] 2 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
+   if( fAcquisition->m_EmptyBuffer ) m_IRQ = 1; 
+   //std::cout << "[DEBUG] 2 DMadc32::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
    if(!m_IRQ) return;
       m_IRQ = 0;
-   //std::cout << "[DEBUG] 3 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
+   //std::cout << "[DEBUG] 3 DMadc32::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
 
    Bool_t m_saveAfterSize = kFALSE; // variable to check if the buffer size reach the max size 
    Bool_t m_saveAfterTime = kFALSE; // variable to check if the time elapsed to save file every sec/min/hour
@@ -614,14 +614,14 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
 
    // ==========================================================================
    // check if the buffer is full and has to be writen to file
-   if( m_BufferPos > UInt_t(fMultiGrid->m_SaveFileSizeEntry*1000*1000) ) {
+   if( m_BufferPos > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
        m_saveAfterSize = kTRUE;
        }
 
   // ===========================================================================
   // check the elapsed time
-  // cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fMultiGrid->m_SaveFileTimeEntry << endl;
-   if( gElapsedTimeADC > (ULong_t)fMultiGrid->m_SaveFileTimeEntry){
+  // cout << "time condition" << gElapsedTimeADC << " " <<  (ULong_t)fAcquisition->m_SaveFileTimeEntry << endl;
+   if( gElapsedTimeADC > (ULong_t)fAcquisition->m_SaveFileTimeEntry){
        if( gPrevRateTimeADC == 0) {
            m_saveAfterTime = kFALSE;
            gPrevRateTimeADC = gCurrentTimeADC;
@@ -634,10 +634,10 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
  
   // =============================================================================
   // writing bufer to file if one of the three conditions are fulfill
-  if( m_saveAfterSize || m_saveAfterTime || fMultiGrid->m_EmptyBuffer){
-    std::cout << "[DEBUG] 4 DMadc32::DataSave m_EmptyBuffer = "<< fMultiGrid->m_EmptyBuffer << std::endl;
+  if( m_saveAfterSize || m_saveAfterTime || fAcquisition->m_EmptyBuffer){
+    std::cout << "[DEBUG] 4 DMadc32::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
     char nr[256];
-    sprintf(nr, "%03d", fMultiGrid->m_NrOfSavedFiles);
+    sprintf(nr, "%03d", fAcquisition->m_NrOfSavedFiles);
 
     //std::time_t t = std::time(NULL);
     //char mbstr[100];
@@ -645,23 +645,23 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
     //    std::cout << mbstr << '\n';
    // }
 
-    string filename = fMultiGrid->m_DataPath + string("/") + fMultiGrid->GetFileTime() 
-	   + string("_") + fMultiGrid->GetFileName() + string("_") + string(nr) + string(".bin");    
+    string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime() 
+	   + string("_") + fAcquisition->GetFileName() + string("_") + string(nr) + string(".bin");    
 
     // take the time now
-    fMultiGrid->m_TimeNow = std::time(NULL);
-    std::string s1 = string(ctime(&fMultiGrid->m_TimeNow));
+    fAcquisition->m_TimeNow = std::time(NULL);
+    std::string s1 = string(ctime(&fAcquisition->m_TimeNow));
 
     std::ofstream DataFile(filename, std::ofstream::out | std::ofstream::binary);
     if(!DataFile.is_open()) {
        std::cout << "[ ERROR ] could not open the file... " << filename << std::endl;
-       *fMultiGrid->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
+       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- could not open the file..." << filename<< "\n"; 
        }
     else {
        DataFile.write((char*)m_Buffer, m_BufferPos); 
        DataFile.close();
-       *fMultiGrid->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
-       *fMultiGrid->fLog << "\t\t\t\tAcq time: " << fMultiGrid->m_TimeNow - fMultiGrid->m_StartAcqTime << "s, " 
+       *fAcquisition->fLog << s1.substr(0, s1.length()-1) << " ----- " << "file [" << filename<< "] has been saved\n"; 
+       *fAcquisition->fLog << "\t\t\t\tAcq time: " << fAcquisition->m_TimeNow - fAcquisition->m_StartAcqTime << "s, " 
                          << "events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
        std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
        std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
@@ -671,7 +671,7 @@ void DMadc32::DataSave(DMultiGrid *fMultiGrid){
  // some cleaning after saving and writing message to the std output
     m_BufferPos = 0;
     m_fileEvents = m_Events;
-    fMultiGrid->m_NrOfSavedFiles++;
+    fAcquisition->m_NrOfSavedFiles++;
     gPrevRateTimeADC = gCurrentTimeADC;
 
     }

@@ -128,7 +128,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int eventID,
 			{
 
 				triggerCount = (rawdata_before_two >> 16);
-				triggerTimestamp = rawdata_before_two & 0x00FF;
+				triggerTimestamp = rawdata_before_two & 0xFFFF;
 				if (fViewStart <= eventNr && fViewEnd >= eventNr)
 				{
 					printf("TriggerCount  %d - TriggerTimestamp %d\n",

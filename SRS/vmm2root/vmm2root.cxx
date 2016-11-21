@@ -127,9 +127,9 @@ int main(int argc, char**argv)
 		time_t end = time(0);
 		unsigned int duration = difftime(end, start);
 
-		printf("\n%ld kB, %ld words read from library in %d s.\n",
+		printf("%ld kB, %ld words read from library in %d s.\n",
 				(long int) (counter * 4 / 1024), counter, duration);
-		printf("Events %d\n", eventNr);
+		printf("Events %d\n\n", eventNr);
 
 		fclose(in);
 
