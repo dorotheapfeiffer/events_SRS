@@ -75,13 +75,13 @@ public:
  UInt_t 		m_TriggerModeDPP;    // shared trigger width in step of 16ns, used to propagate the trigger
  UInt_t 		m_PulsePolarityDPP[8];  // pulse polarity, can be positive or negative
  UInt_t 		m_EnableChargePedestalDPP;
- UInt_t 		m_ChargeSensitivityDPP;
+ UInt_t 		m_ChargeSensitivityDPP[8];
+ UInt_t			m_TriggerSmoothingDPP[8];
  UInt_t 		m_ThresholdDPP[64];
  UInt_t			m_DisTrigHist;
  UInt_t			m_DisSelfTrigger ;
  UInt_t			m_TestPulsesRate ;
  UInt_t			m_EnTestPulses   ;
- UInt_t			m_TriggerSmoothingDPP;
 
   // indyvidual for each group
   // UInt_t                       mSuppresionMode;

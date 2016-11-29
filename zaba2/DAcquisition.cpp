@@ -226,14 +226,14 @@ void DAcquisition::StartAcq(){
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
   *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_StopAfterEventsEntry << ", 0 means forever" << std::endl;
-  *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_SaveFileSizeEntry << ", 0 means forever" << std::endl;
-  *fLog     << s1.substr(0, s1.length()-1) << " ----- Stop after " << m_SaveFileTimeEntry << ", 0 means forever" << std::endl;
+  *fLog     << s1.substr(0, s1.length()-1) << " ----- Save after " << m_SaveFileSizeEntry << " MB" << std::endl;
+  *fLog     << s1.substr(0, s1.length()-1) << " ----- Save after " << m_SaveFileTimeEntry << " [s] "<< std::endl;
   std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Start acquisition ----- " << std::endl;
   std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after time[s]      " << m_StopAfterSecEntry << ", 0 means forever" << std::endl;
   std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after nr of file   " << m_StopAfterFileEntry << ", 0 means forever" << std::endl;
   std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Stop after n of events  " << m_StopAfterEventsEntry << ", 0 means forever" << std::endl;
-  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after f. size " << m_SaveFileSizeEntry << ", 0 means forever" << std::endl;
-  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after time[s] " << m_SaveFileTimeEntry << ", 0 means forever" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after f. size " << m_SaveFileSizeEntry << " MB" << std::endl;
+  std::cout << "[MESSAGE] " << s1.substr(0, s1.length()-1) << " ----- Save data after time " << m_SaveFileTimeEntry << " [s]" << std::endl;
 
 
   iter->Reset();
@@ -319,22 +319,37 @@ void DAcquisition::StopAcq(){
      if( inSection == string("GENERAL SETTINGS")){
        if( name == string("StopAfterSec") ){
          temp = atoi( value.c_str() );
-         if(temp < 0) m_StopAfterSecEntry = 100;
-         else { m_StopAfterSecEntry = temp; m_StopAfterFileEntry = 0; m_SaveFileSizeEntry = 0;}
-         }
+         //if(temp < 0) m_StopAfterSecEntry = 100;
+         //else { m_StopAfterSecEntry = temp; m_StopAfterFileEntry = 0; m_SaveFileSizeEntry = 0;}
+
+         if(temp > 0) { 
+           m_StopAfterSecEntry = temp; m_StopAfterFileEntry = 0; m_StopAfterEventsEntry = 0;
+         } else 
+           m_StopAfterSecEntry = 0;
+
+       }
        else if( name == string("StopAfterFile") ){
          temp = atoi( value.c_str() );
-         if(temp < 0) m_StopAfterFileEntry = 0;
-         else { m_StopAfterFileEntry = temp; m_StopAfterEventsEntry = 0; m_SaveFileSizeEntry = 0;}
-         }
+         //if(temp < 0) m_StopAfterFileEntry = 0;
+         //else { m_StopAfterFileEntry = temp; m_StopAfterEventsEntry = 0; m_SaveFileSizeEntry = 0;}
+         if(temp > 0) { 
+           m_StopAfterFileEntry = temp; m_StopAfterSecEntry = 0; m_StopAfterEventsEntry = 0;
+         } else 
+           m_StopAfterFileEntry = 0;
+       }
        else if( name == string("StopAfterEvents") ){
          temp = atoi( value.c_str() );
-         if(temp < 0) m_StopAfterEventsEntry = 0;
-         else { m_StopAfterEventsEntry = temp; m_StopAfterFileEntry = 0; m_StopAfterSecEntry = 0;}
-         }
+         //if(temp < 0) m_StopAfterEventsEntry = 0;
+         //else { m_StopAfterEventsEntry = temp; m_StopAfterFileEntry = 0; m_StopAfterSecEntry = 0;}
+         if(temp > 0) { 
+           m_StopAfterEventsEntry = temp; m_StopAfterSecEntry = 0; m_StopAfterFileEntry = 0;
+         } else 
+           m_StopAfterEventsEntry = 0;
+
+       }
        else if( name == string("SaveFileSize") ){
          temp = atoi( value.c_str() );
-         if(temp < 0) m_SaveFileSizeEntry = 99;
+         if(temp < 0) m_SaveFileSizeEntry = 100;
          else m_SaveFileSizeEntry = temp;
          }
        else if( name == string("SaveFileTime") ){
