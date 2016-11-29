@@ -16,12 +16,13 @@
  //static ULong_t gPrevSizeADC = 0;
  extern unsigned int gEquippedGroups;
 
+       uint64_t     		gExtendedTimeTag[64];
+       uint64_t     		gETT[64];
+       uint64_t     		gPrevTimeTag[64];
 #include <stdio.h>
 #include <chrono>
 #include <thread>
 #include "DKeyboard.h" 
- FILE *       gWavePlotFile;
- FILE *       gPlotDataFile; 
 //===========================================================
 static ULong_t gGetLongTimeADC(){
  struct timeval t1;
@@ -110,6 +111,7 @@ public:
 	}
 };
 */
+//auto compare = [](const singleEvent& a, const singleEvent& b) { return 0; };
 auto compare = [](const singleEvent& a, const singleEvent& b) { return get<2>(a) > get<2>(b); };
 typedef std::priority_queue < singleEvent, std::deque< singleEvent >, decltype(compare) > p_queue; // piority queue
 
@@ -179,7 +181,6 @@ using namespace std;
  m_RecordLengthDPP	= 128; 
  
  m_EnableChargePedestalDPP = 0;
- m_ChargeSensitivityDPP	= 5;
  
  for(UInt_t i = 0; i < m_NrGroups; i++){
     m_GroupEnableMaskDPP[i]	= 1;
@@ -190,6 +191,8 @@ using namespace std;
     m_PulsePolarityDPP[i]	= 0;
     m_TriggerHoldOffDPP[i] 	= 0;
     m_PreTriggerDPP[i]		= 50;
+    m_ChargeSensitivityDPP[i]	= 5;
+    m_TriggerSmoothingDPP[i]	= 0;
  }
  
     m_DisSelfTrigger		= 0;
@@ -197,7 +200,6 @@ using namespace std;
     m_EnTestPulses		= 0;
     m_DisTrigHist		= 0;  // default is 1 
     m_TriggerModeDPP		= 0;
-    m_TriggerSmoothingDPP	= 0;
     m_FixedBaseLineDPP		= 99;
     m_MaxEventsAggBLT 		= 1;
     m_savingformat		= 0;
@@ -245,13 +247,9 @@ using namespace std;
       std::cout << "name: " << m_Name << " BoardInfo.Channels: " << BoardInfo.Channels << std::endl;	    
       std::cout << "name: " << m_Name << " NrGroups: " << m_NrGroups << " NrChannels: " << m_NrChannels << std::endl;	    
 
-      std::cout << "\t\t- construction CAEN 1740 done!\n";
+      std::cout << "\t\t- construction CAEN 1740D done!\n";
     }
  }
-
-  gWavePlotFile = popen("/usr/bin/gnuplot", "w");
-  fprintf(gWavePlotFile, "set yrange [0:4096]\n");
-
 
 }
 //-----------------------------------------------------------------------------
@@ -347,21 +345,21 @@ void DCAEN1740D::InitModule() {
 */
 
     for(unsigned i = 0; i < m_NrGroups; i++) {
-    uint32_t DppCtrl1 	      = 0;
-    DppCtrl1 = ( ((m_ChargeSensitivityDPP    & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
+        uint32_t DppCtrl1 = 0;
+        DppCtrl1 = ( ((m_ChargeSensitivityDPP[i] & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
                  ((m_EnTestPulses            & 0x0) <<  4)   |  // 0 - disable, 1 - enable
                  ((m_TestPulsesRate          & 0x3) <<  5)   |  // 0x3 = 1MHz
                  ((m_EnableChargePedestalDPP & 0x1) <<  8)   |  // if 1 1024 is added to the charge (useful when energy close to zero)
-                 ((m_TriggerSmoothingDPP     & 0x0) << 12)   |  // smoothing signal, 0x0 - no smoothing 
+                 ((m_TriggerSmoothingDPP[i]  & 0x0) << 12)   |  // smoothing signal, 0x0 - no smoothing 
                  ((m_PulsePolarityDPP[i]     & 0x1) << 16)   |  // 0 - positive, 1 negatize
                  ((m_TriggerModeDPP          & 0x3) << 18)   |  // 0x00 normal self trigger, 0x01 paired mode, read the documentation 
                  ((m_FixedBaseLineDPP        & 0x7) << 20)   |  // 0-fixed, 1-4smp, 2-16smps, 3-64samples 
                  ((m_DisSelfTrigger          & 0x1) << 24)   |  // 
 		 ((m_DisTrigHist             & 0x1) << 30)   ); // trigger histeresis, disable
 
-    uint32_t address = 0x1040 + 0x100*i;
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, address, DppCtrl1);
-    if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] DppCtrl1 " << CheckError(ret) << std::endl;
+         uint32_t address = 0x1040 + 0x100*i;
+         ret = CAEN_DGTZ_WriteRegister(m_Handle, address, DppCtrl1);
+         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] DppCtrl1 " << CheckError(ret) << std::endl;
     }
 
     /* Set Pre Trigger (in samples) */
@@ -505,11 +503,12 @@ void DCAEN1740D::InitModule() {
  }
 //-----------------------------------------------------------------------------
  void DCAEN1740D::ReadVME() {
-  
+ 
+  m_Size = 0; 
   ret = CAEN_DGTZ_ReadData(m_Handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, m_localBuffer, &m_Size);
   CheckError(ret);
   if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] ReadData, error code = " << ret << "\n"; return; }
-  //cout << " mSize:"  << m_Size ;
+//  cout << " --------- mSize:"  << m_Size << " ---------\n";
   if (m_Size == 0) return; // no data collected
 
   // this 2 for loops are necessary because the values of chare and the value of subchannel stay from the prevous readout...
@@ -524,6 +523,24 @@ void DCAEN1740D::InitModule() {
  
 
   int a_ret = _CAEN_DGTZ_GetDPPEvents(m_Handle, m_localBuffer, m_Size, (void **)gEvent, NumEvents); 
+
+  std::ofstream tts("data/timestamp", std::ios::out | std::ios::app);
+  for(uint32_t i = 0; i < m_NrChannels; i++) {
+      for (uint32_t j = 0; j < NumEvents[i]; j++) {
+
+           if (gEvent[i][j].TimeTag < gPrevTimeTag[i])
+                    gETT[i]++;
+
+           gExtendedTimeTag[i] = (gETT[i] << 32) + (uint64_t)(gEvent[i][j].TimeTag);
+
+           gPrevTimeTag[i]   = gEvent[i][j].TimeTag;
+           tts << gExtendedTimeTag[i] << endl;
+       }
+  }
+  tts.close(); 
+
+
+
 /*
   printf("----- events ----- \n");
   for(int i = 0; i < 32; i++)
@@ -540,7 +557,7 @@ void DCAEN1740D::InitModule() {
 
   
 //=============================================================================================================================
- /*  
+/*   
    uint32_t i2 = 0;
    uint32_t k = 0, j = 0;
 	for(j=0; j<NumEvents[k] && k < 8; j++, ++k) {
@@ -559,8 +576,8 @@ void DCAEN1740D::InitModule() {
 	               gEvent[8*i2+4][j].TimeTag , gEvent[8*i2+5][j].TimeTag , gEvent[8*i2+6][j].TimeTag, gEvent[8*i2+7][j].TimeTag);
 	    }
 	}
-*/
-  
+
+ */ 
 
      uint32_t totalEvents = 0; 
      for (uint32_t i = 0; i < m_NrChannels; ++i)
@@ -589,9 +606,9 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
      gp << "set xtics nomirror tc lt 0\n";
      gp << "set x2range ["<< 0 << ":" << 16*m_RecordLengthDPP << "]\n";
      gp << "set x2tics nomirror tc lt 0\n";
-     gp << "set yrange  [0:4300] writeback\n";
+     gp << "set yrange  [0:65535] \n";
      gp << "set ytics nomirror tc lt 0\n";
-     gp << "set y2range [-2.2:2.2] writeback\n";
+     gp << "set y2range [-2.2:2.2] \n";
      gp << "set y2tics nomirror tc lt 0\n";
      gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
      gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
@@ -615,23 +632,24 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
      cout << endl;  
   */
     for(UInt_t i = 0; i < m_NrChannels; ++i){
-	for(int j=0; j<NumEvents[i]; ++j) {
-            //cout << "event i: "<< i << "\tj: " << j << endl;		 
+	//for(int j=0; j<NumEvents[i]; ++j) {
+        //    cout << "event i: "<< i << "\tj: " << j << endl;		 
 	    //uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
-	    uint32_t SubChannel = gEvent[i][j].SubChannel & 0xFFFF;
+	    uint32_t SubChannel = gEvent[i][0].SubChannel & 0xFFFF;
             //cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << endl;
             if( dKeyboard->m_ch[i] && SubChannel == i){
+                cout << "in, ch: "<< SubChannel << "\tdK" <<  dKeyboard->m_ch[i] << endl;
 		    
-                _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][j], gWaveforms);
+                _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][0], gWaveforms);
 	     
 	        std::string fname = string("temp/ch") + to_string(i);
                 std::ofstream gpfile(fname, std::ofstream::out | std::ofstream::ate);
 	        for(uint32_t k = 0; k < gWaveforms->Ns; k++){ 
-                    gpfile << gWaveforms->Trace1[k] << " ";                  // signal           column 1
-                    gpfile << 2000 + 200 * gWaveforms->DTrace1[k] << " ";    // gate             column 2
-                    gpfile << 1000 + 200 * gWaveforms->DTrace2[k] << " ";    // trigger             column 2
-		    gpfile << 500  + 200 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
-		    gpfile << 100  + 200 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
+                    gpfile << m_DCoffsetDPP[i] + gWaveforms->Trace1[k] << " ";                  // signal           column 1
+                    gpfile << m_DCoffsetDPP[i] + 800 * gWaveforms->DTrace1[k] << " ";            // gate             column 2
+                    gpfile << m_DCoffsetDPP[i] - 200 - 500 * gWaveforms->DTrace2[k] << " ";            // trigger          column 2
+		    gpfile << m_DCoffsetDPP[i] - 300 - 500 * gWaveforms->DTrace3[k] << " ";    // trigger hold-off column 3
+		    gpfile << m_DCoffsetDPP[i] - 400 - 500 * gWaveforms->DTrace4[k] << " ";    // trigger hold-off column 3
 		    //gpfile << gWaveforms->Trace1[0] + m_ThresholdDPP[i] << " "; // trigger          column 4
 	            gpfile << endl;
 	         }
@@ -640,13 +658,11 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
                  gp_command += string("'") + fname + string("' u 2 w l ls 2 t 'gt") + to_string(i) + string("', ");		
                  gp_command += string("'") + fname + string("' u 3 w l ls 3 t 'ho") + to_string(i) + string("', ");		
                  gp_command += string("'") + fname + string("' u 4 w l ls 4 t 'th") + to_string(i) + string("', ");		
+                 gp << gp_command << endl;
 	   } 
-    if (gp_command.length() > 5) gp << gp_command << endl;
-       }
-    }
-
-    //cout << "gp_command: " << gp_command << endl; // this is for test only, to check if the command is correct
     //if (gp_command.length() > 5) gp << gp_command << endl;
+       //}
+    }
 
 }
 //-----------------------------------------------------------------------------
@@ -718,16 +734,31 @@ void DCAEN1740D::StopAcq(){
 //-----------------------------------------------------------------------------
  void DCAEN1740D::Log(std::ofstream & logfile) {
 
-  logfile << "\t\t\t ----- CAEN 1740::Settings" << std::endl;
-  logfile << "\t\t\t     + m_xxxxxxxxxxxx "<< std::endl;
-  logfile << "\t\t\t     + chn:   xxxxxxx "<< std::endl;
-//  for(Int_t i = 0; i < 16; i++){
-//    logfile << "\t\t\t     + ch["<< i    << "] " << m_ThresholdOn[i]    << ": " << m_ThresholdValue[i] 
-//            << "\t["  << i+16 << "] " << m_ThresholdOn[i+16] << ": " << m_ThresholdValue[i+16] << std::endl;
-//    }
-  logfile << "\t\t\t     + m_xxxxxxxxxxxxxx " << std::endl;
+  logfile << "\t\t\t ----- CAEN 1740D::Settings" << std::endl;
+  logfile << "\t\t\t |     Mask    DCoffset Polarity Width PreGate Baseline ---"<< std::endl;
+  for(unsigned i = 0; i < m_NrGroups; i++){
+      logfile << "\t\t\t | Gr." << i << "\t  " << m_GroupEnableMaskDPP[i] << "\t" << m_DCoffsetDPP[i] << "\t" <<  polarity(m_PulsePolarityDPP[i])
+                << "\t  " << m_GateWidthDPP[i] << "\t" << m_PreGateDPP[i] << "\t" << m_BaseLineDPP[i] << std::endl;
+   }
 
- }
+   logfile << "\t\t\t | --------- Trg Mask\t               Trg threshold (1...7) \tTrg HoldOff \tPreTrigger ---"<< std::endl;
+   for(unsigned i = 0; i < m_NrGroups; i++){
+      logfile << "\t\t\t | Gr." << i << "\t  ";
+      for(unsigned j = 0; j < 8; j++)
+          logfile << m_SelfTriggerMaskDPP[8*i+j] << " ";
+
+      logfile << "\t";
+
+      for(unsigned j = 0; j < 8; j++)
+          logfile << m_ThresholdDPP[8*i+j] << " ";
+
+      logfile << "\t";
+      logfile << m_TriggerHoldOffDPP[i] << "\t" << m_PreTriggerDPP[i] ; 
+      logfile << std::endl;
+   }
+   
+}
+
 
 //======================================================================================================
 
@@ -744,7 +775,7 @@ void DCAEN1740D::BuildEvent(){
    m_savingformat  =1; //for test only
    if( m_savingformat == 0) return; 
    //---------------------------------------------------------------------------------------------------------------------------
-   if( m_savingformat == 1){
+   if( m_savingformat == 1){// 3 columns, 1-channel, 2-charge, 3-timestamp
      p_queue pEventQueue(compare);
   
      for (uint32_t i = 0; i < m_NrChannels; i++) {
@@ -764,11 +795,8 @@ void DCAEN1740D::BuildEvent(){
    }
    //--------- end of m_savingformat == 1   ------------------------------------------------------------------------------------
    //---------------------------------------------------------------------------------------------------------------------------
-   if( m_savingformat == 2){  // 3 columns, 1-channel, 2-charge, 3-timestamp
+   if( m_savingformat == 2){  
        static uint32_t		flag = 1;	
-       uint64_t     		gExtendedTimeTag[64];
-       uint64_t     		gETT[64];
-       uint64_t     		gPrevTimeTag[64];
       
        if(flag == 1){
           flag = 0;	   
@@ -893,6 +921,7 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
 
 
 
+  fAcquisition->m_AcqStatusEntry2 = m_Events;
   UInt_t Nb = 0, Ne, prevNe = 0, prevNb = 0;
   Nb  = GetDataSize();
   Ne  = GetNrEvents();
@@ -946,11 +975,11 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
        m_saveAfterSize = kTRUE;
        }
 
-   if( m_StringBuffer1.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
+   if( m_StringBuffer1.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
        }
 
-   if( m_StringBuffer2.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1000*1000) ) {
+   if( m_StringBuffer2.length()  > UInt_t(fAcquisition->m_SaveFileSizeEntry*1024*1024) ) {
        m_saveAfterSize = kTRUE;
        }
   // ===========================================================================
@@ -1095,14 +1124,13 @@ void DCAEN1740D::ShowSettings() {
    std::cout << "\t+ =============================================="<< std::endl;
    std::cout << "\t| m_AcqModeDPP\t= "              << acqmodedpp(m_AcqModeDPP) << std::endl;  
    std::cout << "\t| m_EnableChargePedestalDPP\t= " << m_EnableChargePedestalDPP << std::endl;
-   std::cout << "\t| m_ChargeSensitivityDPP\t= "    << m_ChargeSensitivityDPP << std::endl;
    std::cout << "\t| m_TriggerModeDPP\t= "          << m_TriggerModeDPP << std::endl;
-   std::cout << "\t| m_TriggerSmoothingDPP\t= "     << m_TriggerSmoothingDPP << std::endl;
-   std::cout << "\t| --- channel settings --------- gate settings          ---"<< std::endl;
-   std::cout << "\t|     Mask    DCoffset Polarity Width PreGate Baseline ---"<< std::endl;
+   std::cout << "\t| --- channel settings --------- gate settings ----------------------------"<< std::endl;
+   std::cout << "\t|     Mask    DCoffset Polarity Width PreGate Baseline smooth charge.sen---"<< std::endl;
    for(unsigned i = 0; i < m_NrGroups; i++){
       std::cout << "\t| Gr." << i << "\t" << m_GroupEnableMaskDPP[i] << "\t" << m_DCoffsetDPP[i] << "\t" <<  polarity(m_PulsePolarityDPP[i])
-                << "\t" << m_GateWidthDPP[i] << "\t" << m_PreGateDPP[i] << "\t" << m_BaseLineDPP[i] << std::endl;
+                << "\t" << m_GateWidthDPP[i] << "\t" << m_PreGateDPP[i] << "\t" << m_BaseLineDPP[i] 
+                << "\t" << m_TriggerSmoothingDPP[i] << "\t" << m_ChargeSensitivityDPP[i] << std::endl;
    }
               
    std::cout << "\t| --- trigger settings ---"<< std::endl;
@@ -1254,8 +1282,6 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
 
  fout << "# EnableChargePedestal: 0 = disabled; 1 = enabled (add 1024 to the charge) " << endl;
  fout << "EnableChargePedestalDPP " <<  m_EnableChargePedestalDPP << endl;
- fout << "# ChargeSensitivity: 0=0.16pC, 1=0.32pC, 2=0.64pC, 3=1.28pC, 4=2.56pC, 5=5.12pC, 6=10.24pC, 7=20.48pC " << endl;
- fout << "ChargeSensitivityDPP " << m_ChargeSensitivityDPP << endl;
  fout << "#  " << endl;
  fout << "# ========== TriggerSettings " << endl;
  fout << "# TriggerSettings in case of DPP-QDC is different than the standard firmware." << endl;
@@ -1266,10 +1292,18 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
     fout << "ThresholdDPP " << i << " " << m_ThresholdDPP[i]  << endl;
  fout << "# TriggerMode: 0 = Normal; 1 = Paired" << endl;
  fout << "TriggerModeDPP " << m_TriggerModeDPP << endl;
- fout << "# TriggerSmoothing: 0 = no smoothing, otherwise mean over 2^n samples, with n <= 6 " << endl;
- fout << "TriggerSmoothingDPP " << m_TriggerSmoothingDPP << endl;
  fout << "# TriggerHoldOff: Trigger hold off (in steps of 16ns) " << endl;
  fout << "# syntax: TriggerHoldOffDPP     <group> <value>" << endl;
+
+
+ fout << "# Charge sensitivity:  0=0.16pC, 1=0.32pC, 2=0.64pC, 3=1.28pC, 4=2.56pC, 5=5.12pC, 6=10.24pC, 7=20.48pC  " << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+     fout << "ChargeSensitivityDPP " << i << " " << m_ChargeSensitivityDPP[i] << endl;
+
+ fout << "# TriggerSmoothing: 0 = no smoothing, otherwise mean over 2^n samples, with n <= 6 " << endl;
+ for(unsigned i = 0; i < m_NrGroups; i++)
+     fout << "TriggerSmoothingDPP " << i << " " << m_TriggerSmoothingDPP[i] << endl;
+
  for(unsigned i = 0; i < m_NrGroups; i++)
     fout << "TriggerHoldOffDPP "<< i << " " << m_TriggerHoldOffDPP[i] << endl;
  fout << "# PreTriggerDPP: must be bigger than pregate +7 " << endl;
@@ -1295,7 +1329,7 @@ void DCAEN1740D::SaveConfig(std::ofstream & fout){
 //==================================================================================
 void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
  
-  cout << "[MESSAGE] Load configuration file CAEN1740......" << endl;  
+  cout << "[MESSAGE] Load configuration file CAEN1740D......" << endl;  
  
   string line;
   string name;
@@ -1359,17 +1393,46 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		//while (ss >> buf) param.push_back(buf);
 		//m_TriggerEdge[ stoi(param.at(0)) ] = stoi( param.at(1) );
 	     //}
-             else if( name == string("SelfTriggerMaskGr0")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+0]  = 1; else m_SelfTriggerMaskDPP[i+0]  = 0; } }
-             else if( name == string("SelfTriggerMaskGr1")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+8]  = 1; else m_SelfTriggerMaskDPP[i+8]  = 0; } }
-             else if( name == string("SelfTriggerMaskGr2")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+16] = 1; else m_SelfTriggerMaskDPP[i+16] = 0; } }
-             else if( name == string("SelfTriggerMaskGr3")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+24] = 1; else m_SelfTriggerMaskDPP[i+24] = 0; } }
-             else if( name == string("SelfTriggerMaskGr4")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+32] = 1; else m_SelfTriggerMaskDPP[i+32] = 0; } }
-             else if( name == string("SelfTriggerMaskGr5")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+40] = 1; else m_SelfTriggerMaskDPP[i+40] = 0; } }
-             else if( name == string("SelfTriggerMaskGr6")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+48] = 1; else m_SelfTriggerMaskDPP[i+48] = 0; } }
-             else if( name == string("SelfTriggerMaskGr7")){ for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+56] = 1; else m_SelfTriggerMaskDPP[i+56] = 0; } }
- 	     else if( name == string("IOLevel") 	) 	m_FPIOtype            = atoi( value.c_str() );
-             else if( name == string("AcquisitionMode") ) 	m_AcqMode             = atoi( value.c_str() );
-             else if( name == string("AcquisitionModeDPP") ) 	m_AcqModeDPP       = atoi( value.c_str() );
+             else if( name == string("SelfTriggerMaskGr0")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+0]  = 1; else m_SelfTriggerMaskDPP[i+0]  = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr1")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+8]  = 1; else m_SelfTriggerMaskDPP[i+8]  = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr2")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+16] = 1; else m_SelfTriggerMaskDPP[i+16] = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr3")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+24] = 1; else m_SelfTriggerMaskDPP[i+24] = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr4")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+32] = 1; else m_SelfTriggerMaskDPP[i+32] = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr5")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+40] = 1; else m_SelfTriggerMaskDPP[i+40] = 0; } 
+             }
+ 
+             else if( name == string("SelfTriggerMaskGr6")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+48] = 1; else m_SelfTriggerMaskDPP[i+48] = 0; } 
+             }
+
+             else if( name == string("SelfTriggerMaskGr7")){ 
+                  for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+56] = 1; else m_SelfTriggerMaskDPP[i+56] = 0; } 
+             }
+
+ 	     else if( name == string("IOLevel") 	) 	
+                  m_FPIOtype = atoi( value.c_str() );
+
+             else if( name == string("AcquisitionMode") ) 	
+                  m_AcqMode = atoi( value.c_str() );
+
+             else if( name == string("AcquisitionModeDPP") ) 	
+                  m_AcqModeDPP = atoi( value.c_str() );
              
              else if( name == string("BaseLineDPP") ){
 	        stringstream ss(value);
@@ -1378,6 +1441,7 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8 && m_FixedBaseLineDPP == 0) m_BaseLineDPP[ gr ] = val;
 	     }
+
              else if( name == string("FixedBaseLineDPP") ){
 	     	m_FixedBaseLineDPP = atoi( value.c_str() );
 		if(m_FixedBaseLineDPP == 1)      for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 4;
@@ -1385,6 +1449,7 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 	        else if(m_FixedBaseLineDPP == 3) for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 64;	
 	        else if(m_FixedBaseLineDPP == 4) for(UInt_t i = 0; i < m_NrGroups; i++) m_BaseLineDPP[i] = 256;
 	     }	
+
              else if( name == string("GateWidthDPP")  ) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1392,6 +1457,7 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8)m_GateWidthDPP[ gr ] = val;
 	     }
+
              else if( name == string("ThresholdDPP")  ) {
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1399,6 +1465,7 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 		if( ch < 64) m_ThresholdDPP[ ch ] = val;
 	     }
+
              else if( name == string("PulsePolarityDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1406,6 +1473,7 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8) m_PulsePolarityDPP[ gr ] = val;
 	     }
+
              else if( name == string("PreGateDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1413,8 +1481,18 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8) m_PreGateDPP[ gr ] = val;
 	     }
-             else if( name == string("EnableChargePedestalDPP")) m_EnableChargePedestalDPP = atoi( value.c_str() );
-             else if( name == string("ChargeSensitivityDPP") )  m_ChargeSensitivityDPP     = atoi( value.c_str() );
+
+             else if( name == string("EnableChargePedestalDPP")) 
+		m_EnableChargePedestalDPP = atoi( value.c_str() );
+
+             else if( name == string("ChargeSensitivityDPP") ){ 
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_ChargeSensitivityDPP[ gr ] = val;
+             }
+
              else if( name == string("PreTriggerDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1422,8 +1500,18 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8) m_PreTriggerDPP[ gr ] = val;
 	     }
-             else if( name == string("TriggerModeDPP") )      	m_TriggerModeDPP           = atoi( value.c_str() );
-             else if( name == string("TriggerSmoothingDPP") )   m_TriggerSmoothingDPP      = atoi( value.c_str() );
+
+             else if( name == string("TriggerModeDPP") )      	
+		m_TriggerModeDPP = atoi( value.c_str() );
+
+             else if( name == string("TriggerSmoothingDPP") ){
+	        stringstream ss(value);
+		while (ss >> buf) param.push_back(buf);
+		int gr = stoi( param.at(0) );
+		int val= stoi( param.at(1) );
+	     	if(gr < 8) m_TriggerSmoothingDPP[ gr ] = val;
+             }
+
              else if( name == string("TriggerHoldOffDPP") ){
 	        stringstream ss(value);
 		while (ss >> buf) param.push_back(buf);
@@ -1431,10 +1519,19 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
 		int val= stoi( param.at(1) );
 	     	if(gr < 8) m_TriggerHoldOffDPP[ gr ] = val;
 	     }
-             else if( name == string("ClockDelay") 	) 	m_Delay                    = atoi( value.c_str() );
-             else if( name == string("ClockSource")	) 	m_Clock                    = atoi( value.c_str() );
-             else if( name == string("MaxEventsAggBLT")	) 	m_MaxEventsAggBLT          = atoi( value.c_str() );
-             else if( name == string("SynchronizationMode")) 	m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+
+             else if( name == string("ClockDelay") 	) 	
+		m_Delay = atoi( value.c_str() );
+
+             else if( name == string("ClockSource")	) 	
+		m_Clock = atoi( value.c_str() );
+
+             else if( name == string("MaxEventsAggBLT")	) 	
+		m_MaxEventsAggBLT = atoi( value.c_str() );
+
+             else if( name == string("SynchronizationMode")) 	
+		m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+
              else cout << "[ERROR] Parameter not recognized, line nr = " << lineNr << "\t[" << inSection << "] " << name << " : " << value << endl;
 	 }
   }

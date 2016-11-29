@@ -17,15 +17,15 @@ ConnectionVmeBaseAddress 32100000              # VME Base Address : needed only 
 
 AcquisitionMode          MIXED                 # Acquisition Mode: LIST or MIXED
 ChannelTriggerMask       FFFFFFFF              # Channel Trigger Mask 
-SaveList                 1                     # Enable list output files (1)
+SaveList                 0                     # Enable list output files (1)
 EnableExtendedTimeStamp  0                     # 1 = 48-bit Timestamp + 16-bit baseline
-ActiveChannel            0                     # Active channel for data analysis (default=0 if unset)
+ActiveChannel            1                     # Active channel for data analysis (default=0 if unset)
 
 #----------------------------------------------#
 # Input Signal settings                        # 
 #----------------------------------------------#
 
-PulsePolarity            0                     # 1 = Negative pulses; 0 = Positive Pulses
+PulsePolarity            1                     # 1 = Negative pulses; 0 = Positive Pulses
                                                
 EnableTestPulses         0                     # Enable internal test pulse if 1
 TestPulsesRate           0                     # 0 = 1 KHz; 1 = 10 KHz; 2 = 100 KHz; 3 = 1 MHz
@@ -66,92 +66,92 @@ FixedBaseline            3200                  # baseline value when BaselineMod
 # EnableChargePedestal <value>
 # ChargeSensitivity    <value>
 
-PreGate                  10                   # gate position with respect to the trigger (in steps of 16 ns) 	
+PreGate                  20                   # gate position with respect to the trigger (in steps of 16 ns) 	
 EnableChargePedestal     0                     # 0 = disabled; 1 = enabled (add 1024 to the charge)
 ChargeSensitivity        7                     # 0=0.16pC, 1=0.32pC, 2=0.64pC, 3=1.28pC, 4=2.56pC, 5=5.12pC, 6=10.24pC, 7=20.48pC
 GateWidth                0 150                  # gate width (in steps of 16 ns)
-GateWidth                1 50                  # gate width (in steps of 16 ns)
-GateWidth                2 50                  # gate width (in steps of 16 ns)
-GateWidth                3 50                  # gate width (in steps of 16 ns)
-GateWidth                4 50                  # gate width (in steps of 16 ns)
-GateWidth                5 50                  # gate width (in steps of 16 ns)
-GateWidth                6 50                  # gate width (in steps of 16 ns)
-GateWidth                7 50                  # gate width (in steps of 16 ns)
+GateWidth                1 150                  # gate width (in steps of 16 ns)
+GateWidth                2 150                  # gate width (in steps of 16 ns)
+GateWidth                3 150                  # gate width (in steps of 16 ns)
+GateWidth                4 150                  # gate width (in steps of 16 ns)
+GateWidth                5 150                  # gate width (in steps of 16 ns)
+GateWidth                6 150                  # gate width (in steps of 16 ns)
+GateWidth                7 150                  # gate width (in steps of 16 ns)
 
 #----------------------------------------------#
 # Trigger settings                             # 
 #----------------------------------------------#
 
 TrgMode                  0                     # 0 = Normal; 1 = Paired
-TrgSmoothing             0                     # 0 = no smoothing, otherwise mean over 2^n samples, with n <= 6
-TrgHoldOff		 0                     # Trigger hold off (in steps of 16ns)
+TrgSmoothing             3                     # 0 = no smoothing, otherwise mean over 2^n samples, with n <= 6
+TrgHoldOff		 200                   # Trigger hold off (in steps of 16ns)
 DisableTriggerHysteresis 0 
  		
 # trigger thresholds (individual channel by channel); expressed in ADC LSB (1 LSB = 0.5mV)
 # syntax: "TriggerThreshold channel value"
-TriggerThreshold         0  300
-TriggerThreshold         1  10
-TriggerThreshold         2  10
-TriggerThreshold         3  10
-TriggerThreshold         4  10
-TriggerThreshold         5  10
-TriggerThreshold         6  10
-TriggerThreshold         7  10
-TriggerThreshold         8  10
-TriggerThreshold         9  10
-TriggerThreshold         10 10
-TriggerThreshold         11 10
-TriggerThreshold         12 10
-TriggerThreshold         13 10
-TriggerThreshold         14 10
-TriggerThreshold         15 10
-TriggerThreshold         16 10
-TriggerThreshold         17 10
-TriggerThreshold         18 10
-TriggerThreshold         19 10
-TriggerThreshold         20 10
-TriggerThreshold         21 10
-TriggerThreshold         22 10
-TriggerThreshold         23 10
-TriggerThreshold         24 10
-TriggerThreshold         25 10
-TriggerThreshold         26 10
-TriggerThreshold         27 10
-TriggerThreshold         28 10
-TriggerThreshold         29 10
-TriggerThreshold         30 10
-TriggerThreshold         31 10
-TriggerThreshold         32 10
-TriggerThreshold         33 10
-TriggerThreshold         34 10
-TriggerThreshold         35 10
-TriggerThreshold         36 10
-TriggerThreshold         37 10
-TriggerThreshold         38 10
-TriggerThreshold         40 10
-TriggerThreshold         41 10
-TriggerThreshold         42 10
-TriggerThreshold         43 10
-TriggerThreshold         44 10
-TriggerThreshold         45 10
-TriggerThreshold         46 10
-TriggerThreshold         47 10
-TriggerThreshold         48 10
-TriggerThreshold         49 10
-TriggerThreshold         50 10
-TriggerThreshold         51 10
-TriggerThreshold         52 10
-TriggerThreshold         53 10
-TriggerThreshold         54 10
-TriggerThreshold         55 10
-TriggerThreshold         56 10
-TriggerThreshold         57 10
-TriggerThreshold         58 10
-TriggerThreshold         59 10
-TriggerThreshold         60 10
-TriggerThreshold         61 10
-TriggerThreshold         62 10
-TriggerThreshold         63 10
+TriggerThreshold         0  230
+TriggerThreshold         1  120
+TriggerThreshold         2  150
+TriggerThreshold         3  150
+TriggerThreshold         4  150
+TriggerThreshold         5  150
+TriggerThreshold         6  150
+TriggerThreshold         7  150
+TriggerThreshold         8  100
+TriggerThreshold         9  100
+TriggerThreshold         10 100
+TriggerThreshold         11 100
+TriggerThreshold         12 100
+TriggerThreshold         13 100
+TriggerThreshold         14 100
+TriggerThreshold         15 100
+TriggerThreshold         16 100
+TriggerThreshold         17 100
+TriggerThreshold         18 100
+TriggerThreshold         19 100
+TriggerThreshold         20 100
+TriggerThreshold         21 100
+TriggerThreshold         22 100
+TriggerThreshold         23 100
+TriggerThreshold         24 100
+TriggerThreshold         25 100
+TriggerThreshold         26 100
+TriggerThreshold         27 100
+TriggerThreshold         28 100
+TriggerThreshold         29 100
+TriggerThreshold         30 100
+TriggerThreshold         31 100
+TriggerThreshold         32 100
+TriggerThreshold         33 100
+TriggerThreshold         34 100
+TriggerThreshold         35 100
+TriggerThreshold         36 100
+TriggerThreshold         37 100
+TriggerThreshold         38 100
+TriggerThreshold         40 100
+TriggerThreshold         41 100
+TriggerThreshold         42 100
+TriggerThreshold         43 100
+TriggerThreshold         44 100
+TriggerThreshold         45 100
+TriggerThreshold         46 100
+TriggerThreshold         47 100
+TriggerThreshold         48 100
+TriggerThreshold         49 100
+TriggerThreshold         50 100
+TriggerThreshold         51 100
+TriggerThreshold         52 100
+TriggerThreshold         53 100
+TriggerThreshold         54 100
+TriggerThreshold         55 100
+TriggerThreshold         56 100
+TriggerThreshold         57 100
+TriggerThreshold         58 100
+TriggerThreshold         59 100
+TriggerThreshold         60 100
+TriggerThreshold         61 100
+TriggerThreshold         62 100
+TriggerThreshold         63 100
 
 #----------------------------------------------#
 # Advanced settings                            # 
