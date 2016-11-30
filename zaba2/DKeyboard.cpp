@@ -50,6 +50,11 @@ int DKeyboard::CheckKey(){
          for(int i = 0; i < 64; i++){
             m_ch[i] = 0;
          }	 
+  printf("--------------------------------------------------------\n");  
+  for(int i = 0; i < 32; i++) printf(" %d", m_ch[i]);
+  printf("\n");  
+  for(int i = 32; i < 64; i++) printf(" %d", m_ch[i]);
+  printf("\n");  
 
       return 1;
    }//==============================================

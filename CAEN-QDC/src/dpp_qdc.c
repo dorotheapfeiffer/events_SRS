@@ -691,7 +691,9 @@ int run_acquisition() {
                 if (gParams.SaveList) { 
                        fprintf(gListFiles[i], "%16lu %8d\n", gExtendedTimeTag[i], gEvent[i][j].Charge);
                 }
-
+                //printf("i=%d, active_ch=%d\n", i, gActiveChannel);
+                //printf("gParams.AcqMode= %d, ACQMODE_MIXED= %d \n",gParams.AcqMode, ACQMODE_MIXED);
+                //printf("Charge= %d, CHARGE_LLD_CUT= %d CHARGE_ULD_CUT= %d\n", Charge, CHARGE_LLD_CUT, CHARGE_ULD_CUT);
                 /* Plot Waveforms (if enabled) */
                 if ((i==gActiveChannel) && (gParams.AcqMode == ACQMODE_MIXED) && ((gCurrTime-gPrevWPlotTime) > 300) && (Charge >= CHARGE_LLD_CUT) && (Charge <= CHARGE_ULD_CUT)) {
                     _CAEN_DGTZ_DecodeDPPWaveforms(&gEvent[i][j], gWaveforms);
