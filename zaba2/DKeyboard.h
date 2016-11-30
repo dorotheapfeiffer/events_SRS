@@ -17,7 +17,7 @@ using namespace std;
 class DKeyboard : public TObject {
 
 	DKeyboard(){
-	 m_ch[0] = 1;
+	 m_ch[0] = 32;
 	 for(int i = 1; i < 64; i++)
             m_ch[i] = 0;		 
 	 for(int i = 1; i < 8; i++)
