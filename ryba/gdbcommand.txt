@@ -1,0 +1,3 @@
+b lib/ReadData.cpp 41
+run ../zaba/data/14Apr2016/14Apr2016_test1_001.bin ../zaba/data/14Apr2016/14Apr2016_test1_002.bin 
+

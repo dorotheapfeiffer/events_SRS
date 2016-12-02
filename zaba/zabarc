@@ -1,0 +1,100 @@
+# Configuration file for ZABA data acquisition system
+# the file was created:  2016.8.16	14:44:47
+# Line starts with a '#' is a comment line
+#
+#
+[GENERAL SETTINGS]
+# Stop acquisition after certain number of seconds, default 0 means acq will runn forever
+# Keep in mind that from StopAfterSec, StopAfterFile, StopAfterEvents ONLY ONE CAN BE DIFFERENT THAN 0!
+StopAfterSec 0
+ 
+# Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
+StopAfterFile 0
+ 
+# Stop acquisition after certain number of Events, default 0 means acq will runn forever
+StopAfterEvents 20000
+ 
+# Save each file after reach the file size
+SaveFileSize 500
+ 
+# Save each file after certain number of seconds
+SaveFileTime 10
+ 
+# Default path where the data is stored, if you do not set this parameter the path will be ./data
+DataPath /home/dlab/dg_epool/zaba/data
+ 
+# Default file name, in the GUI version program will ask the user to set correct file name
+# The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin
+# where xxxxxx is the file name and nr file number
+# if you put the field of FileName empty then by default the name will be test
+# e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1
+#     the file name will be: 2016_07_14_1956_measurement1_000.bin
+#     then only the number will be increased, so 001, 002, 003, 004
+FileName mes1
+ 
+# Instrument properties: 
+# Keep in mind that there are only few parameters which user can change or modified.
+# There are much more but for the standard using they are not neccesary to set.
+# The parameters below are only these which you can change in the GUI.
+# Settings another parameters require adding some code and recompile. The simplest way is to edit DMadc.32.cpp
+m_AcqStatusEntry2InitModule either uncomment or write which register and value you wan to set. Similar to what is already there.
+# For details of other settings see the documentation.
+[Mesytec Madc-32]
+BaseAddress 0
+ModuleID 1
+
+#By setting this to 1 you can ignore thresholds in all channels
+IgnoreThresholds 0
+
+#Channel configuration. Turn channel on/off, can be only 0 - 1, value of threshold from 0 - 0x1FFF (8191)
+ch[0] 1 0
+ch[1] 1 0
+ch[2] 1 0
+ch[3] 1 0
+ch[4] 1 0
+ch[5] 1 0
+ch[6] 1 0
+ch[7] 1 0
+ch[8] 0 8191
+ch[9] 0 8191
+ch[10] 0 8191
+ch[11] 0 8191
+ch[12] 0 8191
+ch[13] 0 8191
+ch[14] 0 8191
+ch[15] 0 8191
+ch[16] 0 8191
+ch[17] 0 8191
+ch[18] 0 8191
+ch[19] 0 8191
+ch[20] 0 8191
+ch[21] 0 8191
+ch[22] 0 8191
+ch[23] 0 8191
+ch[24] 0 8191
+ch[25] 0 8191
+ch[26] 0 8191
+ch[27] 0 8191
+ch[28] 0 8191
+ch[29] 0 8191
+ch[30] 0 8191
+ch[31] 0 8191
+
+#Activate gate generator, values 0 or 1
+GateGenerator 1
+
+#Set the Gate Delay, values between 0 - 255, 0 = 25ns, 1 = 50ns, then multiple of 50ns
+GateDelay 0
+
+#Set the Gate Width, values between 0 - 255, multiple of 50ns
+GateWidth 2
+
+#Set the Gate Output
+GateOutput 1
+
+#Set the ADC Resolution
+ADCResolution 0
+
+#Set the ADC Range
+ADCRange 2
+
