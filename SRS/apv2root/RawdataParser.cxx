@@ -3,40 +3,49 @@
 
 RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 		bool isRawPedestal, bool isPedestal, bool isZS, float zsCut,
-		bool isUTPC, int uTPCThreshold) :
-		isRawPedestalRun(isRawPedestal), isPedestalRun(isPedestal), isZSRun(
-				isZS), fZsCut(zsCut)
+		bool isUTPC, int uTPCThreshold, bool viewEvent, int viewStart,
+		int viewEnd) :
+		fViewEvent(viewEvent), fViewStart(viewStart), fViewEnd(viewEnd), isRawPedestalRun(
+				isRawPedestal), isPedestalRun(isPedestal), isZSRun(isZS), fZsCut(
+				zsCut)
 {
 	fRawData16bits[0] = 0;
 	fRawData16bits[1] = 0;
-	if (!isRawPedestalRun && !isZS)
+	if (!fViewEvent)
 	{
-		std::stringstream ending;
-		ending << "_ZsCut_" << fZsCut << ".root";
-		fileName.replace(fileName.size() - 4, fileName.size(), ending.str());
-	}
-	else
-	{
-		std::stringstream ending;
-		if (isUTPC)
+		if (!isRawPedestalRun && !isZS)
 		{
-			ending << "_uTPC_" << uTPCThreshold << ".root";
+			std::stringstream ending;
+			ending << "_ZsCut_" << fZsCut << ".root";
+			fileName.replace(fileName.size() - 4, fileName.size(),
+					ending.str());
 		}
 		else
 		{
-			ending << ".root";
+			std::stringstream ending;
+			if (isUTPC)
+			{
+				ending << "_uTPC_" << uTPCThreshold << ".root";
+			}
+			else
+			{
+				ending << ".root";
+			}
+			fileName.replace(fileName.size() - 4, fileName.size(),
+					ending.str());
 		}
-		fileName.replace(fileName.size() - 4, fileName.size(), ending.str());
+		fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
+				isZSRun, isUTPC, uTPCThreshold);
 	}
-	fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
-			isZSRun, isUTPC, uTPCThreshold);
-
 }
 
 RawdataParser::~RawdataParser()
 {
-	fRoot->WriteRootFile();
-	delete fRoot;
+	if (!fViewEvent)
+	{
+		fRoot->WriteRootFile();
+		delete fRoot;
+	}
 }
 
 void RawdataParser::SetRunFlags(bool isRawPedestal, bool isPedestal)
@@ -45,15 +54,16 @@ void RawdataParser::SetRunFlags(bool isRawPedestal, bool isPedestal)
 	isPedestalRun = isPedestal;
 
 	numTimeBins = 0;
-	fRoot->SetRunFlags(isRawPedestalRun, isPedestalRun);
+	if (!fViewEvent)
+	{
+		fRoot->SetRunFlags(isRawPedestalRun, isPedestalRun);
+	}
 }
 
-int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
+int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 		int rawdata_before_two)
 {
-	//printf("32 bits raw data [%.8x]\n", rawdata_before);
 
-	eventNr = eventID;
 	if ((rawdata_before >> 8) == 0x414443)
 	{
 		if (isZSRun == true)
@@ -72,6 +82,7 @@ int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
 		chNo = 0;
 		maxADC = 0;
 		startDataFlag = false;
+
 		if (eventNr == 0)
 		{
 			if (maxAPVID < apvID)
@@ -82,11 +93,12 @@ int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
 			{
 				minAPVID = apvID;
 			}
-			fRoot->InitPedestalData(fecID, apvID);
-			fRoot->InitPedestalHistograms(fecID, apvID);
-
+			if (!fViewEvent)
+			{
+				fRoot->InitPedestalData(fecID, apvID);
+				fRoot->InitPedestalHistograms(fecID, apvID);
+			}
 		}
-
 	}
 	else if ((rawdata_before >> 8) == 0x41505a)
 	{
@@ -115,22 +127,25 @@ int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
 	{
 
 		startDataFlag = false;
-		fRoot->FillHits();
-		timeBinADCs.clear();
-		if (isPedestalRun)
-		{
-			ComputePedestalData(apvID);
-		}
-		else if (isRawPedestalRun)
-		{
-			ComputeRawPedestalData(apvID);
-		}
-		else if (!isRawPedestalRun && !isPedestalRun && !isZSRun)
-		{
-			ComputeCorrectedData(apvID);
-		}
 		inEvent = false;
-		eventNr++;
+		if (!fViewEvent)
+		{
+			fRoot->FillHits();
+			timeBinADCs.clear();
+			if (isPedestalRun)
+			{
+				ComputePedestalData(apvID);
+			}
+			else if (isRawPedestalRun)
+			{
+				ComputeRawPedestalData(apvID);
+			}
+			else if (!isRawPedestalRun && !isPedestalRun && !isZSRun)
+			{
+				ComputeCorrectedData(apvID);
+			}
+		}
+
 	}
 	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50
 			&& rawdata_before_two == 0x50)
@@ -152,7 +167,21 @@ int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
 	{
 		wordCountEquipmentHeader++;
 
-		if (wordCountEquipmentHeader == 18)
+		if (wordCountEquipmentHeader == 5)
+		{
+			runNr = rawdata_before;
+			eventNr = rawdata;
+			if (fViewEnd < eventNr && fViewEnd != 0)
+			{
+				return -1;
+			}
+			if (fViewStart <= eventNr && fViewEnd >= eventNr)
+			{
+				printf("\neventNr  %d - run Nr %d\n", eventNr, runNr);
+
+			}
+		}
+		else if (wordCountEquipmentHeader == 18)
 		{
 			unixtimestamp = rawdata_before;
 			timestamp_us = rawdata;
@@ -201,7 +230,10 @@ int RawdataParser::AnalyzeWord(int eventID, int rawdata, int rawdata_before,
 			}
 			else
 			{
-				AnalyzeEvent();
+				if (!fViewEvent)
+				{
+					AnalyzeEvent();
+				}
 			}
 
 		}
@@ -257,18 +289,15 @@ void RawdataParser::AnalyzeEventZS()
 			}
 			if (((idata - 4) % (numTimeBins + 1)) == numTimeBins)
 			{
-				if (timeBinADCs.size() > 0
-						&& fRoot->GetStripNumber(chNo) <= 127)
+				if (!fViewEvent)
 				{
-					/*
-					 for(int i=0; i<30-timeBinADCs.size();i++)
-					 {
-					 timeBinADCs.push_back(0);
-					 }
-					 */
-					fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
-							apvID, fRoot->GetStripNumber(chNo), maxADC,
-							timeBinMaxADC, timeBinADCs);
+					if (timeBinADCs.size() > 0
+							&& fRoot->GetStripNumber(chNo) <= 127)
+					{
+						fRoot->AddHits(unixtimestamp, timestamp_us, eventNr,
+								fecID, apvID, fRoot->GetStripNumber(chNo),
+								maxADC, timeBinMaxADC, timeBinADCs);
+					}
 				}
 				timeBinADCs.clear();
 				maxADC = 0;

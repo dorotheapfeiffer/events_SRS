@@ -29,6 +29,8 @@ int eventNr = 0;
 int uTPCThreshold = 0;
 int limit = 0;
 float zsCut = 0;
+int vStart = 0;
+int vEnd = 0;
 
 bool pFound = false;
 bool rdFound = false;
@@ -36,13 +38,14 @@ bool rpFound = false;
 bool nFound = false;
 bool cFound = false;
 bool uFound = false;
+bool vFound = false;
 
 int printUsage(std::string errorMessage);
 
 int main(int argc, char**argv)
 {
 
-	for (int i = 1; i < argc; i+=2)
+	for (int i = 1; i < argc; i += 2)
 	{
 		if (strncmp(argv[i], "-rd", 3) == 0)
 		{
@@ -75,6 +78,25 @@ int main(int argc, char**argv)
 			uFound = true;
 			uTPCThreshold = atof(argv[i + 1]);
 
+		}
+		else if (strncmp(argv[i], "-v", 2) == 0)
+		{
+			vFound = true;
+			std::string viewEvents = argv[i + 1];
+			int pos = viewEvents.find("-");
+			if (pos != std::string::npos)
+			{
+				std::string sStart = viewEvents.substr(0, pos);
+				std::string sEnd = viewEvents.substr(pos + 1);
+				//std::cout << sStart << "-" << sEnd << std::endl;
+				vStart = atof(sStart.c_str());
+				vEnd = atof(sEnd.c_str());
+
+			}
+			else
+			{
+				return printUsage("Wrong usage of -v start-end!");
+			}
 		}
 		else
 		{
@@ -153,7 +175,8 @@ int main(int argc, char**argv)
 		if (z == 0)
 		{
 			parser = new RawdataParser(fileName, pedestalName, isRawPedestal,
-					isPedestal, isZS, zsCut, uFound, uTPCThreshold);
+					isPedestal, isZS, zsCut, uFound, uTPCThreshold, vFound, vStart, vEnd);
+
 
 		}
 		else
@@ -172,7 +195,7 @@ int main(int argc, char**argv)
 				rawdata_before = rawdata;
 				n = fread(&rawdata, sizeof(unsigned int), BUFFER_SIZE_INT, in);
 				counter += n;
-				eventNr = parser->AnalyzeWord(eventNr, rawdata, rawdata_before,
+				eventNr = parser->AnalyzeWord(rawdata, rawdata_before,
 						rawdata_before_two);
 				if (eventNr < 0)
 				{

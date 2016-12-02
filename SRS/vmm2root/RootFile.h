@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <iostream>
@@ -28,8 +29,8 @@ public:
     void WriteRootFile() ;
     void AddHits(signed int timestamp, unsigned int us,
     		unsigned int eventNr, unsigned short fecID, unsigned short eventSize, unsigned short vmmID,
-    		unsigned int triggerCount, unsigned int triggerTimestamp,UChar_t overThresholdFlag,
-    		unsigned short chNo, short adc, short tdc, short bcid);
+    		unsigned int triggerCount, unsigned int triggerTimestamp, unsigned int clockCycles, UChar_t overThresholdFlag,
+    		unsigned short chNo, short adc, short tdc, short bcid, short gray_bcid, unsigned int chipTime);
 	void FillHits() ;
 
     void DeleteHitsTree() ;
@@ -53,15 +54,19 @@ private:
     UChar_t * m_overThresholdFlag;
     unsigned int *m_triggerCount;
     unsigned int *m_triggerTimestamp;
+    unsigned int *m_clockCycles;
     
     unsigned short * m_vmmID;        // vmmID
     unsigned short * m_chNo;        // Strip Number
     unsigned short * m_x;
     unsigned short * m_y;
 
-    short * m_adc;     //ADC value
-    short * m_tdc;     //TDC value
-    short * m_bcid;    //BCID value
+    unsigned short * m_adc;     //ADC value
+    unsigned short * m_tdc;     //TDC value
+    unsigned short * m_bcid;    //BCID value
+    unsigned  short * m_gray_bcid;    //Gray coded BCID value
+    unsigned  int * m_chipTime;    //Composed time of BCID and TDC (1 ns resolution)
+
 
 
 

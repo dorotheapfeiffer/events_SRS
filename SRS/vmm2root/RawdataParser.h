@@ -13,8 +13,8 @@ public:
 	RawdataParser(std::string fileName, bool viewEvent, int viewStart, int viewEnd);
 	~RawdataParser();
 	
-	unsigned int AnalyzeWord(unsigned int eventID,  unsigned int rawdata,unsigned int rawdata_before,unsigned int rawdata_before_two);
-	
+	unsigned int AnalyzeWord(unsigned int rawdata,unsigned int rawdata_before,unsigned int rawdata_before_two);
+	unsigned int GrayToBinary32(unsigned int num);
 	unsigned int ReverseBits(unsigned int n);
 private:
 	RootFile *fRoot=0;
@@ -26,11 +26,14 @@ private:
 	unsigned int frameCounter = 0;
 	unsigned int triggerCount = 0;
 	unsigned int triggerTimestamp = 0;
+	unsigned int clockCycles = 0;
 	unsigned int flag = 0;
 	unsigned int overThresholdFlag = 0;
 	unsigned int adc = 0;
 	unsigned int tdc = 0;
 	unsigned int bcid = 0;
+	unsigned int gray_bcid = 0;
+	unsigned int chipTime = 0;
 	
 	unsigned int runNr = 0;
 	unsigned int eventNr = 0;

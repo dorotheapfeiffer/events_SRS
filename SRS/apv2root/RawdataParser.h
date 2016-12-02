@@ -1,19 +1,20 @@
-
 #include <vector>
 #include <list>
 #include <map>
 
 #include "RootFile.h"
 
-
-
 class RawdataParser
 {
 public:
-	RawdataParser(std::string fileName, std::string pedestalName, bool isRawPedestal, bool isPedestal, bool isZS, float ZSCut, bool isUPTC, int uTPCThreshold);
+	RawdataParser(std::string fileName, std::string pedestalName,
+			bool isRawPedestal, bool isPedestal, bool isZS, float ZSCut,
+			bool isUPTC, int uTPCThreshold, bool viewEvent, int viewStart,
+			int viewEnd);
 	~RawdataParser();
 	void SetRunFlags(bool isRawPedestal, bool isPedestal);
-	int AnalyzeWord(int eventID, int rawdata,int rawdata_before,int rawdata_before_two);
+	int AnalyzeWord(int rawdata, int rawdata_before,
+			int rawdata_before_two);
 	void AnalyzeEventZS();
 	void AnalyzeEvent();
 	void ComputeRawPedestalData(int theApvID);
@@ -21,14 +22,19 @@ public:
 	void ComputeCorrectedData(int theApvID);
 	void CreateHistograms();
 private:
-	RootFile *fRoot=0;
+	RootFile *fRoot = 0;
+	bool fViewEvent = false;
+	int fViewStart = 0;
+	int fViewEnd = 0;
 	signed int unixtimestamp = 0;
 	int timestamp_us = 0;
 	int eventNr = 0;
+	unsigned int runNr = 0;
 	int headerLDC = 0;
 	int headerEquipment = 0;
 	int header = 0;
 	bool inEquipmentHeader = 0;
+
 
 	int fecID = 0;
 	int apvID = 0;
@@ -54,15 +60,11 @@ private:
 	float maxADC = 0;
 	int timeBinMaxADC = 0;
 	int apvheaderlevel = 1300;
-	int theTimeBin=0;
+	int theTimeBin = 0;
 	unsigned int fRawData16bits[2];
 	std::vector<float> timeBinADCs;
 
-
 	std::vector<float> commonModeOffset;
 	std::vector<float> timeBinOffset;
-
-
-
 
 };
