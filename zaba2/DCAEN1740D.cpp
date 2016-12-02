@@ -788,7 +788,7 @@ void DCAEN1740D::BuildEvent(){
      }
 
    while(pEventQueue.size() != 0) {
-     m_StringBuffer1 +=  to_string(get<0>(pEventQueue.top())) + " "  + to_string(get<1>(pEventQueue.top()) ) + " " +to_string(get<2>(pEventQueue.top())) + "\n";
+     cout << m_StringBuffer1 +=  to_string(get<0>(pEventQueue.top())) + " "  + to_string(get<1>(pEventQueue.top()) ) + " " +to_string(get<2>(pEventQueue.top())) + "\n";
      pEventQueue.pop();
    }
 
