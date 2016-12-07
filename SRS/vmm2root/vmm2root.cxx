@@ -26,10 +26,18 @@ int eventNr = 0;
 int vStart = 0;
 int vEnd = 0;
 int limit = 0;
+double tac = 125;
+double bc = 40;
+std::vector<int> xChips;
+std::vector<int> yChips;
 
 bool rdFound = false;
 bool nFound = false;
 bool vFound = false;
+bool tacFound = false;
+bool bcFound = false;
+bool xFound = false;
+bool yFound = false;
 
 int printUsage(std::string errorMessage);
 
@@ -52,15 +60,73 @@ int main(int argc, char**argv)
 			nFound = true;
 			numEvents = atof(argv[i + 1]);
 		}
+		else if (strncmp(argv[i], "-tac", 4) == 0)
+		{
+			tacFound = true;
+			tac = atof(argv[i + 1]);
+		}
+		else if (strncmp(argv[i], "-bc", 3) == 0)
+		{
+			bcFound = true;
+			bc = atof(argv[i + 1]);
+		}
+		else if (strncmp(argv[i], "-x", 2) == 0)
+		{
+			xFound = true;
+			std::string xString = argv[i + 1];
+			std::string delims = ",";
+			size_t lastOffset = 0;
+
+			while (true)
+			{
+				size_t offset = xString.find_first_of(delims, lastOffset);
+				xChips.push_back(
+						atoi(
+								xString.substr(lastOffset, offset - lastOffset).c_str()));
+				if (offset == std::string::npos)
+				{
+					break;
+				}
+				else
+				{
+					lastOffset = offset + 1; // add one to skip the delimiter
+				}
+			}
+
+		}
+		else if (strncmp(argv[i], "-y", 2) == 0)
+		{
+			yFound = true;
+			std::string yString = argv[i + 1];
+			std::string delims = ",";
+			size_t lastOffset = 0;
+
+			while (true)
+			{
+				size_t offset = yString.find_first_of(delims, lastOffset);
+				yChips.push_back(
+						atoi(
+								yString.substr(lastOffset, offset - lastOffset).c_str()));
+				if (offset == std::string::npos)
+				{
+					break;
+				}
+				else
+				{
+					lastOffset = offset + 1; // add one to skip the delimiter
+				}
+			}
+
+		}
 		else if (strncmp(argv[i], "-v", 2) == 0)
 		{
 			vFound = true;
 			std::string viewEvents = argv[i + 1];
 			int pos = viewEvents.find("-");
-			if(pos !=std::string::npos)
+			if (pos != std::string::npos)
 			{
-				std::string sStart = viewEvents.substr(0,pos);
-				std::string sEnd = viewEvents.substr(pos+1);
+				std::string sStart = viewEvents.substr(0, pos);
+				std::string sEnd = viewEvents.substr(pos + 1);
 				//std::cout << sStart << "-" << sEnd << std::endl;
 				vStart = atof(sStart.c_str());
 				vEnd = atof(sEnd.c_str());
@@ -71,6 +137,7 @@ int main(int argc, char**argv)
 				return printUsage("Wrong usage of -v start-end!");
 			}
 		}
+
 		else
 		{
 			return printUsage("Wrong type of argument!");
@@ -101,7 +168,8 @@ int main(int argc, char**argv)
 		message << "File " << fileName << " does not exist!" << std::endl;
 		return printUsage(message.str());
 	}
-	parser = new RawdataParser(fileName, vFound, vStart, vEnd);
+	parser = new RawdataParser(fileName, bc, tac, xChips, yChips, vFound,
+			vStart, vEnd);
 
 	if (in)
 	{
@@ -150,7 +218,8 @@ int printUsage(std::string errorMessage)
 	std::cout << "\nERROR: " << errorMessage << std::endl;
 
 	printf("\nUsages:\n");
-	printf("analyse raw data:\n\traw2root -rd data.raw [-n events -v start-end]\n");
+	printf(
+			"analyse raw data:\n\traw2root -rd data.raw [-n events -v start-end -bc MHz - tac ns -x a,b,c -y d,e,f]\n");
 
 	printf("\nFlags:\n");
 	printf(
@@ -158,7 +227,9 @@ int printUsage(std::string errorMessage)
 	printf(
 			"-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n\n");
 	printf(
-				"-v: events to display. Optional argument.\n\tIf not used, a root tree will be created.\n\n");
+			"-v: events to display. Optional argument.\n\tIf not used, a root tree will be created.\n\n");
+	printf("-bc: bunch crossing clock. Optional argument (default 40 MHz)\n\n");
+	printf("-tac: tac slope. Optional argument (default 125 ns)\n\n");
 	return -1;
 }
 
