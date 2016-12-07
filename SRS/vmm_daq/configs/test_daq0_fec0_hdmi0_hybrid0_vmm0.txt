@@ -1,0 +1,743 @@
+daq 0
+fec 0
+hdmi 0
+hybrid 0
+vmm 0
+
+glob_polarity wires
+glob_leakage_current 1
+analog_tristates 0
+double_leakage 0
+gain 3.0
+peak_time 200
+neighbor_trigger 0
+tac_slope 125
+disable_at_peak 0
+art peak
+art_mode 0
+dual_clock_art 0
+out_buffer_mo 0
+out_buffer_pdo 0
+out_buffer_tdo 0
+channel_monitor 0
+monitoring_control 1
+monitor_pdo_out 0
+adcs 1
+sub_hysteresis 0
+direct_time 0
+direct_time_mode ToT
+direct_time_mode0 0
+direct_time_mode1 1
+conv_mode_8bit 1
+enable_6bit 0
+adc_10bit 200ns
+adc_8bit 100ns
+adc_6bit low
+dual_clock_data 0
+dual_clock_6bit 0
+threshold_dac 200
+test_pulse_dac 300
+
+channel 0 polarity wires
+channel 0 capacitance 0
+channel 0 leakage_current 0
+channel 0 test_pulse 0
+channel 0 masked 0
+channel 0 thl_adjust 0
+channel 0 monitor 0
+channel 0 s10bitADC 0
+channel 0 s8bitADC 0
+channel 0 s6bitADC 0
+
+channel 1 polarity wires
+channel 1 capacitance 0
+channel 1 leakage_current 0
+channel 1 test_pulse 0
+channel 1 masked 0
+channel 1 thl_adjust 0
+channel 1 monitor 0
+channel 1 s10bitADC 0
+channel 1 s8bitADC 0
+channel 1 s6bitADC 0
+
+channel 2 polarity wires
+channel 2 capacitance 0
+channel 2 leakage_current 0
+channel 2 test_pulse 0
+channel 2 masked 0
+channel 2 thl_adjust 0
+channel 2 monitor 0
+channel 2 s10bitADC 0
+channel 2 s8bitADC 0
+channel 2 s6bitADC 0
+
+channel 3 polarity wires
+channel 3 capacitance 0
+channel 3 leakage_current 0
+channel 3 test_pulse 0
+channel 3 masked 0
+channel 3 thl_adjust 0
+channel 3 monitor 0
+channel 3 s10bitADC 0
+channel 3 s8bitADC 0
+channel 3 s6bitADC 0
+
+channel 4 polarity wires
+channel 4 capacitance 0
+channel 4 leakage_current 0
+channel 4 test_pulse 0
+channel 4 masked 0
+channel 4 thl_adjust 0
+channel 4 monitor 0
+channel 4 s10bitADC 0
+channel 4 s8bitADC 0
+channel 4 s6bitADC 0
+
+channel 5 polarity wires
+channel 5 capacitance 0
+channel 5 leakage_current 0
+channel 5 test_pulse 0
+channel 5 masked 0
+channel 5 thl_adjust 0
+channel 5 monitor 0
+channel 5 s10bitADC 0
+channel 5 s8bitADC 0
+channel 5 s6bitADC 0
+
+channel 6 polarity wires
+channel 6 capacitance 0
+channel 6 leakage_current 0
+channel 6 test_pulse 0
+channel 6 masked 0
+channel 6 thl_adjust 0
+channel 6 monitor 0
+channel 6 s10bitADC 0
+channel 6 s8bitADC 0
+channel 6 s6bitADC 0
+
+channel 7 polarity wires
+channel 7 capacitance 0
+channel 7 leakage_current 0
+channel 7 test_pulse 0
+channel 7 masked 0
+channel 7 thl_adjust 0
+channel 7 monitor 0
+channel 7 s10bitADC 0
+channel 7 s8bitADC 0
+channel 7 s6bitADC 0
+
+channel 8 polarity wires
+channel 8 capacitance 0
+channel 8 leakage_current 0
+channel 8 test_pulse 0
+channel 8 masked 0
+channel 8 thl_adjust 0
+channel 8 monitor 0
+channel 8 s10bitADC 0
+channel 8 s8bitADC 0
+channel 8 s6bitADC 0
+
+channel 9 polarity wires
+channel 9 capacitance 0
+channel 9 leakage_current 0
+channel 9 test_pulse 0
+channel 9 masked 0
+channel 9 thl_adjust 0
+channel 9 monitor 0
+channel 9 s10bitADC 0
+channel 9 s8bitADC 0
+channel 9 s6bitADC 0
+
+channel 10 polarity wires
+channel 10 capacitance 0
+channel 10 leakage_current 0
+channel 10 test_pulse 0
+channel 10 masked 0
+channel 10 thl_adjust 0
+channel 10 monitor 0
+channel 10 s10bitADC 0
+channel 10 s8bitADC 0
+channel 10 s6bitADC 0
+
+channel 11 polarity wires
+channel 11 capacitance 0
+channel 11 leakage_current 0
+channel 11 test_pulse 0
+channel 11 masked 0
+channel 11 thl_adjust 0
+channel 11 monitor 0
+channel 11 s10bitADC 0
+channel 11 s8bitADC 0
+channel 11 s6bitADC 0
+
+channel 12 polarity wires
+channel 12 capacitance 0
+channel 12 leakage_current 0
+channel 12 test_pulse 0
+channel 12 masked 0
+channel 12 thl_adjust 0
+channel 12 monitor 0
+channel 12 s10bitADC 0
+channel 12 s8bitADC 0
+channel 12 s6bitADC 0
+
+channel 13 polarity wires
+channel 13 capacitance 0
+channel 13 leakage_current 0
+channel 13 test_pulse 0
+channel 13 masked 0
+channel 13 thl_adjust 0
+channel 13 monitor 0
+channel 13 s10bitADC 0
+channel 13 s8bitADC 0
+channel 13 s6bitADC 0
+
+channel 14 polarity wires
+channel 14 capacitance 0
+channel 14 leakage_current 0
+channel 14 test_pulse 0
+channel 14 masked 0
+channel 14 thl_adjust 0
+channel 14 monitor 0
+channel 14 s10bitADC 0
+channel 14 s8bitADC 0
+channel 14 s6bitADC 0
+
+channel 15 polarity wires
+channel 15 capacitance 0
+channel 15 leakage_current 0
+channel 15 test_pulse 0
+channel 15 masked 0
+channel 15 thl_adjust 0
+channel 15 monitor 0
+channel 15 s10bitADC 0
+channel 15 s8bitADC 0
+channel 15 s6bitADC 0
+
+channel 16 polarity wires
+channel 16 capacitance 0
+channel 16 leakage_current 0
+channel 16 test_pulse 0
+channel 16 masked 0
+channel 16 thl_adjust 0
+channel 16 monitor 0
+channel 16 s10bitADC 0
+channel 16 s8bitADC 0
+channel 16 s6bitADC 0
+
+channel 17 polarity wires
+channel 17 capacitance 0
+channel 17 leakage_current 0
+channel 17 test_pulse 0
+channel 17 masked 0
+channel 17 thl_adjust 0
+channel 17 monitor 0
+channel 17 s10bitADC 0
+channel 17 s8bitADC 0
+channel 17 s6bitADC 0
+
+channel 18 polarity wires
+channel 18 capacitance 0
+channel 18 leakage_current 0
+channel 18 test_pulse 0
+channel 18 masked 0
+channel 18 thl_adjust 0
+channel 18 monitor 0
+channel 18 s10bitADC 0
+channel 18 s8bitADC 0
+channel 18 s6bitADC 0
+
+channel 19 polarity wires
+channel 19 capacitance 0
+channel 19 leakage_current 0
+channel 19 test_pulse 0
+channel 19 masked 0
+channel 19 thl_adjust 0
+channel 19 monitor 0
+channel 19 s10bitADC 0
+channel 19 s8bitADC 0
+channel 19 s6bitADC 0
+
+channel 20 polarity wires
+channel 20 capacitance 0
+channel 20 leakage_current 0
+channel 20 test_pulse 0
+channel 20 masked 0
+channel 20 thl_adjust 0
+channel 20 monitor 0
+channel 20 s10bitADC 0
+channel 20 s8bitADC 0
+channel 20 s6bitADC 0
+
+channel 21 polarity wires
+channel 21 capacitance 0
+channel 21 leakage_current 0
+channel 21 test_pulse 0
+channel 21 masked 0
+channel 21 thl_adjust 0
+channel 21 monitor 0
+channel 21 s10bitADC 0
+channel 21 s8bitADC 0
+channel 21 s6bitADC 0
+
+channel 22 polarity wires
+channel 22 capacitance 0
+channel 22 leakage_current 0
+channel 22 test_pulse 0
+channel 22 masked 0
+channel 22 thl_adjust 0
+channel 22 monitor 0
+channel 22 s10bitADC 0
+channel 22 s8bitADC 0
+channel 22 s6bitADC 0
+
+channel 23 polarity wires
+channel 23 capacitance 0
+channel 23 leakage_current 0
+channel 23 test_pulse 0
+channel 23 masked 0
+channel 23 thl_adjust 0
+channel 23 monitor 0
+channel 23 s10bitADC 0
+channel 23 s8bitADC 0
+channel 23 s6bitADC 0
+
+channel 24 polarity wires
+channel 24 capacitance 0
+channel 24 leakage_current 0
+channel 24 test_pulse 0
+channel 24 masked 0
+channel 24 thl_adjust 0
+channel 24 monitor 0
+channel 24 s10bitADC 0
+channel 24 s8bitADC 0
+channel 24 s6bitADC 0
+
+channel 25 polarity wires
+channel 25 capacitance 0
+channel 25 leakage_current 0
+channel 25 test_pulse 0
+channel 25 masked 0
+channel 25 thl_adjust 0
+channel 25 monitor 0
+channel 25 s10bitADC 0
+channel 25 s8bitADC 0
+channel 25 s6bitADC 0
+
+channel 26 polarity wires
+channel 26 capacitance 0
+channel 26 leakage_current 0
+channel 26 test_pulse 0
+channel 26 masked 0
+channel 26 thl_adjust 0
+channel 26 monitor 0
+channel 26 s10bitADC 0
+channel 26 s8bitADC 0
+channel 26 s6bitADC 0
+
+channel 27 polarity wires
+channel 27 capacitance 0
+channel 27 leakage_current 0
+channel 27 test_pulse 0
+channel 27 masked 0
+channel 27 thl_adjust 0
+channel 27 monitor 0
+channel 27 s10bitADC 0
+channel 27 s8bitADC 0
+channel 27 s6bitADC 0
+
+channel 28 polarity wires
+channel 28 capacitance 0
+channel 28 leakage_current 0
+channel 28 test_pulse 0
+channel 28 masked 0
+channel 28 thl_adjust 0
+channel 28 monitor 0
+channel 28 s10bitADC 0
+channel 28 s8bitADC 0
+channel 28 s6bitADC 0
+
+channel 29 polarity wires
+channel 29 capacitance 0
+channel 29 leakage_current 0
+channel 29 test_pulse 0
+channel 29 masked 0
+channel 29 thl_adjust 0
+channel 29 monitor 0
+channel 29 s10bitADC 0
+channel 29 s8bitADC 0
+channel 29 s6bitADC 0
+
+channel 30 polarity wires
+channel 30 capacitance 0
+channel 30 leakage_current 0
+channel 30 test_pulse 0
+channel 30 masked 0
+channel 30 thl_adjust 0
+channel 30 monitor 0
+channel 30 s10bitADC 0
+channel 30 s8bitADC 0
+channel 30 s6bitADC 0
+
+channel 31 polarity wires
+channel 31 capacitance 0
+channel 31 leakage_current 0
+channel 31 test_pulse 0
+channel 31 masked 0
+channel 31 thl_adjust 0
+channel 31 monitor 0
+channel 31 s10bitADC 0
+channel 31 s8bitADC 0
+channel 31 s6bitADC 0
+
+channel 32 polarity wires
+channel 32 capacitance 0
+channel 32 leakage_current 0
+channel 32 test_pulse 0
+channel 32 masked 0
+channel 32 thl_adjust 0
+channel 32 monitor 0
+channel 32 s10bitADC 0
+channel 32 s8bitADC 0
+channel 32 s6bitADC 0
+
+channel 33 polarity wires
+channel 33 capacitance 0
+channel 33 leakage_current 0
+channel 33 test_pulse 0
+channel 33 masked 0
+channel 33 thl_adjust 0
+channel 33 monitor 0
+channel 33 s10bitADC 0
+channel 33 s8bitADC 0
+channel 33 s6bitADC 0
+
+channel 34 polarity wires
+channel 34 capacitance 0
+channel 34 leakage_current 0
+channel 34 test_pulse 0
+channel 34 masked 0
+channel 34 thl_adjust 0
+channel 34 monitor 0
+channel 34 s10bitADC 0
+channel 34 s8bitADC 0
+channel 34 s6bitADC 0
+
+channel 35 polarity wires
+channel 35 capacitance 0
+channel 35 leakage_current 0
+channel 35 test_pulse 0
+channel 35 masked 0
+channel 35 thl_adjust 0
+channel 35 monitor 0
+channel 35 s10bitADC 0
+channel 35 s8bitADC 0
+channel 35 s6bitADC 0
+
+channel 36 polarity wires
+channel 36 capacitance 0
+channel 36 leakage_current 0
+channel 36 test_pulse 0
+channel 36 masked 0
+channel 36 thl_adjust 0
+channel 36 monitor 0
+channel 36 s10bitADC 0
+channel 36 s8bitADC 0
+channel 36 s6bitADC 0
+
+channel 37 polarity wires
+channel 37 capacitance 0
+channel 37 leakage_current 0
+channel 37 test_pulse 0
+channel 37 masked 0
+channel 37 thl_adjust 0
+channel 37 monitor 0
+channel 37 s10bitADC 0
+channel 37 s8bitADC 0
+channel 37 s6bitADC 0
+
+channel 38 polarity wires
+channel 38 capacitance 0
+channel 38 leakage_current 0
+channel 38 test_pulse 0
+channel 38 masked 0
+channel 38 thl_adjust 0
+channel 38 monitor 0
+channel 38 s10bitADC 0
+channel 38 s8bitADC 0
+channel 38 s6bitADC 0
+
+channel 39 polarity wires
+channel 39 capacitance 0
+channel 39 leakage_current 0
+channel 39 test_pulse 0
+channel 39 masked 0
+channel 39 thl_adjust 0
+channel 39 monitor 0
+channel 39 s10bitADC 0
+channel 39 s8bitADC 0
+channel 39 s6bitADC 0
+
+channel 40 polarity wires
+channel 40 capacitance 0
+channel 40 leakage_current 0
+channel 40 test_pulse 0
+channel 40 masked 0
+channel 40 thl_adjust 0
+channel 40 monitor 0
+channel 40 s10bitADC 0
+channel 40 s8bitADC 0
+channel 40 s6bitADC 0
+
+channel 41 polarity wires
+channel 41 capacitance 0
+channel 41 leakage_current 0
+channel 41 test_pulse 0
+channel 41 masked 0
+channel 41 thl_adjust 0
+channel 41 monitor 0
+channel 41 s10bitADC 0
+channel 41 s8bitADC 0
+channel 41 s6bitADC 0
+
+channel 42 polarity wires
+channel 42 capacitance 0
+channel 42 leakage_current 0
+channel 42 test_pulse 0
+channel 42 masked 0
+channel 42 thl_adjust 0
+channel 42 monitor 0
+channel 42 s10bitADC 0
+channel 42 s8bitADC 0
+channel 42 s6bitADC 0
+
+channel 43 polarity wires
+channel 43 capacitance 0
+channel 43 leakage_current 0
+channel 43 test_pulse 0
+channel 43 masked 0
+channel 43 thl_adjust 0
+channel 43 monitor 0
+channel 43 s10bitADC 0
+channel 43 s8bitADC 0
+channel 43 s6bitADC 0
+
+channel 44 polarity wires
+channel 44 capacitance 0
+channel 44 leakage_current 0
+channel 44 test_pulse 0
+channel 44 masked 0
+channel 44 thl_adjust 0
+channel 44 monitor 0
+channel 44 s10bitADC 0
+channel 44 s8bitADC 0
+channel 44 s6bitADC 0
+
+channel 45 polarity wires
+channel 45 capacitance 0
+channel 45 leakage_current 0
+channel 45 test_pulse 0
+channel 45 masked 0
+channel 45 thl_adjust 0
+channel 45 monitor 0
+channel 45 s10bitADC 0
+channel 45 s8bitADC 0
+channel 45 s6bitADC 0
+
+channel 46 polarity wires
+channel 46 capacitance 0
+channel 46 leakage_current 0
+channel 46 test_pulse 0
+channel 46 masked 0
+channel 46 thl_adjust 0
+channel 46 monitor 0
+channel 46 s10bitADC 0
+channel 46 s8bitADC 0
+channel 46 s6bitADC 0
+
+channel 47 polarity wires
+channel 47 capacitance 0
+channel 47 leakage_current 0
+channel 47 test_pulse 0
+channel 47 masked 0
+channel 47 thl_adjust 0
+channel 47 monitor 0
+channel 47 s10bitADC 0
+channel 47 s8bitADC 0
+channel 47 s6bitADC 0
+
+channel 48 polarity wires
+channel 48 capacitance 0
+channel 48 leakage_current 0
+channel 48 test_pulse 0
+channel 48 masked 0
+channel 48 thl_adjust 0
+channel 48 monitor 0
+channel 48 s10bitADC 0
+channel 48 s8bitADC 0
+channel 48 s6bitADC 0
+
+channel 49 polarity wires
+channel 49 capacitance 0
+channel 49 leakage_current 0
+channel 49 test_pulse 0
+channel 49 masked 0
+channel 49 thl_adjust 0
+channel 49 monitor 0
+channel 49 s10bitADC 0
+channel 49 s8bitADC 0
+channel 49 s6bitADC 0
+
+channel 50 polarity wires
+channel 50 capacitance 0
+channel 50 leakage_current 0
+channel 50 test_pulse 0
+channel 50 masked 0
+channel 50 thl_adjust 0
+channel 50 monitor 0
+channel 50 s10bitADC 0
+channel 50 s8bitADC 0
+channel 50 s6bitADC 0
+
+channel 51 polarity wires
+channel 51 capacitance 0
+channel 51 leakage_current 0
+channel 51 test_pulse 0
+channel 51 masked 0
+channel 51 thl_adjust 0
+channel 51 monitor 0
+channel 51 s10bitADC 0
+channel 51 s8bitADC 0
+channel 51 s6bitADC 0
+
+channel 52 polarity wires
+channel 52 capacitance 0
+channel 52 leakage_current 0
+channel 52 test_pulse 0
+channel 52 masked 0
+channel 52 thl_adjust 0
+channel 52 monitor 0
+channel 52 s10bitADC 0
+channel 52 s8bitADC 0
+channel 52 s6bitADC 0
+
+channel 53 polarity wires
+channel 53 capacitance 0
+channel 53 leakage_current 0
+channel 53 test_pulse 0
+channel 53 masked 0
+channel 53 thl_adjust 0
+channel 53 monitor 0
+channel 53 s10bitADC 0
+channel 53 s8bitADC 0
+channel 53 s6bitADC 0
+
+channel 54 polarity wires
+channel 54 capacitance 0
+channel 54 leakage_current 0
+channel 54 test_pulse 0
+channel 54 masked 0
+channel 54 thl_adjust 0
+channel 54 monitor 0
+channel 54 s10bitADC 0
+channel 54 s8bitADC 0
+channel 54 s6bitADC 0
+
+channel 55 polarity wires
+channel 55 capacitance 0
+channel 55 leakage_current 0
+channel 55 test_pulse 0
+channel 55 masked 0
+channel 55 thl_adjust 0
+channel 55 monitor 0
+channel 55 s10bitADC 0
+channel 55 s8bitADC 0
+channel 55 s6bitADC 0
+
+channel 56 polarity wires
+channel 56 capacitance 0
+channel 56 leakage_current 0
+channel 56 test_pulse 0
+channel 56 masked 0
+channel 56 thl_adjust 0
+channel 56 monitor 0
+channel 56 s10bitADC 0
+channel 56 s8bitADC 0
+channel 56 s6bitADC 0
+
+channel 57 polarity wires
+channel 57 capacitance 0
+channel 57 leakage_current 0
+channel 57 test_pulse 0
+channel 57 masked 0
+channel 57 thl_adjust 0
+channel 57 monitor 0
+channel 57 s10bitADC 0
+channel 57 s8bitADC 0
+channel 57 s6bitADC 0
+
+channel 58 polarity wires
+channel 58 capacitance 0
+channel 58 leakage_current 0
+channel 58 test_pulse 0
+channel 58 masked 0
+channel 58 thl_adjust 0
+channel 58 monitor 0
+channel 58 s10bitADC 0
+channel 58 s8bitADC 0
+channel 58 s6bitADC 0
+
+channel 59 polarity wires
+channel 59 capacitance 0
+channel 59 leakage_current 0
+channel 59 test_pulse 0
+channel 59 masked 0
+channel 59 thl_adjust 0
+channel 59 monitor 0
+channel 59 s10bitADC 0
+channel 59 s8bitADC 0
+channel 59 s6bitADC 0
+
+channel 60 polarity wires
+channel 60 capacitance 0
+channel 60 leakage_current 0
+channel 60 test_pulse 0
+channel 60 masked 0
+channel 60 thl_adjust 0
+channel 60 monitor 0
+channel 60 s10bitADC 0
+channel 60 s8bitADC 0
+channel 60 s6bitADC 0
+
+channel 61 polarity wires
+channel 61 capacitance 0
+channel 61 leakage_current 0
+channel 61 test_pulse 0
+channel 61 masked 0
+channel 61 thl_adjust 0
+channel 61 monitor 0
+channel 61 s10bitADC 0
+channel 61 s8bitADC 0
+channel 61 s6bitADC 0
+
+channel 62 polarity wires
+channel 62 capacitance 0
+channel 62 leakage_current 0
+channel 62 test_pulse 0
+channel 62 masked 0
+channel 62 thl_adjust 0
+channel 62 monitor 0
+channel 62 s10bitADC 0
+channel 62 s8bitADC 0
+channel 62 s6bitADC 0
+
+channel 63 polarity wires
+channel 63 capacitance 0
+channel 63 leakage_current 0
+channel 63 test_pulse 0
+channel 63 masked 0
+channel 63 thl_adjust 0
+channel 63 monitor 0
+channel 63 s10bitADC 0
+channel 63 s8bitADC 0
+channel 63 s6bitADC 0
