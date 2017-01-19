@@ -61,9 +61,10 @@ void RootFile::AddHits(signed int timestamp, unsigned int us,
 		unsigned int eventNr, unsigned short fecID, unsigned short eventSize,
 		unsigned int frameCounter, unsigned short vmmID,
 		double triggerTimestamp, UChar_t overThresholdFlag, unsigned short chNo,
-		unsigned short x, unsigned short y, short adc, short tdc, short bcid,
+		 short x,  short y, short adc, short tdc, short bcid,
 		double chipTime)
 {
+
 	if (m_nch < max_hit)
 	{
 
@@ -80,8 +81,16 @@ void RootFile::AddHits(signed int timestamp, unsigned int us,
 		m_overThresholdFlag[m_nch] = overThresholdFlag;
 		m_vmmID[m_nch] = vmmID;
 		m_chNo[m_nch] = chNo;
-		m_x[m_nch] = x;
-		m_y[m_nch] = y;
+		if(x>-1)
+		{
+			m_x[m_nchX] = x;
+			m_nchX++;
+		}
+		if(y>-1)
+		{
+			m_y[m_nchY] = y;
+			m_nchY++;
+		}
 
 		m_adc[m_nch] = adc;
 		m_tdc[m_nch] = tdc;
@@ -102,6 +111,8 @@ void RootFile::FillHits()
 	fHitTree->Fill();
 	//fHitTree->Write(0, TObject::kWriteDelete);
 	m_nch = 0;
+	m_nchX = 0;
+	m_nchY = 0;
 }
 
 //====================================================================================================================
@@ -109,9 +120,11 @@ void RootFile::InitRootFile()
 {
 	m_eventNr = 0;
 	m_nch = 0;
+	m_nchX = 0;
+	m_nchY = 0;
 
 	fFile = TFile::Open(fFileName, "RECREATE");
-
+	std::cout << "Root file " << fFileName << " created!" << std::endl;
 	fHitTree = new TTree("events", "vmm2 events");
 	fHitTree->SetDirectory(fFile);
 	m_frameCounter = new unsigned int[max_hit];
@@ -133,6 +146,8 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("us", &m_us, "us/i");
 	fHitTree->Branch("eventNr", &m_eventNr, "eventNr/i");
 	fHitTree->Branch("nch", &m_nch, "nch/i");
+	fHitTree->Branch("nchX", &m_nchX, "nchX/i");
+	fHitTree->Branch("nchY", &m_nchY, "nchY/i");
 	fHitTree->Branch("fecID", &m_fecID, "fecID/s");
 	fHitTree->Branch("eventSize", &m_eventSize, "eventSize/s");
 	fHitTree->Branch("frameCounter", m_frameCounter, "frameCounter[nch]/i");
@@ -145,15 +160,18 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("overThresholdFlag", m_overThresholdFlag,
 			"overThresholdFlag[nch]/b");
 	fHitTree->Branch("chNo", m_chNo, "chNo[nch]/s");
-	fHitTree->Branch("x", m_x, "x[nch]/S");
-	fHitTree->Branch("y", m_y, "y[nch]/S");
+	fHitTree->Branch("x", m_x, "x[nchX]/S");
+	fHitTree->Branch("y", m_y, "y[nchY]/S");
 	fHitTree->Branch("adc", m_adc, "adc[nch]/s");
 	fHitTree->Branch("tdc", m_tdc, "tdc[nch]/s");
 	fHitTree->Branch("bcid", m_bcid, "bcid[nch]/s");
 	//fHitTree->Branch("gray_bcid", m_gray_bcid, "gray_bcid[nch]/s");
 	fHitTree->Branch("chipTime", m_chipTime, "chipTime[nch]/D");
+	
+	fHitTree->Branch("clusterNr", &m_clusterNr, "clusterNr/i");
+	
+	
 
-	std::cout << "Root file " << fFileName << " created!" << std::endl;
 
 }
 

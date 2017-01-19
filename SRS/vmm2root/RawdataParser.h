@@ -30,7 +30,7 @@ private:
 	bool fViewEvent=false;
 	int fViewStart=0;
 	int fViewEnd=0;
-
+	long discarded=0;
 
 	signed int unixtimestamp = 0;
 	unsigned int timestamp_us = 0;
@@ -42,7 +42,14 @@ private:
 	unsigned int adc = 0;
 	unsigned int tdc = 0;
 	unsigned int bcid = 0;
+	unsigned int oldVmmID = -1;
+	unsigned int oldAdc = -1;
+	unsigned int oldTdc = -1;
+	unsigned int oldBcid = -1;
+	unsigned int oldChNo = -1;
 	double chipTime = 0;
+	double bcTime=0;
+	double tdcTime=0;
 	
 	unsigned int runNr = 0;
 	unsigned int eventNr = 0;
@@ -54,6 +61,7 @@ private:
 	unsigned int vmmID = 0;
 	unsigned int planeID = -1;
 	unsigned int chNo = 0;
+	
 	int x=-1;
 	int y=-1;
 	bool inEvent = false;

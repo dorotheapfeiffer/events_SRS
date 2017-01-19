@@ -18,11 +18,11 @@ unsigned int rawdata_before_two = 0;
 unsigned int rawdata_before = 0;
 unsigned int rawdata = 0;
 
-unsigned int numEvents = 0;
+
 unsigned int validEvents = 0;
 std::string fileName = "";
 unsigned long counter = 0;
-int eventNr = 0;
+int discarded = 0;
 int vStart = 0;
 int vEnd = 0;
 int limit = 0;
@@ -32,7 +32,7 @@ std::vector<int> xChips;
 std::vector<int> yChips;
 
 bool rdFound = false;
-bool nFound = false;
+
 bool vFound = false;
 bool tacFound = false;
 bool bcFound = false;
@@ -55,11 +55,7 @@ int main(int argc, char**argv)
 			rdFound = true;
 			fileName = argv[i + 1];
 		}
-		else if (strncmp(argv[i], "-n", 2) == 0)
-		{
-			nFound = true;
-			numEvents = atof(argv[i + 1]);
-		}
+		
 		else if (strncmp(argv[i], "-tac", 4) == 0)
 		{
 			tacFound = true;
@@ -159,7 +155,6 @@ int main(int argc, char**argv)
 
 	RawdataParser *parser = 0;
 
-	eventNr = 0;
 	counter = 0;
 	in = fopen(fileName.c_str(), "rb");
 	if (!in)
@@ -173,17 +168,17 @@ int main(int argc, char**argv)
 
 	if (in)
 	{
-		while (!feof(in) && (eventNr < numEvents || numEvents == 0))
+		while (!feof(in))
 		{
 
 			rawdata_before_two = rawdata_before;
 			rawdata_before = rawdata;
 			n = fread(&rawdata, sizeof(unsigned int), BUFFER_SIZE_INT, in);
 			counter += n;
-			eventNr = parser->AnalyzeWord(rawdata, rawdata_before,
+			discarded = parser->AnalyzeWord(rawdata, rawdata_before,
 					rawdata_before_two);
 
-			if (eventNr < 0)
+			if (discarded < 0)
 			{
 				fclose(in);
 				delete parser;
@@ -197,7 +192,7 @@ int main(int argc, char**argv)
 
 		printf("%ld kB, %ld words read from library in %d s.\n",
 				(long int) (counter * 4 / 1024), counter, duration);
-		printf("Events %d\n\n", eventNr);
+		printf("Discarded events %d\n\n", discarded);
 
 		fclose(in);
 
