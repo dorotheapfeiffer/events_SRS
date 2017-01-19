@@ -114,6 +114,11 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		{
 
 			fecID = rawdata_before & 0xff;
+			oldVmmID = -1;
+			oldAdc = -1;
+			oldTdc = -1;
+			oldBcid = -1;
+			oldChNo = -1;
 			if (fViewStart <= eventNr && fViewEnd >= eventNr)
 			{
 				printf("fecID  %d\n", fecID);
@@ -186,6 +191,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 			// 0x01: use frame-of-run counter (32-bit)
 			// 0x02: use timestamp(24-bit) and frame-of-event (8-bit) ctr
 			frameCounter = rawdata_before_two;
+			oldVmmID = vmmID;
 			vmmID = rawdata_before & 0xff;
 
 			if (fViewStart <= eventNr && fViewEnd >= eventNr)
@@ -198,10 +204,13 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 
 		}
 
-		if (wordCountEvent > 2 && (rawdata >> 8) != 0x564d32)
+		if (wordCountEvent > 1 && (rawdata >> 8) != 0x564d32
+				&& rawdata != 0xFAFAFAFA)
 		{
 			validEvent = true;
-			if (wordCountEvent == 3)
+			//printf("\n wordcount %d - rawdata_before_two %x - rawdata_before %x - rawdata %x\n", wordCountEvent,
+			//		rawdata_before_two, rawdata_before, rawdata);
+			if (wordCountEvent == 2)
 			{
 
 				//Register 0x0C: evbld_eventInfoData
@@ -221,100 +230,124 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 				// 3 bit high res are 320 MHz = 3.125 ns
 				// high res disabled: 25 ns resolution
 				// high res enabled: 3.125 ns resolution
-				triggerTimestamp = rawdata_before_two;
+				triggerTimestamp = rawdata_before;
 				theTriggerTimestamp = triggerTimestamp * 3.125;
+
 				if (fViewStart <= eventNr && fViewEnd >= eventNr)
 				{
 					printf("\tTriggerTimestamp %f\n", theTriggerTimestamp);
 				}
 
 			}
-			if (wordCountEvent % 2 == 0)
+			if (wordCountEvent > 2)
 			{
-				unsigned int data = ReverseBits(rawdata_before);
-				flag = (data & 0x1);
-				overThresholdFlag = (data & 0x2) >> 1;
-				chNo = (data & 0xfc) >> 2;
-				planeID = GetPlaneID(vmmID);
-				// Plane 0: x
-				// plane 1: y
-				if (planeID == 0)
+				if (wordCountEvent % 2 == 0)
 				{
-					x = GetChannelX(vmmID, chNo);
-				}
-				else if (planeID == 1)
-				{
-					y = GetChannelY(vmmID, chNo);
-				}
+					oldChNo = chNo;
+					unsigned int data = ReverseBits(rawdata_before);
 
-			}
-			else
-			{
+					flag = (data & 0x1);
+					overThresholdFlag = (data & 0x2) >> 1;
+					chNo = (data & 0xfc) >> 2;
+					//printf("%d: %x %x %x %x\n", wordCountEvent, rawdata_before, data, data & 0xfc, chNo);
+					planeID = GetPlaneID(vmmID);
+					// Plane 0: x
+					// plane 1: y
+					if (planeID == 0)
+					{
+						x = GetChannelX(vmmID, chNo);
+						y = -1;
+					}
+					else if (planeID == 1)
+					{
+						y = GetChannelY(vmmID, chNo);
+						x = -1;
+					}
+					else
+					{
+						x = -1;
+						y = -1;
+					}
 
-				unsigned int data = ReverseBits(rawdata_before);
-
-				//adc: 0-7 14-15
-				//tdc: 8-13 22-23
-				//bcid: 16-21 26-31
-				unsigned int data1 = (data >> 24) & 0xFF;
-				unsigned int data2 = (data >> 16) & 0x3;
-				unsigned int data3 = (data >> 18) & 0x3F;
-				unsigned int data4 = (data >> 8) & 0x3;
-				unsigned int data5 = (data >> 10) & 0x3F;
-				unsigned int data6 = data & 0x3F;
-
-				//10 bits (8+2)
-				adc = (data2 << 8) + data1;
-				//8 bits (6+2)
-				tdc = (data4 << 6) + data3;
-
-				//***********************************************************
-				//Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
-				//***********************************************************
-				//12 bits (6+6)
-				unsigned int gray_bcid = (data6 << 6) + data5;
-				bcid = GrayToBinary32(gray_bcid);
-				//BC time: bcid value * 1/(clock frequency)
-				double bcTime = 1e+3 * bcid * (1 / (double) bcClock);
-				//TDC time: tacSlope * tdc value (8 bit) * ramp length
-				double tdcTime = tacSlope * (double) tdc / 256;
-				//Chip time: bcid where tac was stopped minus tdc value 
-				chipTime = bcTime - tdcTime;
-				if (!fViewEvent)
-				{
-					fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
-							eventSize, frameCounter, vmmID, triggerTimestamp,
-							overThresholdFlag, chNo, x, y, adc, tdc, bcid,
-							chipTime);
+					if ((adc % 16 != 0 && overThresholdFlag == 1)
+							&& (oldVmmID != vmmID || oldChNo != chNo
+									|| oldBcid != bcid))
+					{
+						if (!fViewEvent)
+						{
+							fRoot->AddHits(unixtimestamp, timestamp_us, eventNr,
+									fecID, eventSize, frameCounter, vmmID,
+									triggerTimestamp, overThresholdFlag, chNo,
+									x, y, adc, tdc, bcid, chipTime);
+						}
+						else if (fViewStart <= eventNr && fViewEnd >= eventNr)
+						{
+							if (planeID == 0)
+							{
+								printf(
+										"\t\tx-channel %d (chNo  %d) - overThresholdFlag %d\n",
+										x, chNo, overThresholdFlag);
+							}
+							else if (planeID == 1)
+							{
+								printf(
+										"\t\ty-channel %d (chNo  %d) - overThresholdFlag %d\n",
+										y, chNo, overThresholdFlag);
+							}
+							else
+							{
+								printf("\t\tPlane for vmmID %d not defined!\n",
+										vmmID);
+							}
+							printf("\t\t\tbcid %d, tdc %d, adc %d\n", bcid, tdc,
+									adc);
+							printf(
+									"\t\t\tbcTime %.2f us, tdcTime %.2f ns, time %.2f us\n",
+									bcTime, tdcTime, chipTime);
+						}
+					}
+					else
+					{
+						discarded++;
+					}
 				}
 				else
 				{
 
-					if (overThresholdFlag > 0 && fViewStart <= eventNr
-							&& fViewEnd >= eventNr)
-					{
-						if (planeID == 0)
-						{
-							printf(
-									"\t\tx-channel %d (chNo  %d) - overThresholdFlag %d - adc %d \n",
-									x, chNo, overThresholdFlag, adc);
-						}
-						else if (planeID == 1)
-						{
-							printf(
-									"\t\ty-channel %d (chNo  %d) - overThresholdFlag %d - adc %d \n",
-									y, chNo, overThresholdFlag, adc);
-						}
-						else
-						{
-							printf("\t\tPlane for vmmID %d not defined!\n", vmmID);
-						}
+					unsigned int data = ReverseBits(rawdata_before);
 
-						printf(
-								"\t\t\tbcTime %.2f us, tdcTime %.2f ns, time %.2f us\n",
-								bcTime, tdcTime, chipTime);
-
-					}
+					//adc: 0-7 14-15
+					//tdc: 8-13 22-23
+					//bcid: 16-21 26-31
+					unsigned int data1 = (data >> 24) & 0xFF;
+					unsigned int data2 = (data >> 16) & 0x3;
+					unsigned int data3 = (data >> 18) & 0x3F;
+					unsigned int data4 = (data >> 8) & 0x3;
+					unsigned int data5 = (data >> 10) & 0x3F;
+					unsigned int data6 = data & 0x3F;
+					oldAdc = adc;
+					oldTdc = tdc;
+					oldBcid = bcid;
+					//10 bits (8+2)
+					adc = (data2 << 8) + data1;
+					//8 bits (6+2)
+					tdc = (data4 << 6) + data3;
+					//***********************************************************
+					//Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
+					//***********************************************************
+					//12 bits (6+6)
+					unsigned int gray_bcid = (data6 << 6) + data5;
+					bcid = GrayToBinary32(gray_bcid);
+					//BC time: bcid value * 1/(clock frequency)
+					bcTime = bcid * (1 / (double) bcClock);
+					//TDC time: tacSlope * tdc value (8 bit) * ramp length
+					tdcTime = tacSlope * (double) tdc / 256;
+					//Chip time: bcid plus tdc value
+					//Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
+					chipTime = bcTime + tdcTime * 1e-3;
+					//if(adc % 16 != 0)
+					//if (oldVmmID != vmmID || oldChNo != chNo || oldBcid != bcid)
+					//if(adc % 16 != 0)
 
 				}
 
@@ -324,7 +357,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 
 	}
 
-	return eventNr;
+	return discarded;
 
 }
 

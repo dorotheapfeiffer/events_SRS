@@ -87,7 +87,8 @@ private:
 	int * m_apvID;        // APVId
 	int * m_strip_chip;   // Strip Number chip
 	int * m_strip;        // Strip Number
-
+	int * m_x;        // x
+	int * m_y;        // y
 	int * m_hitTimeBin;     //time bin with maximum ADC
 	short* m_hitMaxADC; //Maximum ADC value of hit
 

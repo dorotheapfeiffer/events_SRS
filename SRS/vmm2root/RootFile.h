@@ -31,7 +31,7 @@ public:
 			unsigned short fecID, unsigned short eventSize,
 			unsigned int frameCounter, unsigned short vmmID,
 			double triggerTimestamp, UChar_t overThresholdFlag,
-			unsigned short chNo, unsigned short x, unsigned short y, short adc,
+			unsigned short chNo,  short x,  short y, short adc,
 			short tdc, short bcid, double chipTime);
 	void FillHits();
 
@@ -44,10 +44,13 @@ private:
 	TString fFileName;
 
 	unsigned long m_nch;
+	unsigned long m_nchX;
+	unsigned long m_nchY;
 
 	signed int m_timestamp; 		//Unix time stamp
 	unsigned int m_us;
 	unsigned int m_eventNr;
+	unsigned int m_clusterNr;
 	unsigned short m_fecID;        // fecID
 	unsigned short m_eventSize;
 

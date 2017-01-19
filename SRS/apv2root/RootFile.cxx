@@ -4,10 +4,11 @@
 #include "TMath.h"
 
 RootFile::RootFile(TString fileName, TString pedestalName,
-		bool isRawPedestalRun, bool isPedestalRun, bool isZSRun, bool isUTPC,int uTPCThreshold) :
+		bool isRawPedestalRun, bool isPedestalRun, bool isZSRun, bool isUTPC,
+		int uTPCThreshold) :
 		isRawPedestalRun(isRawPedestalRun), isPedestalRun(isPedestalRun), isZSRun(
-				isZSRun), isUTPCRun(isUTPC), amplitudeThreshold(uTPCThreshold), fFileName(fileName), fPedestalName(
-				pedestalName), rawPedestalNoise(
+				isZSRun), isUTPCRun(isUTPC), amplitudeThreshold(uTPCThreshold), fFileName(
+				fileName), fPedestalName(pedestalName), rawPedestalNoise(
 		NFEC * NAPV, 0), rawPedestalOffset(NFEC * NAPV, 0), pedestalNoise(
 		NFEC * NAPV, 0), pedestalOffset(NFEC * NAPV, 0), chipData(
 		NFEC * NAPV, std::vector<TH1F*>(NCH, 0))
@@ -326,7 +327,10 @@ void RootFile::DeleteHitsTree()
 		delete[] m_strip;
 	if (m_strip_chip)
 		delete[] m_strip_chip;
-
+	if (m_x)
+		delete[] m_x;
+	if (m_y)
+		delete[] m_y;
 	if (m_planeID)
 		delete[] m_planeID;
 	if (m_apvID)
@@ -355,6 +359,7 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 	{
 		m_strip[m_chID] = stripNo;
 		m_planeID[m_chID] = 0;
+		m_x[m]
 	}
 	else if (apvID == 1)
 	{
@@ -455,7 +460,8 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 					}
 				}
 				else if (timeBin == 29 && amp0 > amp1 && amp1 > amp2
-						&& amp0 > amplitudeThreshold && abs(timeBin1 - timeBin) > 2)
+						&& amp0 > amplitudeThreshold
+						&& abs(timeBin1 - timeBin) > 2)
 				{
 					stripMaximaX.push_back(pStrip);
 					timeMaximaX.push_back(timeBin);
@@ -580,7 +586,8 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 					}
 				}
 				else if (timeBin == 29 && amp0 > amp1 && amp1 > amp2
-						&& amp0 > amplitudeThreshold && abs(timeBin1 - timeBin) > 2)
+						&& amp0 > amplitudeThreshold
+						&& abs(timeBin1 - timeBin) > 2)
 				{
 					stripMaximaY.push_back(stripNo);
 					timeMaximaY.push_back(pStrip);
