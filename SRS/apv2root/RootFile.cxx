@@ -35,6 +35,7 @@ RootFile::~RootFile()
 	{
 		DeleteHitsTree();
 	}
+
 }
 
 void RootFile::SetRunFlags(bool isRawPedestal, bool isPedestal)
@@ -325,12 +326,14 @@ void RootFile::DeleteHitsTree()
 		delete[] m_hitMaxADC;
 	if (m_strip)
 		delete[] m_strip;
+
 	if (m_strip_chip)
 		delete[] m_strip_chip;
 	if (m_x)
 		delete[] m_x;
 	if (m_y)
 		delete[] m_y;
+
 	if (m_planeID)
 		delete[] m_planeID;
 	if (m_apvID)
@@ -359,22 +362,29 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 	{
 		m_strip[m_chID] = stripNo;
 		m_planeID[m_chID] = 0;
-		m_x[m]
+		m_x[m_nchX] = stripNo;
+		m_nchX++;
 	}
 	else if (apvID == 1)
 	{
 		m_strip[m_chID] = stripNo + 128;
 		m_planeID[m_chID] = 0;
+		m_x[m_nchX] = stripNo+ 128;
+		m_nchX++;
 	}
 	else if (apvID == 2)
 	{
 		m_strip[m_chID] = stripNo;
 		m_planeID[m_chID] = 1;
+		m_y[m_nchY] = stripNo;
+		m_nchY++;
 	}
 	else if (apvID == 3)
 	{
 		m_strip[m_chID] = stripNo + 128;
 		m_planeID[m_chID] = 1;
+		m_y[m_nchY] = stripNo+ 128;
+		m_nchY++;
 	}
 
 	m_hitTimeBin[m_chID] = timeBinMaxADC;
@@ -737,7 +747,8 @@ void RootFile::InitRootFile()
 {
 	m_evtID = 0;
 	m_chID = 0;
-
+	m_nchX = 0;
+	m_nchY = 0;
 	fFile = TFile::Open(fFileName, "RECREATE");
 	std::cout << "Root file " << fFileName << " created!" << std::endl;
 
@@ -749,6 +760,8 @@ void RootFile::InitRootFile()
 		m_apvID = new int[10000];
 		m_strip = new int[10000];
 		m_strip_chip = new int[10000];
+		m_x = new unsigned short[10000];
+		m_y = new unsigned short[10000];
 		m_planeID = new int[10000];
 		m_hitTimeBin = new int[10000];
 		m_hitMaxADC = new short[10000];
@@ -786,13 +799,16 @@ void RootFile::InitRootFile()
 		fHitTree->Branch("timestamp", &m_timestamp, "timestamp/I");
 		fHitTree->Branch("us", &m_us, "us/I");
 		fHitTree->Branch("evtID", &m_evtID, "evtID/I");
-		fHitTree->Branch("nch", &m_chID, "nch/I");
+		fHitTree->Branch("nch", &m_chID, "nch/i");
+		fHitTree->Branch("nchX", &m_nchX, "nchX/i");
+		fHitTree->Branch("nchY", &m_nchY, "nchY/i");
 		fHitTree->Branch("fecID", m_fecID, "fecID[nch]/I");
 		fHitTree->Branch("apvID", m_apvID, "apvID[nch]/I");
 		fHitTree->Branch("planeID", m_planeID, "planeID[nch]/I");
 		fHitTree->Branch("strip_chip", m_strip_chip, "strip_chip[nch]/I");
 		fHitTree->Branch("strip", m_strip, "strip[nch]/I");
-
+		fHitTree->Branch("x", m_x, "x[nchX]/s");
+		fHitTree->Branch("y", m_y, "y[nchY]/s");
 		fHitTree->Branch("hitTimebin", m_hitTimeBin, "hitTimeBin[nch]/I");
 		fHitTree->Branch("hitMaxADC", m_hitMaxADC, "hitMaxADC[nch]/S");
 		fHitTree->Branch("adc0", m_adc0, "adc0[nch]/S");
