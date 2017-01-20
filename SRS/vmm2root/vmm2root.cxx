@@ -214,17 +214,20 @@ int printUsage(std::string errorMessage)
 
 	printf("\nUsages:\n");
 	printf(
-			"analyse raw data:\n\traw2root -rd data.raw [-n events -v start-end -bc MHz - tac ns -x a,b,c -y d,e,f]\n");
+			"analyse raw data:\n\traw2root -rd data.raw -x 0,1,2,3 -y 4,5,6,7 [-n events -v start-end -bc MHz - tac ns] \n");
 
 	printf("\nFlags:\n");
 	printf(
 			"-rd: raw data file with the extension .raw\n\tThe data file was created by DATE.\n");
+	printf("-x: mapping of chips, list of chips in x direction separated by comma\n\n");
+	printf("-y: mapping of chips, list of chips in y direction separated by comma\n\n");
 	printf(
 			"-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n\n");
 	printf(
 			"-v: events to display. Optional argument.\n\tIf not used, a root tree will be created.\n\n");
 	printf("-bc: bunch crossing clock. Optional argument (default 40 MHz)\n\n");
 	printf("-tac: tac slope. Optional argument (default 125 ns)\n\n");
+
 	return -1;
 }
 
