@@ -59,8 +59,8 @@ private:
 	unsigned int *m_frameCounter;
 	unsigned short * m_vmmID;        // vmmID
 	unsigned short * m_chNo;        // Strip Number
-	short * m_x;
-	short * m_y;
+	unsigned short * m_x;
+	unsigned short * m_y;
 
 	unsigned short * m_adc;     //ADC value
 	unsigned short * m_tdc;     //TDC value

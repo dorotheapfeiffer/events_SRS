@@ -44,7 +44,10 @@ int printUsage(std::string errorMessage);
 
 int main(int argc, char**argv)
 {
-
+	if (argc == 1 || argc % 2 == 0)
+	{
+			return printUsage("Wrong number of arguments!");
+	}
 	for (int i = 1; i < argc; i += 2)
 	{
 		if (strncmp(argv[i], "-rd", 3) == 0)
@@ -103,10 +106,7 @@ int main(int argc, char**argv)
 			return printUsage("Wrong type of argument!");
 		}
 	}
-	if (argc == 1 || argc % 2 == 0)
-	{
-		return printUsage("Wrong number of arguments!");
-	}
+
 	if (rpFound && pFound)
 	{
 		return printUsage("Wrong combination of arguments!");

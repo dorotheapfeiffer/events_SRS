@@ -134,8 +134,8 @@ void RootFile::InitRootFile()
 	//m_clockCycles = new unsigned int[max_hit];
 	m_overThresholdFlag = new UChar_t[max_hit];
 	m_chNo = new unsigned short[max_hit];
-	m_x = new short[max_hit];
-	m_y = new short[max_hit];
+	m_x = new unsigned short[max_hit];
+	m_y = new unsigned short[max_hit];
 	m_adc = new unsigned short[max_hit];
 	m_tdc = new unsigned short[max_hit];
 	m_bcid = new unsigned short[max_hit];
@@ -160,8 +160,8 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("overThresholdFlag", m_overThresholdFlag,
 			"overThresholdFlag[nch]/b");
 	fHitTree->Branch("chNo", m_chNo, "chNo[nch]/s");
-	fHitTree->Branch("x", m_x, "x[nchX]/S");
-	fHitTree->Branch("y", m_y, "y[nchY]/S");
+	fHitTree->Branch("x", m_x, "x[nchX]/s");
+	fHitTree->Branch("y", m_y, "y[nchY]/s");
 	fHitTree->Branch("adc", m_adc, "adc[nch]/s");
 	fHitTree->Branch("tdc", m_tdc, "tdc[nch]/s");
 	fHitTree->Branch("bcid", m_bcid, "bcid[nch]/s");

@@ -80,15 +80,16 @@ private:
 	int m_timestamp; 		//Unix time stamp
 	int m_us;
 	int m_evtID;
-	int m_chID;
-
+	unsigned long m_chID;
+	unsigned long m_nchX;
+	unsigned long m_nchY;
 	int * m_planeID;      // Plane Number
 	int * m_fecID;        // APVId
 	int * m_apvID;        // APVId
 	int * m_strip_chip;   // Strip Number chip
 	int * m_strip;        // Strip Number
-	int * m_x;        // x
-	int * m_y;        // y
+	unsigned short * m_x;
+	unsigned short * m_y;
 	int * m_hitTimeBin;     //time bin with maximum ADC
 	short* m_hitMaxADC; //Maximum ADC value of hit
 
