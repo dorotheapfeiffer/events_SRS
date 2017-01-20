@@ -1,0 +1,1001 @@
+#define START_PATH "/Users/dpfeiffe/data/Norway_June_2016/root"
+
+#include <stdlib.h>
+
+#include "Riostream.h"
+#include "TROOT.h"
+#include "RVersion.h"
+#include <TApplication.h>
+#include <TGClient.h>
+#include <TCanvas.h>
+#include <TF1.h>
+#include <TRandom.h>
+#include <TSystemFile.h>
+#include <TSystemDirectory.h>
+#include <TGFileDialog.h>
+
+#include <vector>
+#include <iostream>
+#include <map>
+#include <unistd.h>
+
+#include <TColor.h>
+#include <TLine.h>
+#include <TMarker.h>
+#include <libgen.h> 
+#include "uTPCViewer.h"
+
+#include "TMatrixD.h"
+#include "TMatrixDEigen.h"
+#include "TMath.h"
+
+enum ETestCommandIdentifiers
+{
+	M_FILE_OPEN, M_FILE_ANALYZE, M_FILE_SAVEAS, M_FILE_CLOSE, M_FILE_EXIT
+};
+
+const char *filetypes[] =
+{ "ROOT files", "*.root", 0, 0 };
+
+const Int_t colors[15] =
+{ kGreen, kGreen + 1, kGreen + 2, kCyan - 7, kCyan - 3, kCyan + 2, kBlue - 7,
+		kBlue, kBlue + 2, kMagenta - 7, kMagenta + 1, kMagenta + 2, kRed - 7,
+		kRed, kRed + 2, };
+
+uTPCViewer::uTPCViewer(const TGWindow *p, UInt_t w, UInt_t h) :
+		TGMainFrame(p, w, h)
+{
+
+	int scaleGUI = 2;
+
+	SetLayoutManager(new TGVerticalLayout(this));
+
+	vframeTop = new TGVerticalFrame(this, 800, 150);
+	vframeControls = new TGHorizontalFrame(this, 700, 75);
+	vframeMiddle1 = new TGVerticalFrame(this, 800, 300);
+	vframeMiddle2 = new TGVerticalFrame(this, 800, 300);
+	vframeBottom = new TGVerticalFrame(this, 800, 50);
+
+	AddFrame(vframeTop, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 5));
+	AddFrame(vframeMiddle1,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	AddFrame(vframeMiddle2,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	AddFrame(vframeBottom, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 5));
+
+	vframeTop->SetLayoutManager(new TGVerticalLayout(vframeTop));
+	vframeControls->SetLayoutManager(new TGHorizontalLayout(vframeControls));
+
+	fMenuFile = new TGPopupMenu(gClient->GetRoot());
+
+	fMenuFile->AddEntry("&Open file...", M_FILE_OPEN);
+	fMenuFile->AddEntry("&Analyse file...", M_FILE_ANALYZE);
+	fMenuFile->AddEntry("S&ave pictures as...", M_FILE_SAVEAS);
+	fMenuFile->AddEntry("&Close file", M_FILE_CLOSE);
+
+	fMenuFile->AddSeparator();
+
+	fMenuFile->AddEntry("E&xit", M_FILE_EXIT);
+
+	fMBItemLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 4, 0, 0);
+	fMenuBar = new TGMenuBar(vframeTop, 100, 20, kHorizontalFrame);
+	fMenuBar->AddPopup("&File", fMenuFile, fMBItemLayout);
+
+	vframeTop->AddFrame(fMenuBar,
+			new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 5));
+	vframeTop->AddFrame(vframeControls,
+			new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 5));
+
+	fMenuFile->Associate(this);
+
+	fLabelThresholdAmplitude = new TGLabel(vframeControls,
+			"Threshold amplitude [ADC counts]:");
+	//fLabelThresholdDistance = new TGLabel(vframeControls,
+	//		"Threshold distance [um]:");
+	//fLabelThresholdPCA = new TGLabel(vframeControls, "Threshold PCA [um]:");
+	//fLabelThresholdGamma = new TGLabel(vframeControls,
+	//		"Threshold Gamma [points]:");
+	fLabelThresholdDiscard = new TGLabel(vframeControls,
+			"Threshold Discard [points]:");
+
+	fThresholdAmplitude = new TGNumberEntry(vframeControls, 150, 4, 1,
+			TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+			TGNumberFormat::kNELLimitMinMax, 1., 1000);
+	//fThresholdDistance = new TGNumberEntry(vframeControls, 6000, 6, 1,
+	//		TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+	//		TGNumberFormat::kNELLimitMinMax, 1., 10000);
+	//fThresholdPCA = new TGNumberEntry(vframeControls, 3600, 6, 1,
+	//		TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+	//		TGNumberFormat::kNELLimitMinMax, 1., 10000);
+
+	//fThresholdGamma = new TGNumberEntry(vframeControls, 4, 2, 1,
+	//		TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+	//		TGNumberFormat::kNELLimitMinMax, 1., 99);
+	fThresholdDiscard = new TGNumberEntry(vframeControls, 70, 2, 1,
+			TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+			TGNumberFormat::kNELLimitMinMax, 1., 99);
+
+	fThresholdAmplitude->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fThresholdAmplitude->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fThresholdAmplitude->GetNumberEntry()->Connect("ReturnPressed()",
+			"uTPCViewer", this, "DoNumberEntry(Int_t=0)");
+
+	//fThresholdDistance->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdDistance->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdDistance->GetNumberEntry()->Connect("ReturnPressed()",
+	//		"uTPCViewer", this, "DoNumberEntry(Int_t=0)");
+
+	//fThresholdPCA->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdPCA->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdPCA->GetNumberEntry()->Connect("ReturnPressed()", "uTPCViewer",
+	//		this, "DoNumberEntry(Int_t=0)");
+
+	//fThresholdGamma->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdGamma->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+	//		"DoNumberEntry(Int_t)");
+	//fThresholdGamma->GetNumberEntry()->Connect("ReturnPressed()", "uTPCViewer",
+	//		this, "DoNumberEntry(Int_t=0)");
+
+	fThresholdDiscard->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fThresholdDiscard->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fThresholdDiscard->GetNumberEntry()->Connect("ReturnPressed()",
+			"uTPCViewer", this, "DoNumberEntry(Int_t=0)");
+
+	vframeControls->AddFrame(fLabelThresholdAmplitude,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 15, 5, 20, 5));
+	vframeControls->AddFrame(fThresholdAmplitude,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fLabelThresholdDistance,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fThresholdDistance,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fLabelThresholdPCA,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fThresholdPCA,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fLabelThresholdGamma,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	//vframeControls->AddFrame(fThresholdGamma,
+	//		new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	vframeControls->AddFrame(fLabelThresholdDiscard,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	vframeControls->AddFrame(fThresholdDiscard,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	fProgressBar = new TGHProgressBar(vframeBottom, TGProgressBar::kFancy,
+			800 * scaleGUI);
+	fProgressBar->SetBarColor("lightblue");
+	fProgressBar->ShowPosition(kTRUE, kTRUE, "%.0f events");
+
+	vframeBottom->AddFrame(fProgressBar,
+			new TGLayoutHints(kLHintsExpandX, 20, 5, 5, 5));
+
+	fEventNr = new TGNumberEntry(vframeControls, 0, 8, 1,
+			TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive,
+			TGNumberFormat::kNELLimitMinMax, 1., 10000000);
+
+	fEventNr->Connect("ValueSet(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fEventNr->Connect("ValueChanged(Long_t)", "uTPCViewer", this,
+			"DoNumberEntry(Int_t)");
+	fEventNr->GetNumberEntry()->Connect("ReturnPressed()", "uTPCViewer", this,
+			"DoNumberEntry(Int_t=0)");
+
+	fLabelEvent = new TGLabel(vframeControls, "Event");
+	fLabelEventTotal = new TGLabel(vframeControls, "of 1000000 events");
+
+	vframeControls->AddFrame(fLabelEvent,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 15, 5, 20, 5));
+	vframeControls->AddFrame(fEventNr,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+	vframeControls->AddFrame(fLabelEventTotal,
+			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 20, 5));
+
+	vframeMiddle1->SetLayoutManager(new TGHorizontalLayout(vframeMiddle1));
+	vframeMiddle2->SetLayoutManager(new TGHorizontalLayout(vframeMiddle2));
+	vframe1 = new TGVerticalFrame(vframeMiddle1, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe2 = new TGVerticalFrame(vframeMiddle1, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe5 = new TGVerticalFrame(vframeMiddle1, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe3 = new TGVerticalFrame(vframeMiddle2, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe4 = new TGVerticalFrame(vframeMiddle2, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe6 = new TGVerticalFrame(vframeMiddle2, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframeMiddle1->AddFrame(vframe1,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	vframeMiddle1->AddFrame(vframe2,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	vframeMiddle1->AddFrame(vframe5,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	vframeMiddle2->AddFrame(vframe3,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	vframeMiddle2->AddFrame(vframe4,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	vframeMiddle2->AddFrame(vframe6,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 5));
+	fLabel1 = new TGLabel(vframe1, "x Clusters");
+	vframe1->AddFrame(fLabel1, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas1 = new TRootEmbeddedCanvas("ec1", vframe1, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe1->AddFrame(fEcanvas1,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	fLabel2 = new TGLabel(vframe2, "y Clusters");
+	vframe2->AddFrame(fLabel2, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas2 = new TRootEmbeddedCanvas("ec2", vframe2, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe2->AddFrame(fEcanvas2,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	fLabel5 = new TGLabel(vframe5, "x Clusters (mm)");
+	vframe5->AddFrame(fLabel5, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas5 = new TRootEmbeddedCanvas("ec5", vframe5, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe5->AddFrame(fEcanvas5,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	fLabel3 = new TGLabel(vframe3, "x Time Structure");
+	vframe3->AddFrame(fLabel3, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas3 = new TRootEmbeddedCanvas("ec3", vframe3, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe3->AddFrame(fEcanvas3,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	fLabel4 = new TGLabel(vframe4, "y Time Structure");
+	vframe4->AddFrame(fLabel4, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas4 = new TRootEmbeddedCanvas("ec4", vframe4, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe4->AddFrame(fEcanvas4,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	fLabel6 = new TGLabel(vframe6, "y Clusters (mm)");
+	vframe6->AddFrame(fLabel6, new TGLayoutHints(kLHintsExpandX, 5, 5, 5, 1));
+	fEcanvas6 = new TRootEmbeddedCanvas("ec6", vframe6, 400 * scaleGUI,
+			250 * scaleGUI);
+	vframe6->AddFrame(fEcanvas6,
+			new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 5, 1));
+
+	Int_t parts[] =
+	{ 60, 20, 20 };
+	fStatusBar = new TGStatusBar(vframeBottom, 800 * scaleGUI, 10,
+			kHorizontalFrame);
+	fStatusBar->SetParts(parts, 3);
+	fStatusBar->SetText("Filename", 0);
+	fStatusBar->SetText("Event shown", 1);
+	fStatusBar->SetText("Number of events", 2);
+
+	vframeBottom->AddFrame(fStatusBar,
+			new TGLayoutHints(kLHintsExpandX, 20, 5, 5, 5));
+
+	fEcanvas1->GetCanvas()->SetBorderMode(0);
+	fEcanvas2->GetCanvas()->SetBorderMode(0);
+	fEcanvas3->GetCanvas()->SetBorderMode(0);
+	fEcanvas4->GetCanvas()->SetBorderMode(0);
+	fEcanvas5->GetCanvas()->SetBorderMode(0);
+	fEcanvas6->GetCanvas()->SetBorderMode(0);
+
+	SetWindowName("uTPCViewer");
+	MapSubwindows();
+
+	vframeTop->Resize();
+	vframeMiddle1->Resize();
+	vframeMiddle2->Resize();
+	vframeBottom->Resize();
+	Resize(GetDefaultSize());
+	MapWindow();
+
+	fStatusBar->SetText("", 0);
+	fStatusBar->SetText("", 1);
+	fStatusBar->SetText("", 2);
+	rawData = 0;
+	hx = 0;
+	hy = 0;
+	h2x = 0;
+	h2y = 0;
+	h2xmm = 0;
+	h2ymm = 0;
+	plotData = new uTPCPlotData();
+	plotData->fThresholdAmplitude = fThresholdAmplitude->GetNumber();
+	plotData->fThresholdDistance = 0;
+	plotData->fThresholdPCA = 0;
+	plotData->fThresholdGamma = 0;
+	plotData->fThresholdDiscard = fThresholdDiscard->GetNumber();
+}
+
+void uTPCViewer::DoNumberEntry(Int_t pos)
+{
+	ShowEvent(fEventNr->GetNumber());
+	TString s1 = "Event ";
+	s1 += fEventNr->GetNumber();
+	s1 += " shown";
+	fStatusBar->SetText(s1, 1);
+	plotData->fThresholdAmplitude = fThresholdAmplitude->GetNumber();
+	plotData->fThresholdDistance = 0;
+	plotData->fThresholdPCA = 0;
+	plotData->fThresholdGamma = 0;
+	plotData->fThresholdDiscard = fThresholdDiscard->GetNumber();
+
+}
+
+void show()
+{
+	new uTPCViewer(gClient->GetRoot(), 800, 800);
+}
+
+void uTPCViewer::CloseWindow()
+{
+	CloseFile();
+	gApplication->Terminate(0);
+}
+
+Bool_t uTPCViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t)
+{
+	switch (GET_MSG(msg))
+	{
+
+	case kC_COMMAND:
+		switch (GET_SUBMSG(msg))
+		{
+
+		case kCM_MENU:
+			switch (parm1)
+			{
+
+			case M_FILE_OPEN:
+			{
+				static TString dir(START_PATH);
+				TGFileInfo fi;
+				fi.fFileTypes = filetypes;
+				fi.fIniDir = StrDup(dir);
+				new TGFileDialog(fClient->GetRoot(), this, kFDOpen, &fi);
+				printf("Open file: %s (dir: %s)\n", fi.fFilename, fi.fIniDir);
+				dir = fi.fIniDir;
+				if (fi.fFilename)
+					OpenFile(dir, basename(fi.fFilename), 0);
+
+			}
+				break;
+			case M_FILE_ANALYZE:
+			{
+				static TString dir(START_PATH);
+				TGFileInfo fi;
+				fi.fFileTypes = filetypes;
+				fi.fIniDir = StrDup(dir);
+				new TGFileDialog(fClient->GetRoot(), this, kFDOpen, &fi);
+				printf("Open file: %s (dir: %s)\n", fi.fFilename, fi.fIniDir);
+				dir = fi.fIniDir;
+				if (fi.fFilename)
+					OpenFile(dir, basename(fi.fFilename), 1);
+
+			}
+				break;
+			case M_FILE_SAVEAS:
+				printf("M_FILE_SAVEAS\n");
+				break;
+
+			case M_FILE_CLOSE:
+				CloseFile();
+				break;
+
+			case M_FILE_EXIT:
+				CloseWindow();
+				break;
+
+			default:
+				break;
+			}
+		default:
+			break;
+		}
+	default:
+		break;
+	}
+
+	return kTRUE;
+}
+
+void uTPCViewer::OpenFile(TString dir, TString fileName, Bool_t analyze)
+{
+	CloseFile();
+	rawData = new uTPCRawData();
+
+	int numEvents = rawData->importData(dir, fileName, analyze, 0,
+			this->plotData, this);
+	if (numEvents > 0)
+	{
+		fStatusBar->SetText(fileName, 0);
+		TString s1 = "Event ";
+		s1 += 1;
+		s1 += " shown";
+		TString s2 = "Number of events: ";
+		s2 += numEvents;
+		fStatusBar->SetText(s1, 1);
+		fStatusBar->SetText(s2, 2);
+		fEventNr->SetLimitValues(1, numEvents);
+
+		TString s3 = "of ";
+		s3 += numEvents;
+		s3 += " events";
+		fLabelEventTotal->SetText(s3);
+		ShowEvent(1);
+	}
+}
+
+void uTPCViewer::CloseFile()
+{
+	fStatusBar->SetText("", 0);
+	fStatusBar->SetText("", 1);
+	fStatusBar->SetText("", 2);
+
+	if (h2x)
+	{
+		h2x->Delete();
+		h2x = 0;
+	}
+	if (hx)
+	{
+		hx->Delete();
+		hx = 0;
+	}
+
+	if (h2y)
+	{
+		h2y->Delete();
+		h2y = 0;
+	}
+	if (hy)
+	{
+		hy->Delete();
+		hy = 0;
+	}
+	if (h2xmm)
+	{
+		h2xmm->Delete();
+		h2xmm = 0;
+	}
+	if (h2ymm)
+	{
+		h2ymm->Delete();
+		h2ymm = 0;
+	}
+
+	if (rawData != 0)
+	{
+		delete rawData;
+	}
+	rawData = 0;
+
+}
+
+void uTPCViewer::ShowEvent(int eventNr)
+{
+	if (!rawData)
+		return;
+
+	if (h2x)
+	{
+		h2x->Delete();
+		h2x = 0;
+	}
+	if (hx)
+	{
+		hx->Delete();
+		hx = 0;
+	}
+
+	if (h2y)
+	{
+		h2y->Delete();
+		h2y = 0;
+	}
+	if (hy)
+	{
+		hy->Delete();
+		hy = 0;
+	}
+	if (h2xmm)
+	{
+		h2xmm->Delete();
+		h2xmm = 0;
+	}
+	if (h2ymm)
+	{
+		h2ymm->Delete();
+		h2ymm = 0;
+	}
+
+	rawData->selectEvent(eventNr, fThresholdAmplitude->GetNumber(),
+			0, 0,
+			0, fThresholdDiscard->GetNumber());
+	rawData->analyzeEvent(plotData);
+	int chkx = 0;
+	int chky = 0;
+
+	h2x = new TH2F("h2x", ";x strip [0.4 mm];time bin [25 ns]", 260, 0., 260.,
+			30, 0., 30.);
+	h2y = new TH2F("h2y", ";y strip [0.4 mm];time bin [25 ns]", 260, 0., 260.,
+			30, 0., 30.);
+	h2xmm = new TH2F("h2xmm", ";x [mm];z [mm]", 256, 0., 102.4, 30, 0., 15.);
+	h2ymm = new TH2F("h2ymm", ";y [mm];z [mm]", 256, 0., 102.4, 30, 0., 15.);
+
+	h2x->SetStats(0);
+	h2y->SetStats(0);
+	h2xmm->SetStats(0);
+	h2ymm->SetStats(0);
+
+	uTPCEvent* evt = rawData->getEvent();
+
+	double x0 = evt->getX0();
+	double y0 = evt->getY0();
+	bool xDraw = 1;
+	bool yDraw = 1;
+
+	std::map<unsigned int, unsigned int> clusterX = rawData->getClusterX();
+	std::map<unsigned int, unsigned int> clusterY = rawData->getClusterY();
+
+	if (clusterX.size() == 0)
+	{
+		xDraw = 0;
+	}
+	if (clusterY.size() == 0)
+	{
+		yDraw = 0;
+	}
+
+	int stripXMin = 512, stripXMax = -512, stripYMin = 512, stripYMax = -512;
+
+	if (xDraw)
+	{
+		for (std::map<unsigned int, unsigned int>::iterator it =
+				clusterX.begin(); it != clusterX.end(); ++it)
+		{
+
+			if (stripXMin > rawData->getStripNumber(it->second))
+			{
+				stripXMin = rawData->getStripNumber(it->second);
+			}
+			if (stripXMax < rawData->getStripNumber(it->second))
+			{
+				stripXMax = rawData->getStripNumber(it->second);
+			}
+			//if (it->second == 5)
+			//{
+
+			hx = new TH1F("hx", ";time bin [25 ns];charge [ADC counts]", 30, 0.,
+					30.);
+			hx->SetStats(0);
+			hx->GetYaxis()->SetRangeUser(0, 1.1 * rawData->getMaxX());
+			hx->GetYaxis()->SetTitleOffset(1.5);
+			for (int timeBin = 0;
+					timeBin < rawData->getWaveformSize(it->second); timeBin++)
+			{
+
+				h2x->Fill(rawData->getStripNumber(it->second) + 0.5,
+						timeBin + 0.5,
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+				hx->Fill(timeBin + 0.5,
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+				h2xmm->Fill(0.4 * (rawData->getStripNumber(it->second) + 0.5),
+						0.5 * (timeBin + 0.5),
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+
+			}
+
+			fCanvas = fEcanvas3->GetCanvas();
+			fCanvas->cd();
+			fCanvas->SetRightMargin(0.05);
+			hx->SetLineColor(colors[chkx % 15]);
+			//hx->SetLineColor(1);
+			hx->SetLineWidth(3);
+			if (!chkx)
+			{
+				hx->DrawCopy("hist");
+			}
+			else
+			{
+				hx->DrawCopy("hist same");
+			}
+			chkx++;
+			fCanvas->Update();
+			if (hx)
+			{
+				hx->Delete();
+				hx = 0;
+			}
+			//}
+		}
+
+	}
+	if (yDraw)
+	{
+		//int dummy = 0;
+		for (std::map<unsigned int, unsigned int>::iterator it =
+				clusterY.begin(); it != clusterY.end(); ++it)
+		{
+			if (stripYMin > rawData->getStripNumber(it->second))
+			{
+				stripYMin = rawData->getStripNumber(it->second);
+			}
+			if (stripYMax < rawData->getStripNumber(it->second))
+			{
+				stripYMax = rawData->getStripNumber(it->second);
+			}
+			//dummy++;
+			//if (dummy == 18)
+			//{
+
+			hy = new TH1F("hy", ";time bin [25 ns];charge [ADC counts]", 30, 0.,
+					30.);
+			//hy = new TH1F("hy", ";;", 30, 0.,30.);
+			hy->SetStats(0);
+			hy->GetYaxis()->SetRangeUser(0, 1.1 * rawData->getMaxY());
+			hy->GetYaxis()->SetTitleOffset(1.5);
+
+			for (int timeBin = 0;
+					timeBin < rawData->getWaveformSize(it->second); timeBin++)
+			{
+
+				h2y->Fill(rawData->getStripNumber(it->second) + 0.5,
+						timeBin + 0.5,
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+				hy->Fill(timeBin + 0.5,
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+				h2ymm->Fill(0.4 * (rawData->getStripNumber(it->second) + 0.5),
+						0.5 * (timeBin + 0.5),
+						rawData->getWaveformAtTimeBin(it->second, timeBin));
+
+			}
+			fCanvas = fEcanvas4->GetCanvas();
+			fCanvas->cd();
+			fCanvas->SetRightMargin(0.05);
+			hy->SetLineColor(colors[chky % 15]);
+			//hy->SetLineColor(1);
+			hy->SetLineWidth(3);
+			if (!chky)
+			{
+				hy->DrawCopy("hist");
+			}
+			else
+			{
+				hy->DrawCopy("hist same");
+			}
+
+			chky++;
+			fCanvas->Update();
+			if (hy)
+			{
+				hy->Delete();
+				hy = 0;
+			}
+			//}
+		}
+
+	}
+
+	fCanvas = fEcanvas1->GetCanvas();
+	fCanvas->cd();
+
+	if (rawData->getMinX() >= 0)
+	{
+		h2x->GetZaxis()->SetRangeUser(-1, rawData->getMaxX());
+	}
+	h2x->Draw("colz");
+	fCanvas->SetRightMargin(0.17);
+	h2x->GetZaxis()->SetTitle("charge [ADC counts]");
+	h2x->GetZaxis()->SetTitleOffset(1.5);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas5->GetCanvas();
+	fCanvas->cd();
+
+	if (rawData->getMinX() >= 0)
+	{
+		h2xmm->GetZaxis()->SetRangeUser(-1, rawData->getMaxX());
+	}
+	h2xmm->Draw("colz");
+	fCanvas->SetRightMargin(0.17);
+	h2xmm->GetZaxis()->SetTitle("charge [ADC counts]");
+	h2xmm->GetZaxis()->SetTitleOffset(1.5);
+	fCanvas->Update();
+
+	TMarker* mX, *mXmm;
+	TLine* line;
+	for (int z = 0; z < evt->getLargestClusterSizeX(); z++)
+	{
+		int strip =
+				plotData->fStripMaximaX[plotData->fPointClustersX[evt->getLargestClusterX()][z]];
+		int time =
+				plotData->fTimeMaximaX[plotData->fPointClustersX[evt->getLargestClusterX()][z]];
+
+		mX = new TMarker();
+		mXmm = new TMarker();
+		mX->SetX(strip + 0.5);
+		mX->SetY(time + 0.5);
+		mXmm->SetX(0.4 * (strip + 0.5));
+		mXmm->SetY(0.5 * (time + 0.5));
+		if ((strip == evt->getClusterStripStartX()
+				&& time == evt->getClusterTimeStartX())
+				|| (strip == evt->getClusterStripEndX()
+						&& time == evt->getClusterTimeEndX()))
+		{
+			mX->SetMarkerSize(1);
+			mXmm->SetMarkerSize(1);
+		}
+		else
+		{
+			mX->SetMarkerSize(0.5);
+			mXmm->SetMarkerSize(0.5);
+		}
+		if (plotData->fXEigenvectorX.size() > 0
+				&& plotData->fXEigenvectorY.size() > 0)
+		{
+			line = new TLine(strip + 0.5 - 0.5 * plotData->fXEigenvectorX[z],
+					time + 0.5 - 0.5 * plotData->fXEigenvectorY[z],
+					strip + 0.5 + 0.5 * plotData->fXEigenvectorX[z],
+					time + 0.5 + 0.5 * plotData->fXEigenvectorY[z]);
+
+			line->SetLineWidth(3);
+			fCanvas = fEcanvas1->GetCanvas();
+			fCanvas->cd();
+			line->Draw();
+
+			fCanvas = fEcanvas5->GetCanvas();
+			fCanvas->cd();
+			line->Draw();
+
+		}
+		if (evt->getParticleTypeX() == 1)
+		{
+			mX->SetMarkerColor(1);
+			mXmm->SetMarkerColor(1);
+		}
+		else if (evt->getParticleTypeX() == 2)
+		{
+			mX->SetMarkerColor(0);
+			mXmm->SetMarkerColor(0);
+		}
+		else
+		{
+			mX->SetMarkerColor(14);
+			mXmm->SetMarkerColor(14);
+		}
+		mX->SetMarkerStyle(20);
+		mXmm->SetMarkerStyle(20);
+		fCanvas = fEcanvas1->GetCanvas();
+		fCanvas->cd();
+		mX->Draw();
+
+		fCanvas = fEcanvas5->GetCanvas();
+		fCanvas->cd();
+		mXmm->Draw();
+
+	}
+
+	fCanvas = fEcanvas1->GetCanvas();
+	fCanvas->cd();
+	double minX = 0;
+	double maxX = stripXMax + 2.5;
+
+	if (stripXMin >= 1.5)
+	{
+		minX = stripXMin - 1.5;
+	}
+	else
+	{
+		minX = 0;
+	}
+	h2x->GetXaxis()->SetRangeUser(minX, maxX);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas5->GetCanvas();
+	fCanvas->cd();
+	h2xmm->GetXaxis()->SetRangeUser(minX * 0.4, maxX * 0.4);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas2->GetCanvas();
+	fCanvas->cd();
+	if (rawData->getMinY() >= 0)
+	{
+		h2y->GetZaxis()->SetRangeUser(-1, rawData->getMaxX());
+
+	}
+	h2y->Draw("colz");
+	fCanvas->SetRightMargin(0.17);
+	h2y->GetZaxis()->SetTitle("charge [ADC counts]");
+	h2y->GetZaxis()->SetTitleOffset(1.5);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas6->GetCanvas();
+	fCanvas->cd();
+	if (rawData->getMinY() >= 0)
+	{
+		h2ymm->GetZaxis()->SetRangeUser(-1, rawData->getMaxX());
+
+	}
+	h2ymm->Draw("colz");
+	fCanvas->SetRightMargin(0.17);
+	h2ymm->GetZaxis()->SetTitle("charge [ADC counts]");
+	h2ymm->GetZaxis()->SetTitleOffset(1.5);
+	fCanvas->Update();
+
+	TMarker* mY, *mYmm;
+
+	for (int z = 0; z < evt->getLargestClusterSizeY(); z++)
+	{
+		int strip =
+				plotData->fStripMaximaY[plotData->fPointClustersY[evt->getLargestClusterY()][z]];
+		int time =
+				plotData->fTimeMaximaY[plotData->fPointClustersY[evt->getLargestClusterY()][z]];
+
+		mY = new TMarker();
+		mYmm = new TMarker();
+		mY->SetX(strip + 0.5);
+		mY->SetY(time + 0.5);
+		mYmm = new TMarker();
+		mYmm->SetX(0.4 * (strip + 0.5));
+		mYmm->SetY(0.5 * (time + 0.5));
+
+		if ((strip == evt->getClusterStripStartY()
+				&& time == evt->getClusterTimeStartY())
+				|| (strip == evt->getClusterStripEndY()
+						&& time == evt->getClusterTimeEndY()))
+		{
+			mY->SetMarkerSize(1);
+			mYmm->SetMarkerSize(1);
+		}
+		else
+		{
+			mY->SetMarkerSize(0.5);
+			mYmm->SetMarkerSize(0.5);
+		}
+		if (plotData->fYEigenvectorX.size() > 0
+				&& plotData->fYEigenvectorY.size() > 0)
+		{
+			line = new TLine(strip + 0.5 - 0.5 * plotData->fYEigenvectorX[z],
+					time + 0.5 - 0.5 * plotData->fYEigenvectorY[z],
+					strip + 0.5 + 0.5 * plotData->fYEigenvectorX[z],
+					time + 0.5 + 0.5 * plotData->fYEigenvectorY[z]);
+
+			line->SetLineWidth(3);
+			fCanvas = fEcanvas2->GetCanvas();
+			fCanvas->cd();
+			line->Draw();
+
+			fCanvas = fEcanvas6->GetCanvas();
+			fCanvas->cd();
+			line->Draw();
+
+		}
+		if (evt->getParticleTypeY() == 1)
+		{
+			mY->SetMarkerColor(1);
+			mYmm->SetMarkerColor(1);
+		}
+		else if (evt->getParticleTypeY() == 2)
+		{
+			mY->SetMarkerColor(0);
+			mYmm->SetMarkerColor(0);
+		}
+		else
+		{
+			mY->SetMarkerColor(14);
+			mYmm->SetMarkerColor(14);
+		}
+		mY->SetMarkerStyle(20);
+		mYmm->SetMarkerStyle(20);
+		fCanvas = fEcanvas2->GetCanvas();
+		fCanvas->cd();
+		mY->Draw();
+
+		fCanvas = fEcanvas6->GetCanvas();
+		fCanvas->cd();
+		mYmm->Draw();
+	}
+
+	fCanvas = fEcanvas2->GetCanvas();
+	fCanvas->cd();
+	maxX = stripYMax + 2.5;
+	if (stripYMin >= 1.5)
+	{
+		minX = stripYMin - 1.5;
+	}
+	else
+	{
+		minX = 0;
+	}
+
+	h2y->GetXaxis()->SetRangeUser(minX, maxX);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas6->GetCanvas();
+	fCanvas->cd();
+	h2ymm->GetXaxis()->SetRangeUser(minX * 0.4, maxX * 0.4);
+	fCanvas->Update();
+
+	fCanvas = fEcanvas3->GetCanvas();
+	fCanvas->cd();
+	if (chkx == 0)
+	{
+		hx = new TH1F("hx", ";time bin [25 ns];charge [ADC counts]", 30, 0.,
+				30.);
+		hx->SetStats(0);
+		hx->GetYaxis()->SetTitleOffset(1.5);
+		hx->DrawCopy();
+	}
+	fCanvas->Update();
+
+	fCanvas = fEcanvas4->GetCanvas();
+	fCanvas->cd();
+	if (chky == 0)
+	{
+		hy = new TH1F("hy", ";time bin [25 ns];charge [ADC counts]", 30, 0.,
+				30.);
+		hy->SetStats(0);
+		hy->GetYaxis()->SetTitleOffset(1.5);
+		hy->DrawCopy();
+	}
+
+	fCanvas->Update();
+	plotData->clearDataStructures();
+}
+
+void startBatchMode(int argc, char **argv)
+{
+	uTPCRawData* rawData = new uTPCRawData();
+	uTPCPlotData* plotData = new uTPCPlotData();
+	plotData->fThresholdAmplitude = 150;
+	plotData->fThresholdDistance = 6000;
+	plotData->fThresholdPCA = 3600;
+	plotData->fThresholdGamma = 4;
+	plotData->fThresholdDiscard = 70;
+	TString dirName = argv[1];
+	TSystemDirectory dir(argv[1], argv[1]);
+	TList *files = dir.GetListOfFiles();
+	if (files)
+	{
+		TSystemFile *file;
+		TString fname;
+		TIter next(files);
+		while ((file = (TSystemFile*) next()))
+		{
+			fname = file->GetName();
+			if (!file->IsDirectory() && fname.EndsWith(".root")&& !fname.BeginsWith("uTPC_"))
+			{
+				std::cout << dirName << " " << fname << std::endl;
+				int numEvents = rawData->importData(dirName, fname, 1, 0, plotData, 0,
+							0);
+			}
+		}
+	}
+
+	delete plotData;
+	delete rawData;
+}
+
+int main(int argc, char **argv)
+{
+	if (argc == 1)
+	{
+		TApplication theApp("App", &argc, argv);
+		show();
+		theApp.Run();
+	}
+	else
+	{
+		startBatchMode(argc, argv);
+	}
+	return 0;
+}
+

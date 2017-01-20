@@ -5,13 +5,14 @@
 
 RootFile::RootFile(TString fileName, TString pedestalName,
 		bool isRawPedestalRun, bool isPedestalRun, bool isZSRun, bool isUTPC,
-		int uTPCThreshold) :
+		int uTPCThreshold, std::vector<int> xChips, std::vector<int> yChips) :
 		isRawPedestalRun(isRawPedestalRun), isPedestalRun(isPedestalRun), isZSRun(
 				isZSRun), isUTPCRun(isUTPC), amplitudeThreshold(uTPCThreshold), fFileName(
 				fileName), fPedestalName(pedestalName), rawPedestalNoise(
 		NFEC * NAPV, 0), rawPedestalOffset(NFEC * NAPV, 0), pedestalNoise(
 		NFEC * NAPV, 0), pedestalOffset(NFEC * NAPV, 0), chipData(
-		NFEC * NAPV, std::vector<TH1F*>(NCH, 0))
+		NFEC * NAPV, std::vector<TH1F*>(NCH, 0)), xChipIDs(xChips), yChipIDs(
+				yChips)
 {
 
 	if (!isZSRun && !isRawPedestalRun)
@@ -355,35 +356,44 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 	m_apvID[m_chID] = apvID;
 
 	int stripNo = chNo;
-	//std::cout << stripNo << std::endl;
+	//std::cout << "strip no" << stripNo << std::endl;
 	m_strip_chip[m_chID] = stripNo;
 	//stripNo = 127 - stripNo;
-	if (apvID == 0)
+
+	unsigned int planeID = GetPlaneID(apvID);
+	// Plane 0: x
+	// plane 1: y
+	unsigned int x =0;
+	unsigned int y =0;
+
+	if (planeID == 0)
 	{
-		m_strip[m_chID] = stripNo;
+		x = GetChannelX(apvID, stripNo);
+		y = -1;
+	}
+	else if (planeID == 1)
+	{
+		y = GetChannelY(apvID, stripNo);
+		x = -1;
+	}
+	else
+	{
+		x = -1;
+		y = -1;
+	}
+
+	if(planeID == 0)
+	{
+		m_strip[m_chID] = x;
 		m_planeID[m_chID] = 0;
-		m_x[m_nchX] = stripNo;
+		m_x[m_nchX] = x;
 		m_nchX++;
 	}
-	else if (apvID == 1)
+	else if (planeID == 1)
 	{
-		m_strip[m_chID] = stripNo + 128;
-		m_planeID[m_chID] = 0;
-		m_x[m_nchX] = stripNo+ 128;
-		m_nchX++;
-	}
-	else if (apvID == 2)
-	{
-		m_strip[m_chID] = stripNo;
+		m_strip[m_chID] = y;
 		m_planeID[m_chID] = 1;
-		m_y[m_nchY] = stripNo;
-		m_nchY++;
-	}
-	else if (apvID == 3)
-	{
-		m_strip[m_chID] = stripNo + 128;
-		m_planeID[m_chID] = 1;
-		m_y[m_nchY] = stripNo+ 128;
+		m_y[m_nchY] = y;
 		m_nchY++;
 	}
 
@@ -739,6 +749,8 @@ void RootFile::FillHits()
 		fHitTree->Fill();
 		resetUTPCData();
 		m_chID = 0;
+		m_nchX = 0;
+		m_nchY = 0;
 	}
 }
 
@@ -760,8 +772,8 @@ void RootFile::InitRootFile()
 		m_apvID = new int[10000];
 		m_strip = new int[10000];
 		m_strip_chip = new int[10000];
-		m_x = new unsigned short[10000];
-		m_y = new unsigned short[10000];
+		m_x = new short[10000];
+		m_y = new short[10000];
 		m_planeID = new int[10000];
 		m_hitTimeBin = new int[10000];
 		m_hitMaxADC = new short[10000];
@@ -799,9 +811,9 @@ void RootFile::InitRootFile()
 		fHitTree->Branch("timestamp", &m_timestamp, "timestamp/I");
 		fHitTree->Branch("us", &m_us, "us/I");
 		fHitTree->Branch("evtID", &m_evtID, "evtID/I");
-		fHitTree->Branch("nch", &m_chID, "nch/i");
-		fHitTree->Branch("nchX", &m_nchX, "nchX/i");
-		fHitTree->Branch("nchY", &m_nchY, "nchY/i");
+		fHitTree->Branch("nch", &m_chID, "nch/I");
+		fHitTree->Branch("nchX", &m_nchX, "nchX/I");
+		fHitTree->Branch("nchY", &m_nchY, "nchY/I");
 		fHitTree->Branch("fecID", m_fecID, "fecID[nch]/I");
 		fHitTree->Branch("apvID", m_apvID, "apvID[nch]/I");
 		fHitTree->Branch("planeID", m_planeID, "planeID[nch]/I");
@@ -994,4 +1006,61 @@ void RootFile::resetUTPCData()
 	timeMaximaY.clear();
 	energyMaximaX.clear();
 	energyMaximaY.clear();
+}
+
+
+unsigned int RootFile::GetPlaneID(unsigned int chipID)
+{
+	std::vector<int>::iterator it;
+
+	it = find(xChipIDs.begin(), xChipIDs.end(), chipID);
+	if (it != xChipIDs.end())
+	{
+		return 0;
+	}
+	else
+	{
+		it = find(yChipIDs.begin(), yChipIDs.end(), chipID);
+		if (it != yChipIDs.end())
+		{
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+}
+
+
+unsigned int RootFile::GetChannelX(unsigned int chipID, unsigned int channelID)
+{
+	std::vector<int>::iterator it;
+
+	it = find(xChipIDs.begin(), xChipIDs.end(), chipID);
+	if (it != xChipIDs.end())
+	{
+		int pos = it - xChipIDs.begin();
+		return (channelID + pos * 128);
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+unsigned int RootFile::GetChannelY(unsigned int chipID, unsigned int channelID)
+{
+	std::vector<int>::iterator it;
+
+	it = find(yChipIDs.begin(), yChipIDs.end(), chipID);
+	if (it != yChipIDs.end())
+	{
+		int pos = it - yChipIDs.begin();
+		return (channelID + pos * 128);
+	}
+	else
+	{
+		return -1;
+	}
 }

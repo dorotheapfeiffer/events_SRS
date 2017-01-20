@@ -39,6 +39,11 @@ bool nFound = false;
 bool cFound = false;
 bool uFound = false;
 bool vFound = false;
+bool xFound = false;
+bool yFound = false;
+
+std::vector<int> xChips;
+std::vector<int> yChips;
 
 int printUsage(std::string errorMessage);
 
@@ -46,7 +51,7 @@ int main(int argc, char**argv)
 {
 	if (argc == 1 || argc % 2 == 0)
 	{
-			return printUsage("Wrong number of arguments!");
+		return printUsage("Wrong number of arguments!");
 	}
 	for (int i = 1; i < argc; i += 2)
 	{
@@ -80,6 +85,54 @@ int main(int argc, char**argv)
 		{
 			uFound = true;
 			uTPCThreshold = atof(argv[i + 1]);
+
+		}
+		else if (strncmp(argv[i], "-x", 2) == 0)
+		{
+			xFound = true;
+			std::string xString = argv[i + 1];
+			std::string delims = ",";
+			size_t lastOffset = 0;
+
+			while (true)
+			{
+				size_t offset = xString.find_first_of(delims, lastOffset);
+				xChips.push_back(
+						atoi(
+								xString.substr(lastOffset, offset - lastOffset).c_str()));
+				if (offset == std::string::npos)
+				{
+					break;
+				}
+				else
+				{
+					lastOffset = offset + 1; // add one to skip the delimiter
+				}
+			}
+
+		}
+		else if (strncmp(argv[i], "-y", 2) == 0)
+		{
+			yFound = true;
+			std::string yString = argv[i + 1];
+			std::string delims = ",";
+			size_t lastOffset = 0;
+
+			while (true)
+			{
+				size_t offset = yString.find_first_of(delims, lastOffset);
+				yChips.push_back(
+						atoi(
+								yString.substr(lastOffset, offset - lastOffset).c_str()));
+				if (offset == std::string::npos)
+				{
+					break;
+				}
+				else
+				{
+					lastOffset = offset + 1; // add one to skip the delimiter
+				}
+			}
 
 		}
 		else if (strncmp(argv[i], "-v", 2) == 0)
@@ -175,8 +228,8 @@ int main(int argc, char**argv)
 		if (z == 0)
 		{
 			parser = new RawdataParser(fileName, pedestalName, isRawPedestal,
-					isPedestal, isZS, zsCut, uFound, uTPCThreshold, vFound, vStart, vEnd);
-
+					isPedestal, isZS, zsCut, uFound, uTPCThreshold, xChips, yChips,vFound,
+					vStart, vEnd);
 
 		}
 		else
@@ -247,11 +300,11 @@ int printUsage(std::string errorMessage)
 
 	printf("\nUsages:\n");
 	printf(
-			"1a) analyse non zero-suppressed pedestal data:\n\traw2root -rp pedestal.raw [-n events]\n");
+			"1a) analyse non zero-suppressed pedestal data:\n\traw2root -rp pedestal.raw  [-n events]\n");
 	printf(
-			"1b) analyse non zero-suppressed data and subtract pedestal:\n\traw2root -rd data.raw -r pedestal.root -c ZSCut [-n events] [-utpc]\n");
+			"1b) analyse non zero-suppressed data and subtract pedestal:\n\traw2root -rd data.raw -r pedestal.root -c ZSCut -x 0,1 -y 2,3 [-n events] [-utpc]\n");
 	printf(
-			"2) analyse zero-suppressed data:\n\traw2root -rd data.raw [-n events]  [-utpc]\n");
+			"2) analyse zero-suppressed data:\n\traw2root -rd data.raw -x 0,1 -y 2,3 [-n events]  [-utpc]\n");
 
 	printf("\nFlags:\n");
 	printf(
@@ -266,6 +319,8 @@ int printUsage(std::string errorMessage)
 	printf(
 			"-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n");
 	printf("-utpc: Add uTPC analysis. Optional argument.\n\n");
+	printf("-x: mapping of chips, list of chips in x direction separated by comma\n\n");
+	printf("-y: mapping of chips, list of chips in y direction separated by comma\n\n");
 
 	return -1;
 }

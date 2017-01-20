@@ -3,11 +3,10 @@
 
 RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 		bool isRawPedestal, bool isPedestal, bool isZS, float zsCut,
-		bool isUTPC, int uTPCThreshold, bool viewEvent, int viewStart,
+		bool isUTPC, int uTPCThreshold, std::vector<int> xChips, std::vector<int> yChips, bool viewEvent, int viewStart,
 		int viewEnd) :
-		fViewEvent(viewEvent), fViewStart(viewStart), fViewEnd(viewEnd), isRawPedestalRun(
-				isRawPedestal), isPedestalRun(isPedestal), isZSRun(isZS), fZsCut(
-				zsCut)
+		isRawPedestalRun(isRawPedestal), isPedestalRun(isPedestal), isZSRun(isZS), fZsCut(zsCut),
+		fViewEvent(viewEvent), fViewStart(viewStart),fViewEnd(viewEnd)
 {
 	fRawData16bits[0] = 0;
 	fRawData16bits[1] = 0;
@@ -35,7 +34,7 @@ RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 					ending.str());
 		}
 		fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
-				isZSRun, isUTPC, uTPCThreshold);
+				isZSRun, isUTPC, uTPCThreshold, xChips, yChips);
 	}
 }
 

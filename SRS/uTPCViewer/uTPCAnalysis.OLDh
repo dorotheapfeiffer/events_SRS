@@ -1,0 +1,496 @@
+#ifndef ANALYSIS_CLASS
+#define ANALYSIS_CLASS 1
+
+#define SIZE 2000
+
+#include <vector>
+#include <algorithm>
+#include <TString.h>
+#include <TTree.h>
+#include <TFile.h>
+
+class uTPCViewer;
+//class uTPCHit;
+class uTPCEvent;
+
+class uTPCPlotData: public TObject
+{
+public:
+	uTPCPlotData();
+	~uTPCPlotData();
+	void clearDataStructures();
+	std::vector<std::vector<unsigned int>> fPointClustersX;
+	std::vector<std::vector<unsigned int>> fPointClustersY;
+
+	std::vector<double> fEnergyX;
+	std::vector<double> fEnergyY;
+	std::vector<unsigned int> fEnergyMaximaX;
+	std::vector<unsigned int> fEnergyMaximaY;
+	std::vector<unsigned int> fStripMaximaX;
+	std::vector<unsigned int> fStripMaximaY;
+	std::vector<unsigned int> fTimeMaximaX;
+	std::vector<unsigned int> fTimeMaximaY;
+
+	std::vector<double> fXEigenvectorX;
+	std::vector<double> fXEigenvectorY;
+	std::vector<double> fXNormalX;
+	std::vector<double> fXNormalY;
+
+	std::vector<double> fYEigenvectorX;
+	std::vector<double> fYEigenvectorY;
+	std::vector<double> fYNormalX;
+	std::vector<double> fYNormalY;
+
+	double fThresholdAmplitude;
+	double fThresholdDistance;
+	double fThresholdPCA;
+	double fThresholdGamma;
+	double fThresholdDiscard;
+};
+
+class uTPCRawData: public TObject
+{
+public:
+	uTPCRawData();
+	virtual ~uTPCRawData();
+	//int getNumberOfWaveforms();
+	int getNumberOfStripsHit();
+	//std::vector<double> getWaveform(unsigned int);
+	int getStripNumber(unsigned int);
+	int getWaveformSize(unsigned int);
+	double getWaveformAtTimeBin(unsigned int strip, unsigned int timeBin);
+	int getStripId(unsigned int plane, unsigned int stripNumber);
+	unsigned int getNumber();
+	int getThresholdAmplitude()
+	{
+		return fThresholdAmplitude;
+	}
+	int getThresholdDistance()
+	{
+		return fThresholdDistance;
+	}
+	int getThresholdPCA()
+	{
+		return fThresholdPCA;
+	}
+	int getThresholdDiscard()
+	{
+		return fThresholdDiscard;
+	}
+	int getThresholdGamma()
+	{
+		return fThresholdGamma;
+	}
+
+	int getPlaneId(unsigned int);
+	int importData(TString dir, TString fileName, Bool_t analyze, Bool_t fit,
+			uTPCPlotData* plotData, uTPCViewer* mainFrame = 0, int num = 0);
+	void selectEvent(unsigned int eventNr, int thresholdAmplitude,
+			int thresholdDistance, int thresholdPCA, int thresholdGamma,
+			int thresholdDiscard);
+	TTree* getAnalyzedTree()
+	{
+		return treeOut;
+	}
+	;
+	void analyzeEvent(uTPCPlotData *plotData);
+	uTPCEvent* getEvent()
+	{
+		return event;
+	}
+	//void smooth(int, int);
+	//void dump();
+	void calculateScalingFactor();
+	std::map<unsigned int, unsigned int>& getClusterX()
+	{
+		return fClusterX;
+	}
+	std::map<unsigned int, unsigned int>& getClusterY()
+	{
+		return fClusterY;
+	}
+	void setClusterX(std::map<unsigned int, unsigned int>& map)
+	{
+		fClusterX = map;
+	}
+	void setClusterY(std::map<unsigned int, unsigned int>& map)
+	{
+		fClusterY = map;
+	}
+	double getScaleX()
+	{
+		return fScaleX;
+	}
+	double getScaleY()
+	{
+		return fScaleY;
+	}
+
+	void setMaxX(float maxX)
+	{
+		fMaxX = maxX;
+	}
+	void setMaxY(float maxY)
+	{
+		fMaxY = maxY;
+	}
+	void setMinX(float minX)
+	{
+		fMinX = minX;
+	}
+	void setMinY(float minY)
+	{
+		fMinY = minY;
+	}
+
+	double getMaxX()
+	{
+		return fMaxX;
+	}
+	double getMaxY()
+	{
+		return fMaxY;
+	}
+	double getMinX()
+	{
+		return fMinX;
+	}
+	double getMinY()
+	{
+		return fMinY;
+	}
+
+ClassDef(uTPCRawData,0)
+private:
+	TFile * fileIn;
+	TFile * fileOut;
+	TTree * treeIn;
+	TTree * treeOut;
+	uTPCEvent* event;
+	int pNCH;
+	//std::vector<std::vector<double> >* pWaveform;
+	short pADC0[SIZE];
+	short pADC1[SIZE];
+	short pADC2[SIZE];
+	short pADC3[SIZE];
+	short pADC4[SIZE];
+	short pADC5[SIZE];
+	short pADC6[SIZE];
+	short pADC7[SIZE];
+	short pADC8[SIZE];
+	short pADC9[SIZE];
+	short pADC10[SIZE];
+	short pADC11[SIZE];
+	short pADC12[SIZE];
+	short pADC13[SIZE];
+	short pADC14[SIZE];
+	short pADC15[SIZE];
+	short pADC16[SIZE];
+	short pADC17[SIZE];
+	short pADC18[SIZE];
+	short pADC19[SIZE];
+	short pADC20[SIZE];
+	short pADC21[SIZE];
+	short pADC22[SIZE];
+	short pADC23[SIZE];
+	short pADC24[SIZE];
+	short pADC25[SIZE];
+	short pADC26[SIZE];
+	short pADC27[SIZE];
+	short pADC28[SIZE];
+	short pADC29[SIZE];
+	int pStripNumber[SIZE];
+	//std::vector<TString>* pPlaneName;
+	int pPlaneId[SIZE];
+	std::map<unsigned int, unsigned int> fClusterX;
+	std::map<unsigned int, unsigned int> fClusterY;
+	double fScaleX;
+	double fScaleY;
+	double fMaxX;
+	double fMaxY;
+	double fMinX;
+	double fMinY;
+	unsigned int fNcx;
+	unsigned int fNcy;
+	unsigned int pNumber;
+	int fThresholdAmplitude;
+	int fThresholdDistance;
+	int fThresholdPCA;
+	int fThresholdGamma;
+	int fThresholdGammaStd;
+	int fThresholdDiscard;
+};
+
+class uTPCEvent
+{
+public:
+	uTPCEvent();
+	virtual ~uTPCEvent();
+	void initializeDataStructures();
+	void freeDataStructures();
+	//uTPCHit getHit(int = 0);
+	void analyseEvent(uTPCRawData* rawData, uTPCPlotData *plotData);
+	void analyseEventPCA(uTPCRawData* rawData, uTPCPlotData *plotData);
+	void dump();
+	void setEventID(int id)
+	{
+		eventID=id;
+	}
+	void setX0(double x)
+	{
+		x0 = x;
+	}
+	void setXf(double x)
+	{
+		xf = x;
+	}
+	void setY0(double y)
+	{
+		y0 = x;
+	}
+	void setYf(double y)
+	{
+		yf = x;
+	}
+	double getX0()
+	{
+		return x0;
+	}
+	;
+	double getY0()
+	{
+		return y0;
+	}
+	;
+	double getXf()
+	{
+		return xf;
+	}
+	;
+	double getYf()
+	{
+		return yf;
+	}
+	;
+	double getTX0()
+	{
+		return tX0;
+	}
+	;
+	double getTY0()
+	{
+		return tY0;
+	}
+	;
+	double getTXf()
+	{
+		return tXf;
+	}
+	;
+	double getTYf()
+	{
+		return tYf;
+	}
+	;
+
+	int getParticleTypeX()
+	{
+		return fParticleTypeX;
+	}
+
+	int getParticleTypeY()
+	{
+		return fParticleTypeY;
+	}
+
+	int getLargestClusterSizeX()
+	{
+		return fLargestClusterSizeX;
+	}
+
+	int getLargestClusterSizeY()
+	{
+		return fLargestClusterSizeY;
+	}
+
+	int getLargestClusterX()
+	{
+		return fLargestClusterX;
+	}
+
+	int getLargestClusterY()
+	{
+		return fLargestClusterY;
+	}
+
+	int getClusterStripStartX()
+	{
+		return xfirst;
+	}
+
+	int getClusterStripEndX()
+	{
+		return xlast;
+	}
+
+	int getClusterTimeStartX()
+	{
+		return tXFirst;
+	}
+
+	int getClusterTimeEndX()
+	{
+		return tXLast;
+	}
+
+	int getClusterStripStartY()
+	{
+		return yfirst;
+	}
+
+	int getClusterStripEndY()
+	{
+		return ylast;
+	}
+
+	int getClusterTimeStartY()
+	{
+		return tYFirst;
+	}
+
+	int getClusterTimeEndY()
+	{
+		return tYLast;
+	}
+
+private:
+	//std::vector<uTPCHit>* pHits;
+	/*
+	 double fStripStartX;
+	 double fStripEndX;
+	 double fTimeStartX;
+	 double fTimeEndX;
+
+	 double fStripStartY;
+	 double fStripEndY;
+	 double fTimeStartY;
+	 double fTimeEndY;
+	 */
+	unsigned int fLargestClusterSizeX;
+	unsigned int fLargestClusterSizeY;
+	unsigned int fLargestClusterX;
+	unsigned int fLargestClusterY;
+	unsigned int fParticleTypeX;
+	unsigned int fParticleTypeY;
+
+	std::vector<unsigned int>* pStripNumber;
+	std::vector<unsigned int>* pPlaneNumber;
+	double x, y, x0, y0, xf, yf, xm, ym, xi, yi, xs, ys, xcs, ycs, xd, yd, xmax, ymax;
+	double xAmplitude, xIntegral, yAmplitude, yIntegral;
+	double maxAmplitudeX, maxAmplitudeY;
+	double mx, qx, my, qy;
+	double xChi2, yChi2;
+	double tX0, tY0, tXf, tYf, tXs, tYs, tXcs, tYcs, tdx, tdy, tmaxx, tmaxy;
+	int nx, ny, ntx, nty;
+	double xfirst, yfirst, xlast, ylast, tXFirst, tYFirst, tXLast, tYLast;
+	int eventID;
+	//double stripSpreadX, stripSpreadY, timeSpreadX, timeSpreadY;
+
+};
+/*
+class uTPCHit
+{
+public:
+	friend class uTPCEvent;
+	uTPCHit() :
+			pBaseline(0), pNoise(0), pAmplitude(0), pIntegral(0), pStart(0), pStop(
+					0), pPeak(0), pHalf(0), pRise(0), pFall(0), pStrip(0), pPlane(
+					0), pPileup(0)
+	{
+	}
+	;
+	virtual ~uTPCHit();
+
+	double getBaseline()
+	{
+		return pBaseline;
+	}
+	;
+
+	double getNoise()
+	{
+		return pNoise;
+	}
+	;
+
+	double getAmplitude()
+	{
+		return pAmplitude;
+	}
+	;
+
+	double getIntegral()
+	{
+		return pIntegral;
+	}
+	;
+
+	double getStart()
+	{
+		return pStart;
+	}
+	;
+
+	double getStop()
+	{
+		return pStop;
+	}
+	;
+
+	double getPeak()
+	{
+		return pPeak;
+	}
+	;
+
+	double getHalf()
+	{
+		return pHalf;
+	}
+	;
+
+	double getRise()
+	{
+		return pRise;
+	}
+	;
+
+	double getFall()
+	{
+		return pFall;
+	}
+	;
+
+	int getPileup()
+	{
+		return pPileup;
+	}
+	;
+
+	double pBaseline;
+	double pNoise;
+	double pAmplitude;
+	double pIntegral;
+	double pStart;
+	double pStop;
+	double pPeak;
+	double pHalf;
+	double pRise;
+	double pFall;
+	int pStrip;
+	int pPlane;
+	int pPileup;
+};
+*/
+#endif
+

@@ -9,12 +9,12 @@ class RawdataParser
 public:
 	RawdataParser(std::string fileName, std::string pedestalName,
 			bool isRawPedestal, bool isPedestal, bool isZS, float ZSCut,
-			bool isUPTC, int uTPCThreshold, bool viewEvent, int viewStart,
+			bool isUPTC, int uTPCThreshold, std::vector<int> xChipIDs,
+			std::vector<int> yChipIDs, bool viewEvent, int viewStart,
 			int viewEnd);
 	~RawdataParser();
 	void SetRunFlags(bool isRawPedestal, bool isPedestal);
-	int AnalyzeWord(int rawdata, int rawdata_before,
-			int rawdata_before_two);
+	int AnalyzeWord(int rawdata, int rawdata_before, int rawdata_before_two);
 	void AnalyzeEventZS();
 	void AnalyzeEvent();
 	void ComputeRawPedestalData(int theApvID);
@@ -23,6 +23,10 @@ public:
 	void CreateHistograms();
 private:
 	RootFile *fRoot = 0;
+	bool isRawPedestalRun = false;
+	bool isPedestalRun = false;
+	bool isZSRun = false;
+	float fZsCut = 0;
 	bool fViewEvent = false;
 	int fViewStart = 0;
 	int fViewEnd = 0;
@@ -35,7 +39,6 @@ private:
 	int header = 0;
 	bool inEquipmentHeader = 0;
 
-
 	int fecID = 0;
 	int apvID = 0;
 	int minFECID = 9999;
@@ -46,11 +49,8 @@ private:
 	int idata = 0;
 	bool inEvent = false;
 
-	bool isRawPedestalRun = false;
-	bool isPedestalRun = false;
-	bool isZSRun = false;
 	bool startDataFlag = false;
-	float fZsCut = 0;
+
 	int wordCountEquipmentHeader = 0;
 	int wordCountEvent = 0;
 	int packetSize = 0;

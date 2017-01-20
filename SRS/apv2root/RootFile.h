@@ -25,7 +25,9 @@ class RootFile: public TObject
 public:
 
 	RootFile(TString fileName, TString pedestalName, bool isRawPedestalRun,
-			bool isPedestalRun, bool isZSRun, bool boolisUTPC,int uTPCThreshold);
+			bool isPedestalRun, bool isZSRun, bool boolisUTPC,
+			int uTPCThreshold, std::vector<int> xChips,
+			std::vector<int> yChips);
 	~RootFile();
 
 	void InitRootFile();
@@ -56,6 +58,9 @@ public:
 
 	int GetStripNumber(int chNo);
 	void resetUTPCData();
+	unsigned int GetPlaneID(unsigned int chipID);
+	unsigned int GetChannelX(unsigned int chipID, unsigned int channelID);
+	unsigned int GetChannelY(unsigned int chipID, unsigned int channelID);
 
 private:
 	bool isRawPedestalRun;
@@ -77,19 +82,22 @@ private:
 	std::vector<std::vector<TH1F*> > chipData;
 	std::vector<std::vector<float>*> stripData;
 
+	std::vector<int> xChipIDs;
+	std::vector<int> yChipIDs;
+
 	int m_timestamp; 		//Unix time stamp
 	int m_us;
 	int m_evtID;
-	unsigned long m_chID;
-	unsigned long m_nchX;
-	unsigned long m_nchY;
+	long m_chID;
+	long m_nchX;
+	long m_nchY;
 	int * m_planeID;      // Plane Number
 	int * m_fecID;        // APVId
 	int * m_apvID;        // APVId
 	int * m_strip_chip;   // Strip Number chip
 	int * m_strip;        // Strip Number
-	unsigned short * m_x;
-	unsigned short * m_y;
+	short * m_x;
+	short * m_y;
 	int * m_hitTimeBin;     //time bin with maximum ADC
 	short* m_hitMaxADC; //Maximum ADC value of hit
 
@@ -183,7 +191,6 @@ private:
 	std::vector<float> timeMaximaY;
 	std::vector<float> energyMaximaX;
 	std::vector<float> energyMaximaY;
-
 
 	ClassDef(RootFile,1)
 };
