@@ -372,7 +372,7 @@ namespace {
     };
     static const char* includePaths[] = {
 "/Applications/root/include",
-"/Users/dpfeiffe/programming/ESS/uTPCViewer/",
+"/Users/dpfeiffe/programming/ESS/dg_epool/SRS/uTPCViewer/",
 0
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(
