@@ -11,7 +11,7 @@ RawdataParser::RawdataParser(std::string fileName, double bc, double tac,
 	if (!fViewEvent)
 	{
 		std::stringstream ending;
-		ending << "_TREE.root";
+		ending << ".root";
 		fileName.replace(fileName.size() - 4, fileName.size(), ending.str());
 
 		fRoot = new RootFile(fileName);
@@ -33,6 +33,7 @@ RawdataParser::~RawdataParser()
 unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		unsigned int rawdata_before, unsigned int rawdata_before_two)
 {
+	
 	//0x564d32 = VM2
 	if ((rawdata_before >> 8) == 0x564d32)
 	{
@@ -41,6 +42,11 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		wordCountEquipmentHeader = 0;
 		wordCountEvent = 0;
 		validEvent = false;
+	}
+	//empty event
+	else if ((rawdata_before >> 8) == 0x564132)
+	{
+		inEvent = false;
 	}
 	else if (rawdata_before == 0xfafafafa)
 	{
@@ -209,7 +215,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		{
 			validEvent = true;
 			//printf("\n wordcount %d - rawdata_before_two %x - rawdata_before %x - rawdata %x\n", wordCountEvent,
-			//		rawdata_before_two, rawdata_before, rawdata);
+			//	rawdata_before_two, rawdata_before, rawdata);
 			if (wordCountEvent == 2)
 			{
 
@@ -268,10 +274,13 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 						x = -1;
 						y = -1;
 					}
-
+/*
 					if ((adc % 16 != 0 && overThresholdFlag == 1)
 							&& (oldVmmID != vmmID || oldChNo != chNo
 									|| oldBcid != bcid))
+*/
+					//if ((adc % 16 != 0 && overThresholdFlag == 1))	
+					if(true)			
 					{
 						if (!fViewEvent)
 						{
@@ -344,7 +353,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 					tdcTime = tacSlope * (double) tdc / 256;
 					//Chip time: bcid plus tdc value
 					//Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
-					chipTime = bcTime + tdcTime * 1e-3;
+					chipTime = bcTime*1000 + tdcTime;
 					//if(adc % 16 != 0)
 					//if (oldVmmID != vmmID || oldChNo != chNo || oldBcid != bcid)
 					//if(adc % 16 != 0)

@@ -1,3 +1,4 @@
+#include <sstream>
 #include "RawdataParser.h"
 #include "TMath.h"
 
