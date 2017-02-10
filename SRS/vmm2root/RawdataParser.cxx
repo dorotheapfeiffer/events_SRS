@@ -47,6 +47,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 	else if ((rawdata_before >> 8) == 0x564132)
 	{
 		inEvent = false;
+		wordCountEvent = 0;
 	}
 	else if (rawdata_before == 0xfafafafa)
 	{
@@ -82,6 +83,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 			if (rawdata != 7)
 			{
 				inEquipmentHeader = false;
+				wordCountEquipmentHeader = 0;
 			}
 		}
 		else if (wordCountEquipmentHeader == 5)
@@ -350,9 +352,9 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 					//BC time: bcid value * 1/(clock frequency)
 					bcTime = bcid * (1 / (double) bcClock);
 					//TDC time: tacSlope * tdc value (8 bit) * ramp length
-					tdcTime = tacSlope * (double) tdc / 256;
+					tdcTime = tacSlope * (double) tdc / 255;
 					//Chip time: bcid plus tdc value
-					//Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
+					//Talk Vinnie: HIT time  = BCIDx25 + ADC*125/255 [ns]
 					chipTime = bcTime*1000 + tdcTime;
 					//if(adc % 16 != 0)
 					//if (oldVmmID != vmmID || oldChNo != chNo || oldBcid != bcid)
