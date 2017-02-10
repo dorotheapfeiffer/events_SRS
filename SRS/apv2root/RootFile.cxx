@@ -180,6 +180,7 @@ void RootFile::FillPedestalData(int fecID, int apvID, int stripNo, float mean)
 	int theID = (fecID - 1) * NAPV + apvID;
 	chipData[theID][stripNo]->Fill(mean);
 
+
 }
 
 void RootFile::CreateHistograms(int minFecID, int maxFecID, int minAPVID,
@@ -351,6 +352,8 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 		int apvID, int chNo, float maxADC, int timeBinMaxADC,
 		std::vector<float> &timeBinADCs)
 {
+
+
 	m_timestamp = timestamp;
 	m_us = us;
 	m_evtID = eventId;
@@ -764,11 +767,11 @@ void RootFile::InitRootFile()
 	m_nchX = 0;
 	m_nchY = 0;
 	fFile = TFile::Open(fFileName, "RECREATE");
-	std::cout << "Root file " << fFileName << " created!" << std::endl;
 
 	if (!isPedestalRun && !isRawPedestalRun)
 	{
 		fHitTree = new TTree("events", "GEM events ROOT file");
+
 		fHitTree->SetDirectory(fFile);
 		m_fecID = new int[10000];
 		m_apvID = new int[10000];
@@ -809,7 +812,7 @@ void RootFile::InitRootFile()
 		m_adc27 = new short[10000];
 		m_adc28 = new short[10000];
 		m_adc29 = new short[10000];
-
+		
 		fHitTree->Branch("timestamp", &m_timestamp, "timestamp/I");
 		fHitTree->Branch("us", &m_us, "us/I");
 		fHitTree->Branch("evtID", &m_evtID, "evtID/I");
@@ -855,6 +858,7 @@ void RootFile::InitRootFile()
 		fHitTree->Branch("adc27", m_adc27, "adc27[nch]/S");
 		fHitTree->Branch("adc28", m_adc28, "adc28[nch]/S");
 		fHitTree->Branch("adc29", m_adc29, "adc29[nch]/S");
+	
 		//std::cout << "Hit tree created!" << std::endl;
 		if (isUTPCRun)
 		{
@@ -910,7 +914,7 @@ void RootFile::InitRootFile()
 
 		}
 	}
-
+	std::cout << "Root file " << fFileName << " created!" << std::endl;
 }
 
 //====================================================================================================================

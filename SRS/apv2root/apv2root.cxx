@@ -231,6 +231,7 @@ int main(int argc, char**argv)
 					isPedestal, isZS, zsCut, uFound, uTPCThreshold, xChips, yChips,vFound,
 					vStart, vEnd);
 
+
 		}
 		else
 		{
@@ -248,8 +249,10 @@ int main(int argc, char**argv)
 				rawdata_before = rawdata;
 				n = fread(&rawdata, sizeof(unsigned int), BUFFER_SIZE_INT, in);
 				counter += n;
+
 				eventNr = parser->AnalyzeWord(rawdata, rawdata_before,
 						rawdata_before_two);
+
 				if (eventNr < 0)
 				{
 					fclose(in);

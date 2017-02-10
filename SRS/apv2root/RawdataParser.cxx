@@ -36,7 +36,9 @@ RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 		}
 		fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
 				isZSRun, isUTPC, uTPCThreshold, xChips, yChips);
-	}
+
+
+ 	}
 }
 
 RawdataParser::~RawdataParser()
@@ -66,6 +68,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 
 	if ((rawdata_before >> 8) == 0x414443)
 	{
+
 		if (isZSRun == true)
 		{
 			std::cout
@@ -77,14 +80,14 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 		inEquipmentHeader = false;
 		wordCountEquipmentHeader = 0;
 		apvID = rawdata_before & 0xff;
-
 		wordCountEvent = 0;
 		chNo = 0;
 		maxADC = 0;
 		startDataFlag = false;
 
-		if (eventNr == 0)
+		if (eventNr == 1)
 		{
+
 			if (maxAPVID < apvID)
 			{
 				maxAPVID = apvID;
@@ -128,6 +131,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 
 		startDataFlag = false;
 		inEvent = false;
+
 		if (!fViewEvent)
 		{
 			fRoot->FillHits();
@@ -175,6 +179,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			{
 				return -1;
 			}
+
 			if (fViewStart <= eventNr && fViewEnd >= eventNr)
 			{
 				printf("\neventNr  %d - run Nr %d\n", eventNr, runNr);
@@ -197,7 +202,6 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			{
 				minFECID = fecID;
 			}
-
 		}
 	}
 	if ((rawdata >> 8) == 0x41505a || (rawdata >> 8) == 0x414443)
@@ -324,6 +328,7 @@ void RawdataParser::AnalyzeEventZS()
 //****************************************************************************
 void RawdataParser::AnalyzeEvent()
 {
+
 	for (int i = 0; i <= 1; i++)
 	{
 		if (startDataFlag)
@@ -468,6 +473,7 @@ void RawdataParser::ComputeRawPedestalData(int theApvID)
 		fRoot->FillPedestalData(fecID, theApvID, stripNo, mean);
 
 	}
+
 }
 
 //****************************************************************************
