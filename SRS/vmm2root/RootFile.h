@@ -13,7 +13,7 @@
 #include "TString.h"
 
 #define NFEC 4
-const long max_hit = 10000000000;
+const long max_hit = 100000000;
 
 using namespace std;
 
