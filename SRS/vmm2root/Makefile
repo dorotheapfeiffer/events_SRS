@@ -47,6 +47,6 @@ $(DICTIONARY): $(INCLUDES) $(LINKDEF)
 	$(ROOTCINT) -f $(DICTIONARY) -c -p $^
 
 clean:
-	rm -f $(EXECUTABLE) $(TARGET) $(OBJECTS) $(DICTIONARY) $(DICTOBJ) $(DICT)_rdict.pcm
+	rm -f $(EXECUTABLE) $(TARGET) $(OBJECTS) $(DICTIONARY) $(DICTOBJ) $(DICT)_rdict.pcm vmm2rootDict.cxx vmm2rootDict.h
 	
 .PHONY: clean
