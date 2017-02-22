@@ -3,10 +3,11 @@
 #include <time.h>
 
 RawdataParser::RawdataParser(std::string fileName, double bc, double tac,
-		std::vector<int> xChips, std::vector<int> yChips, bool viewEvent,
-		int viewStart, int viewEnd) :
-		bcClock(bc), tacSlope(tac), xChipIDs(xChips), yChipIDs(yChips), fViewEvent(
-				viewEvent), fViewStart(viewStart), fViewEnd(viewEnd)
+		std::vector<int> xChips, std::vector<int> yChips, std::string readout,
+		bool viewEvent, int viewStart, int viewEnd) :
+		bcClock(bc), tacSlope(tac), xChipIDs(xChips), yChipIDs(yChips), readoutType(
+				readout), fViewEvent(viewEvent), fViewStart(viewStart), fViewEnd(
+				viewEnd)
 {
 	if (!fViewEvent)
 	{
@@ -33,7 +34,7 @@ RawdataParser::~RawdataParser()
 unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		unsigned int rawdata_before, unsigned int rawdata_before_two)
 {
-	
+
 	//0x564d32 = VM2
 	if ((rawdata_before >> 8) == 0x564d32)
 	{
@@ -53,8 +54,98 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 	{
 		if (validEvent && !fViewEvent)
 		{
+
+			double time1 = 0, time2 = 0;
+
+			std::multimap<double, std::pair<int, unsigned int> > buffer;
+			std::multimap<double, std::pair<int, unsigned int>>::iterator itHits =
+					hitsX.begin();
+
+			int count = 0;
+			for (; itHits != hitsX.end(); itHits++)
+			{
+				time2 = time1;
+				time1 = itHits->first;
+				if (time1 - time2 < 500 || count == 0)
+				{
+					buffer.insert(
+							std::make_pair(time1,
+									std::make_pair(itHits->second.first,
+											itHits->second.second)));
+				}
+				else
+				{
+					std::multimap<double, std::pair<int, unsigned int>>::iterator itBuf =
+							buffer.begin();
+					float centerOfGravity = 0;
+					float centerOfTime = 0;
+					unsigned int totalADC = 0;
+
+					if (!buffer.empty())
+					{
+						//std::cout << "**************************" << std::endl;
+						for (; itBuf != buffer.end(); itBuf++)
+						{
+
+							centerOfGravity += itBuf->second.first
+									* itBuf->second.second;
+							centerOfTime += itBuf->first * itBuf->second.second;
+							totalADC += itBuf->second.second;
+/*
+							std::cout << itBuf->first << " "
+									<< itBuf->second.first << " "
+									<< itBuf->second.second << std::endl;
+									*/
+
+						}
+
+						centerOfGravity = (centerOfGravity / totalADC);
+						centerOfTime = (centerOfTime / totalADC);
+
+						//std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
+						fRoot->AddClusters(centerOfGravity, -1.0, totalADC,
+								centerOfTime);
+
+						buffer.clear();
+					}
+					buffer.insert(
+							std::make_pair(time1,
+									std::make_pair(itHits->second.first,
+											itHits->second.second)));
+				}
+				count++;
+			}
+			if (!buffer.empty())
+			{
+				std::multimap<double, std::pair<int, unsigned int>>::iterator itBuf =
+						buffer.begin();
+				double centerOfGravity = 0;
+				double centerOfTime = 0;
+				unsigned int totalADC = 0;
+				//std::cout << "**************************" << std::endl;
+				for (; itBuf != buffer.end(); itBuf++)
+				{
+
+					centerOfGravity += itBuf->second.first
+							* itBuf->second.second;
+					centerOfTime += itBuf->first * itBuf->second.second;
+					totalADC += itBuf->second.second;
+					//std::cout << itBuf->first << " "	<< itBuf->second.first << " "<< itBuf->second.second << std::endl;
+				}
+				centerOfGravity = (centerOfGravity / totalADC);
+				centerOfTime = (centerOfTime / totalADC);
+				//std::cout << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
+
+				fRoot->AddClusters(centerOfGravity, -1.0, totalADC,
+						centerOfTime);
+				buffer.clear();
+			}
+
 			//std::cout << "*****************************    Fill Hits!" << std::endl;
 			fRoot->FillHits();
+			hitsX.clear();
+			hitsY.clear();
+
 		}
 		inEvent = false;
 		wordCountEvent = 0;
@@ -103,12 +194,19 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		}
 		else if (wordCountEquipmentHeader == 19)
 		{
+			oldUnixtimestamp = unixtimestamp;
+			oldTimestamp_us = timestamp_us;
 			unixtimestamp = rawdata_before_two;
 			timestamp_us = rawdata_before;
+			deltaUnixTimestamp = 1000 * (unixtimestamp - oldUnixtimestamp)
+					+ 0.001 * (timestamp_us - oldTimestamp_us);
+			//deltaUnixTimestamp =  0.001*(timestamp_us-oldTimestamp_us);
 			eventSize = rawdata;
 
 			if (fViewStart <= eventNr && fViewEnd >= eventNr)
 			{
+				printf("Time since last unixtime  %.4f ms\n",
+						deltaUnixTimestamp);
 				time_t unixtime = (time_t) unixtimestamp;
 				printf("unixtimestamp %d -> %s", unixtimestamp,
 						asctime(gmtime(&unixtime)));
@@ -238,12 +336,34 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 				// 3 bit high res are 320 MHz = 3.125 ns
 				// high res disabled: 25 ns resolution
 				// high res enabled: 3.125 ns resolution
+				oldTriggerTimestamp = theTriggerTimestamp;
+
 				triggerTimestamp = rawdata_before;
 				theTriggerTimestamp = triggerTimestamp * 3.125;
 
+				if (oldTriggerTimestamp > theTriggerTimestamp)
+				{
+					deltaTriggerTimestamp = (13421772800 + theTriggerTimestamp
+							- oldTriggerTimestamp) * 0.001;
+
+				}
+				else
+				{
+					deltaTriggerTimestamp = (theTriggerTimestamp
+							- oldTriggerTimestamp) * 0.001;
+
+				}
 				if (fViewStart <= eventNr && fViewEnd >= eventNr)
 				{
-					printf("\tTriggerTimestamp %f\n", theTriggerTimestamp);
+					if (deltaTriggerTimestamp > 0)
+					{
+						printf("\tTime since last trigger %.4f us (%.4f kHz)\n",
+								deltaTriggerTimestamp,
+								1000 / deltaTriggerTimestamp);
+						printf("\tTriggerTimestamp %.2f\n",
+								theTriggerTimestamp);
+					}
+
 				}
 
 			}
@@ -261,14 +381,15 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 					planeID = GetPlaneID(vmmID);
 					// Plane 0: x
 					// plane 1: y
+					oldX = x;
 					if (planeID == 0)
 					{
-						x = GetChannelX(vmmID, chNo);
+						x = GetChannelX(vmmID, chNo, readoutType);
 						y = -1;
 					}
 					else if (planeID == 1)
 					{
-						y = GetChannelY(vmmID, chNo);
+						y = GetChannelY(vmmID, chNo, readoutType);
 						x = -1;
 					}
 					else
@@ -276,14 +397,20 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 						x = -1;
 						y = -1;
 					}
-/*
-					if ((adc % 16 != 0 && overThresholdFlag == 1)
-							&& (oldVmmID != vmmID || oldChNo != chNo
-									|| oldBcid != bcid))
-*/
-					//if ((adc % 16 != 0 && overThresholdFlag == 1))	
-					if(true)			
+
+					/*
+					 if ((adc % 16 != 0 && overThresholdFlag == 1)
+					 && (oldVmmID != vmmID || oldChNo != chNo
+					 || oldBcid != bcid))
+					 */
+					//if ((adc % 16 != 0))
+					if (true)
 					{
+						if (oldChipTime > (chipTime + 1000))
+						{
+							bcTime = (bcid + 4096) * (1 / (double) bcClock);
+							chipTime = bcTime * 1000 + tdcTime;
+						}
 						if (!fViewEvent)
 						{
 							fRoot->AddHits(unixtimestamp, timestamp_us, eventNr,
@@ -291,8 +418,22 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 									triggerTimestamp, overThresholdFlag, chNo,
 									x, y, adc, tdc, bcid, chipTime);
 						}
-						else if (fViewStart <= eventNr && fViewEnd >= eventNr)
+						if (x > -1)
 						{
+							hitsX.insert(
+									std::make_pair(chipTime,
+											std::make_pair(x, adc)));
+						}
+						if (y > -1)
+						{
+							hitsY.insert(
+									std::make_pair(chipTime,
+											std::make_pair(y, adc)));
+						}
+
+						if (fViewStart <= eventNr && fViewEnd >= eventNr)
+						{
+
 							if (planeID == 0)
 							{
 								printf(
@@ -313,7 +454,7 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 							printf("\t\t\tbcid %d, tdc %d, adc %d\n", bcid, tdc,
 									adc);
 							printf(
-									"\t\t\tbcTime %.2f us, tdcTime %.2f ns, time %.2f us\n",
+									"\t\t\tbcTime %.2f us, tdcTime %.2f ns, time %.2f ns\n",
 									bcTime, tdcTime, chipTime);
 						}
 					}
@@ -355,7 +496,10 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 					tdcTime = tacSlope * (double) tdc / 255;
 					//Chip time: bcid plus tdc value
 					//Talk Vinnie: HIT time  = BCIDx25 + ADC*125/255 [ns]
-					chipTime = bcTime*1000 + tdcTime;
+
+					oldChipTime = chipTime;
+					chipTime = bcTime * 1000 + tdcTime;
+
 					//if(adc % 16 != 0)
 					//if (oldVmmID != vmmID || oldChNo != chNo || oldBcid != bcid)
 					//if(adc % 16 != 0)
@@ -396,7 +540,7 @@ unsigned int RawdataParser::GetPlaneID(unsigned int chipID)
 }
 
 unsigned int RawdataParser::GetChannelX(unsigned int chipID,
-		unsigned int channelID)
+		unsigned int channelID, std::string readout)
 {
 	std::vector<int>::iterator it;
 
@@ -404,7 +548,7 @@ unsigned int RawdataParser::GetChannelX(unsigned int chipID,
 	if (it != xChipIDs.end())
 	{
 		int pos = it - xChipIDs.begin();
-		return (channelID + pos * 64);
+		return MapChipChannelToReadout(channelID + pos * 64, readout);
 	}
 	else
 	{
@@ -413,7 +557,7 @@ unsigned int RawdataParser::GetChannelX(unsigned int chipID,
 }
 
 unsigned int RawdataParser::GetChannelY(unsigned int chipID,
-		unsigned int channelID)
+		unsigned int channelID, std::string readout)
 {
 	std::vector<int>::iterator it;
 
@@ -421,7 +565,7 @@ unsigned int RawdataParser::GetChannelY(unsigned int chipID,
 	if (it != yChipIDs.end())
 	{
 		int pos = it - yChipIDs.begin();
-		return (channelID + pos * 64);
+		return MapChipChannelToReadout(channelID + pos * 64, readout);;
 	}
 	else
 	{
@@ -447,5 +591,85 @@ unsigned int RawdataParser::GrayToBinary32(unsigned int num)
 	num = num ^ (num >> 2);
 	num = num ^ (num >> 1);
 	return num;
+}
+
+int RawdataParser::MapChipChannelToReadout(unsigned int chNo,
+		std::string readout)
+{
+	if (readout == "MM1" || readout == "mm1")
+	{
+		return MMStripMappingHybrid1(chNo);
+	}
+	if (readout == "MM2" || readout == "mm2")
+	{
+		return MMStripMappingHybrid2(chNo);
+	}
+	if (readout == "MM3" || readout == "mm3")
+	{
+		return MMStripMappingHybrid3(chNo);
+	}
+	if (readout == "GEM" || readout == "gem")
+	{
+		return (chNo);
+	}
+	return (chNo);
+}
+
+int RawdataParser::MMStripMappingHybrid1(unsigned int chNo)
+{
+	if ((chNo % 2) == 1)
+	{
+		chNo = ((chNo - 1) / 2) + 32;
+	}
+	else
+	{
+		chNo = (chNo / 2);
+		if (chNo < 32)
+			chNo = 31 - chNo;
+		else if (chNo > 37)
+			chNo = 159 - chNo;
+		else
+			chNo += 90;
+	}
+	return chNo;
+}
+
+//=====================================================
+int RawdataParser::MMStripMappingHybrid2(unsigned int chNo)
+{
+	if ((chNo % 2) == 1)
+	{
+		chNo = ((chNo - 1) / 2) + 27;
+	}
+	else
+	{
+		chNo = (chNo / 2);
+		if (chNo < 27)
+			chNo = 26 - chNo;
+		else if (chNo > 38)
+			chNo = 154 - chNo;
+		else
+			chNo += 89;
+	}
+	return chNo;
+}
+
+int RawdataParser::MMStripMappingHybrid3(unsigned int chNo)
+{
+	if ((chNo % 2) == 1)
+	{
+		chNo = ((chNo - 1) / 2) + 26;
+	}
+	else
+	{
+		chNo = (chNo / 2);
+		if (chNo < 26)
+			chNo = 25 - chNo;
+		else if (chNo > 31)
+			chNo = 153 - chNo;
+		else
+			chNo += 96;
+	}
+	return chNo;
 }
 
