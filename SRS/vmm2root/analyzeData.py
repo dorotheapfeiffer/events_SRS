@@ -4,7 +4,7 @@ import re
 
 
 #directory=os.path.dirname(os.path.abspath(__file__))
-directory='/Users/dpfeiffe/data/vmm2TimingStudy/reset'
+directory='/Users/dpfeiffe/data/vmm2TimingStudy/clustering'
 for filename in os.listdir(directory):
 	print filename
 	if filename.endswith(".raw"): 

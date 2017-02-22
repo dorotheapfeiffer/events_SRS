@@ -13,7 +13,7 @@
 #include "TString.h"
 
 #define NFEC 4
-const long max_hit = 100000000;
+const long max_hit = 100000;
 
 using namespace std;
 
@@ -31,8 +31,11 @@ public:
 			unsigned short fecID, unsigned short eventSize,
 			unsigned int frameCounter, unsigned short vmmID,
 			double triggerTimestamp, UChar_t overThresholdFlag,
-			unsigned short chNo,  short x,  short y, short adc,
-			short tdc, short bcid, double chipTime);
+			unsigned short chNo, short x, short y, short adc, short tdc,
+			short bcid, double chipTime);
+
+	void AddClusters(float clusterX, float clusterY,
+			unsigned int clusterADC, float clusterTime);
 	void FillHits();
 
 	void DeleteHitsTree();
@@ -41,6 +44,7 @@ private:
 
 	TFile * fFile;
 	TTree * fHitTree;
+
 	TString fFileName;
 
 	unsigned long m_nch;
@@ -50,7 +54,7 @@ private:
 	signed int m_timestamp; 		//Unix time stamp
 	unsigned int m_us;
 	unsigned int m_eventNr;
-	unsigned int m_clusterNr;
+
 	unsigned short m_fecID;        // fecID
 	unsigned short m_eventSize;
 
@@ -66,6 +70,15 @@ private:
 	unsigned short * m_tdc;     //TDC value
 	unsigned short * m_bcid;    //BCID value
 	double * m_chipTime;    //Composed time of BCID and TDC (1 ns resolution)
+
+	unsigned long m_ncl;
+	unsigned long m_nclX;
+	unsigned long m_nclY;
+	unsigned int m_clusterNr;
+	float * m_clusterX;
+	float * m_clusterY;
+	unsigned int * m_clusterADC;
+	float * m_clusterTime;
 
 	ClassDef(RootFile,1)
 };

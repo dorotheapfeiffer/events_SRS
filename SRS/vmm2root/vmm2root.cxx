@@ -18,7 +18,6 @@ unsigned int rawdata_before_two = 0;
 unsigned int rawdata_before = 0;
 unsigned int rawdata = 0;
 
-
 unsigned int validEvents = 0;
 std::string fileName = "";
 unsigned long counter = 0;
@@ -30,6 +29,7 @@ double tac = 125;
 double bc = 40;
 std::vector<int> xChips;
 std::vector<int> yChips;
+std::string readout = "GEM";
 
 bool rdFound = false;
 
@@ -38,6 +38,7 @@ bool tacFound = false;
 bool bcFound = false;
 bool xFound = false;
 bool yFound = false;
+bool readoutFound = false;
 
 int printUsage(std::string errorMessage);
 
@@ -55,7 +56,7 @@ int main(int argc, char**argv)
 			rdFound = true;
 			fileName = argv[i + 1];
 		}
-		
+
 		else if (strncmp(argv[i], "-tac", 4) == 0)
 		{
 			tacFound = true;
@@ -88,6 +89,8 @@ int main(int argc, char**argv)
 					lastOffset = offset + 1; // add one to skip the delimiter
 				}
 			}
+			//std::cout << "x1 " << xChips[0] << std::endl;
+			//	std::cout << "x2 " << xChips[1] << std::endl;
 
 		}
 		else if (strncmp(argv[i], "-y", 2) == 0)
@@ -133,7 +136,17 @@ int main(int argc, char**argv)
 				return printUsage("Wrong usage of -v start-end!");
 			}
 		}
-
+		else if (strncmp(argv[i], "-readout", 2) == 0)
+		{
+			readoutFound = true;
+			readout = argv[i + 1];
+			if(readout != "MM1" && readout != "MM2" && readout != "MM3" && readout != "mm1" &&
+					readout != "mm2" && readout != "mm3" &&
+					readout != "GEM" && readout != "gem")
+			{
+				return printUsage("Wrong type of readout: MM1, MM2, MM3 or GEM are valid!");
+			}
+		}
 		else
 		{
 			return printUsage("Wrong type of argument!");
@@ -163,7 +176,7 @@ int main(int argc, char**argv)
 		message << "File " << fileName << " does not exist!" << std::endl;
 		return printUsage(message.str());
 	}
-	parser = new RawdataParser(fileName, bc, tac, xChips, yChips, vFound,
+	parser = new RawdataParser(fileName, bc, tac, xChips, yChips, readout, vFound,
 			vStart, vEnd);
 
 	if (in)
@@ -214,19 +227,22 @@ int printUsage(std::string errorMessage)
 
 	printf("\nUsages:\n");
 	printf(
-			"analyse raw data:\n\traw2root -rd data.raw -x 0,1,2,3 -y 4,5,6,7 [-n events -v start-end -bc MHz - tac ns] \n");
+			"analyse raw data:\n\traw2root -rd data.raw -x 0,1,2,3 -y 4,5,6,7 [-n events -v start-end -bc MHz - tac ns -readout MM1] \n");
 
 	printf("\nFlags:\n");
 	printf(
 			"-rd: raw data file with the extension .raw\n\tThe data file was created by DATE.\n");
-	printf("-x: mapping of chips, list of chips in x direction separated by comma\n\n");
-	printf("-y: mapping of chips, list of chips in y direction separated by comma\n\n");
+	printf(
+			"-x: mapping of chips, list of chips in x direction separated by comma\n\n");
+	printf(
+			"-y: mapping of chips, list of chips in y direction separated by comma\n\n");
 	printf(
 			"-n: number of events to analyze. Optional argument.\n\tIf not used, all events in the file will be analyzed.\n\n");
 	printf(
 			"-v: events to display. Optional argument.\n\tIf not used, a root tree will be created.\n\n");
 	printf("-bc: bunch crossing clock. Optional argument (default 40 MHz)\n\n");
 	printf("-tac: tac slope. Optional argument (default 125 ns)\n\n");
+	printf("-readout: type of readout board. Optional argument (default GEM)\n\n");
 
 	return -1;
 }
