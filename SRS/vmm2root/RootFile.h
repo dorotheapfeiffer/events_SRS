@@ -34,7 +34,7 @@ public:
 			unsigned short chNo, short x, short y, short adc, short tdc,
 			short bcid, double chipTime);
 
-	void AddClusters(float clusterX, float clusterY,
+	void AddClusters(float clusterX, float clusterY,short clusterSize,
 			unsigned int clusterADC, float clusterTime);
 	void FillHits();
 
@@ -75,6 +75,7 @@ private:
 	unsigned long m_nclX;
 	unsigned long m_nclY;
 	unsigned int m_clusterNr;
+	short* m_clusterSize;
 	float * m_clusterX;
 	float * m_clusterY;
 	unsigned int * m_clusterADC;
