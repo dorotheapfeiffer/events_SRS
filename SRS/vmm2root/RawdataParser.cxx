@@ -54,10 +54,14 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 	{
 		if (validEvent && !fViewEvent)
 		{
+			const int minSize=1;
+			const int minDeltaT=250;
+			double time1 = -1, time2 = -1;
 
-			double time1 = 0, time2 = 0;
+			//std::multimap<double, std::pair<int, unsigned int> > buffer;
 
-			std::multimap<double, std::pair<int, unsigned int> > buffer;
+			std::multimap<int, std::pair<double, unsigned int> > cluster;
+
 			std::multimap<double, std::pair<int, unsigned int>>::iterator itHits =
 					hitsX.begin();
 
@@ -66,80 +70,123 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 			{
 				time2 = time1;
 				time1 = itHits->first;
-				if (time1 - time2 < 500 || count == 0)
+
+				if ((time1 - time2 <= minDeltaT) || count == 0)
 				{
-					buffer.insert(
-							std::make_pair(time1,
-									std::make_pair(itHits->second.first,
+					cluster.insert(
+							std::make_pair(itHits->second.first,
+									std::make_pair(time1,
 											itHits->second.second)));
 				}
 				else
 				{
-					std::multimap<double, std::pair<int, unsigned int>>::iterator itBuf =
-							buffer.begin();
-					float centerOfGravity = 0;
-					float centerOfTime = 0;
-					unsigned int totalADC = 0;
 
-					if (!buffer.empty())
+					if (cluster.size() >= minSize)
 					{
+						std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
+								cluster.begin();
+						float centerOfGravity = 0;
+						float centerOfTime = 0;
+						unsigned int totalADC = 0;
+						unsigned int adc1 = 9999, adc2 = 9999;
+						int strip1 = -1, strip2 = -1;
+						int stripCount = 0;
 						//std::cout << "**************************" << std::endl;
-						for (; itBuf != buffer.end(); itBuf++)
+						for (; itCluster != cluster.end(); itCluster++)
 						{
+							adc2 = adc1;
+							adc1 = itCluster->second.second;
+							strip2 = strip1;
+							strip1 = itCluster->first;
+							if(stripCount != 0  && abs(strip1 - strip2))
+							{
 
-							centerOfGravity += itBuf->second.first
-									* itBuf->second.second;
-							centerOfTime += itBuf->first * itBuf->second.second;
-							totalADC += itBuf->second.second;
-/*
-							std::cout << itBuf->first << " "
-									<< itBuf->second.first << " "
-									<< itBuf->second.second << std::endl;
-									*/
+								//std::cout << strip1 << " " << itCluster->second.first << " " << adc1 << " " << adc1%16 << " " << itCluster->second.first << " " <<adc2 << " " << adc2%16 << " " << abs((int)adc1-(int)adc2) << std::endl;
+
+
+							}
+							if (stripCount == 0 || (abs(strip1 - strip2) != 0 && abs(strip1 - strip2) <=2) )
+							{
+								stripCount++;
+								centerOfGravity += itCluster->first
+										* itCluster->second.second;
+								centerOfTime += itCluster->second.first
+										* itCluster->second.second;
+								totalADC += itCluster->second.second;
+								/*
+								 std::cout << itBuf->first << " "
+								 << itBuf->second.first << " "
+								 << itBuf->second.second << std::endl;
+								 */
+							}
 
 						}
+						if (stripCount >= minSize)
+						{
+							centerOfGravity = (centerOfGravity / (double)totalADC);
+							centerOfTime = (centerOfTime / totalADC);
+							if(centerOfGravity > 127)
+								std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
+							fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
+									centerOfTime);
+						}
 
-						centerOfGravity = (centerOfGravity / totalADC);
-						centerOfTime = (centerOfTime / totalADC);
-
-						//std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
-						fRoot->AddClusters(centerOfGravity, -1.0, totalADC,
-								centerOfTime);
-
-						buffer.clear();
 					}
-					buffer.insert(
-							std::make_pair(time1,
-									std::make_pair(itHits->second.first,
+					cluster.clear();
+					cluster.insert(
+							std::make_pair(itHits->second.first,
+									std::make_pair(time1,
 											itHits->second.second)));
+
 				}
 				count++;
 			}
-			if (!buffer.empty())
+
+			if (cluster.size() >= minSize)
 			{
-				std::multimap<double, std::pair<int, unsigned int>>::iterator itBuf =
-						buffer.begin();
-				double centerOfGravity = 0;
-				double centerOfTime = 0;
+				std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
+						cluster.begin();
+				float centerOfGravity = 0;
+				float centerOfTime = 0;
 				unsigned int totalADC = 0;
+				unsigned int adc1 = 9999, adc2 = 9999;
+				int strip1 = -1, strip2 = -1;
+				int stripCount = 0;
 				//std::cout << "**************************" << std::endl;
-				for (; itBuf != buffer.end(); itBuf++)
+				for (; itCluster != cluster.end(); itCluster++)
 				{
+					adc2 = adc1;
+					adc1 = itCluster->second.second;
+					strip2 = strip1;
+					strip1 = itCluster->first;
+					if (stripCount == 0 || (abs(strip1 - strip2) != 0 && abs(strip1 - strip2) <=2) )
+					{
+						stripCount++;
+						centerOfGravity += itCluster->first
+								* itCluster->second.second;
+						centerOfTime += itCluster->second.first
+								* itCluster->second.second;
+						totalADC += itCluster->second.second;
+						/*
+						 std::cout << itBuf->first << " "
+						 << itBuf->second.first << " "
+						 << itBuf->second.second << std::endl;
+						 */
+					}
 
-					centerOfGravity += itBuf->second.first
-							* itBuf->second.second;
-					centerOfTime += itBuf->first * itBuf->second.second;
-					totalADC += itBuf->second.second;
-					//std::cout << itBuf->first << " "	<< itBuf->second.first << " "<< itBuf->second.second << std::endl;
 				}
-				centerOfGravity = (centerOfGravity / totalADC);
-				centerOfTime = (centerOfTime / totalADC);
-				//std::cout << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
+				if (stripCount >= minSize)
+				{
+					centerOfGravity = (centerOfGravity / (double)totalADC);
+					centerOfTime = (centerOfTime / totalADC);
+					if(centerOfGravity > 127)
+					std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
+					fRoot->AddClusters(centerOfGravity, -1.0, stripCount,totalADC,
+							centerOfTime);
+				}
 
-				fRoot->AddClusters(centerOfGravity, -1.0, totalADC,
-						centerOfTime);
-				buffer.clear();
 			}
+			cluster.clear();
 
 			//std::cout << "*****************************    Fill Hits!" << std::endl;
 			fRoot->FillHits();
@@ -234,22 +281,22 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 		}
 
 	}
-	// **********************************************************************************
-	// Readout frequency
-	// **********************************************************************************
-	// Trigger preset: Hex number that gives time period, to be multiplied by 25 ns
-	// Example:
-	// 	- Trigger preset 0xFAO = 4000, 4000 * 25 ns = 100000 ns = 100 us,
-	//	=> frequency = 10kHz
-	// **********************************************************************************
-	// Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
-	// 12-bit bcid, overflows after 4096 clock cycles
-	// To get useful bcid, trigger preset has to be chosen so that bcid does not overflow
-	// **********************************************************************************
+// **********************************************************************************
+// Readout frequency
+// **********************************************************************************
+// Trigger preset: Hex number that gives time period, to be multiplied by 25 ns
+// Example:
+// 	- Trigger preset 0xFAO = 4000, 4000 * 25 ns = 100000 ns = 100 us,
+//	=> frequency = 10kHz
+// **********************************************************************************
+// Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
+// 12-bit bcid, overflows after 4096 clock cycles
+// To get useful bcid, trigger preset has to be chosen so that bcid does not overflow
+// **********************************************************************************
 
-	// **********************************************************************************
-	// VMM2 register
-	// **********************************************************************************
+// **********************************************************************************
+// VMM2 register
+// **********************************************************************************
 	/*
 	 (*RegGlobNames)[0] ="glob_polarity";           (*RegGlob)[0] = 0;   (*RegGlobVals)[0]={"wires", "strips"};
 	 (*RegGlobNames)[1] ="glob_leakage_current";    (*RegGlob)[1] = 1;   (*RegGlobVals)[1]={"0", "1", "true", "false"};

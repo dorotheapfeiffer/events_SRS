@@ -54,6 +54,8 @@ void RootFile::DeleteHitsTree()
 	if (m_vmmID)
 		delete[] m_vmmID;
 
+	if (m_clusterSize)
+			delete[] m_clusterSize;
 	if (m_clusterX)
 		delete[] m_clusterX;
 	if (m_clusterY)
@@ -116,17 +118,14 @@ void RootFile::AddHits(signed int timestamp, unsigned int us,
 }
 
 //====================================================================================================================
-void RootFile::AddClusters(float clusterX, float clusterY, unsigned int clusterADC, float clusterTime)
+void RootFile::AddClusters(float clusterX, float clusterY, short clusterSize, unsigned int clusterADC, float clusterTime)
 {
 
 	if (m_ncl < max_hit)
 	{
 
 		m_clusterNr++;
-		if(clusterX > 200)
-		{
-			std::cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
-		}
+
 
 		if (clusterX > -1.0)
 		{
@@ -138,7 +137,7 @@ void RootFile::AddClusters(float clusterX, float clusterY, unsigned int clusterA
 			m_clusterY[m_nclY] = clusterY;
 			m_nclY++;
 		}
-
+		m_clusterSize[m_ncl] = clusterSize;
 		m_clusterADC[m_ncl] = clusterADC;
 		m_clusterTime[m_ncl] = clusterTime;
 
@@ -195,6 +194,8 @@ void RootFile::InitRootFile()
 	m_bcid = new unsigned short[max_hit];
 	//m_gray_bcid = new unsigned short[max_hit];
 	m_chipTime = new double[max_hit];
+	m_clusterSize = new short[max_hit];
+
 	m_clusterX = new float[max_hit];
 	m_clusterY = new float[max_hit];
 	m_clusterADC = new unsigned int[max_hit];
@@ -230,9 +231,10 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("nclX", &m_nclX, "nclX/i");
 	fHitTree->Branch("nclY", &m_nclY, "nclY/i");
 	fHitTree->Branch("clusterNr", &m_clusterNr, "clusterNr/i");
+	fHitTree->Branch("clusterSize", m_clusterSize, "clusterSize[ncl]/s");
 	fHitTree->Branch("clusterX", m_clusterX, "clusterX[nclX]/F");
 	fHitTree->Branch("clusterY", m_clusterY, "clusterY[nclY]/F");
-	fHitTree->Branch("clusterADC", m_clusterADC, "adcm_clusterADC[ncl]/s");
+	fHitTree->Branch("clusterADC", m_clusterADC, "clusterADC[ncl]/s");
 	fHitTree->Branch("clusterTime", m_clusterTime, "clusterTime[ncl]/F");
 
 	std::cout << "Root file " << fFileName << " created!" << std::endl;
