@@ -1,47 +1,50 @@
-
 #include <vector>
 #include <list>
 #include <map>
 
 #include "RootFile.h"
 
-
-
 class RawdataParser
 {
 public:
 	RawdataParser(std::string fileName, double bc, double tac,
-		std::vector<int> xChipIDs, std::vector<int> yChipIDs, std::string readout,
-		bool viewEvent, int viewStart, int viewEnd);
+			std::vector<int> xChipIDs, std::vector<int> yChipIDs,
+			std::string readout, bool viewEvent, int viewStart, int viewEnd);
 	~RawdataParser();
-	
-	unsigned int AnalyzeWord(unsigned int rawdata,unsigned int rawdata_before,unsigned int rawdata_before_two);
+
+	unsigned int AnalyzeWord(unsigned int rawdata, unsigned int rawdata_before,
+			unsigned int rawdata_before_two);
 	unsigned int GrayToBinary32(unsigned int num);
 	unsigned int ReverseBits(unsigned int n);
 	unsigned int GetPlaneID(unsigned int chipID);
-	unsigned int GetChannelX(unsigned int chipID, unsigned int channelID, std::string readout);
-	unsigned int GetChannelY(unsigned int chipID, unsigned int channelID, std::string readout);
-
-	 int MapChipChannelToReadout(unsigned int chNo,
+	unsigned int GetChannelX(unsigned int chipID, unsigned int channelID,
 			std::string readout);
- int MMStripMappingHybrid1(unsigned int chNo);
-	 int MMStripMappingHybrid2(unsigned int chNo);
-	 int MMStripMappingHybrid3(unsigned int chNo);
+	unsigned int GetChannelY(unsigned int chipID, unsigned int channelID,
+			std::string readout);
 
+	int MapChipChannelToReadout(unsigned int chNo, std::string readout);
+	int MMStripMappingHybrid1(unsigned int chNo);
+	int MMStripMappingHybrid2(unsigned int chNo);
+	int MMStripMappingHybrid3(unsigned int chNo);
+
+	int clusterStrips(std::multimap<int, std::pair<double, unsigned int>> & cluster,
+			int minDeltaStrip);
+	int createClusters(std::multimap<double, std::pair<int, unsigned int>>& hits,
+			double minDeltaT,int minDeltaStrip);
 private:
-	RootFile *fRoot=0;
+	RootFile *fRoot = 0;
 	double bcClock = 0;
 	double tacSlope = 0;
 	std::vector<int> xChipIDs;
 	std::vector<int> yChipIDs;
 	std::string readoutType;
-	bool fViewEvent=false;
-	int fViewStart=0;
-	int fViewEnd=0;
-	long discarded=0;
+	bool fViewEvent = false;
+	int fViewStart = 0;
+	int fViewEnd = 0;
+	long discarded = 0;
 
-	std::multimap<double, std::pair<int,unsigned int> > hitsX;
-	std::multimap<double, std::pair<int,unsigned int> > hitsY;
+	std::multimap<double, std::pair<int, unsigned int> > hitsX;
+	std::multimap<double, std::pair<int, unsigned int> > hitsY;
 
 	signed int unixtimestamp = 0;
 	unsigned int timestamp_us = 0;
@@ -65,9 +68,9 @@ private:
 	unsigned int oldChNo = -1;
 	double chipTime = 0;
 	double oldChipTime = 0;
-	double bcTime=0;
-	double tdcTime=0;
-	
+	double bcTime = 0;
+	double tdcTime = 0;
+
 	unsigned int runNr = 0;
 	unsigned int eventNr = 0;
 	unsigned int eventSize = 0;
@@ -78,10 +81,10 @@ private:
 	unsigned int vmmID = 0;
 	unsigned int planeID = -1;
 	unsigned int chNo = 0;
-	
-	int x=-1;
-	int oldX=-1;
-	int y=-1;
+
+	int x = -1;
+	int oldX = -1;
+	int y = -1;
 	bool inEvent = false;
 	bool validEvent = false;
 	unsigned int wordCountEquipmentHeader = 0;
