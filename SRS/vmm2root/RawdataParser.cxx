@@ -54,141 +54,10 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 	{
 		if (validEvent && !fViewEvent)
 		{
-			const int minSize=1;
-			const int minDeltaT=250;
-			double time1 = -1, time2 = -1;
+			const int minDeltaStrip = 2;
+			const int minDeltaT = 150;
+			int clusterCount = createClusters(hitsX,minDeltaT,minDeltaStrip);
 
-			//std::multimap<double, std::pair<int, unsigned int> > buffer;
-
-			std::multimap<int, std::pair<double, unsigned int> > cluster;
-
-			std::multimap<double, std::pair<int, unsigned int>>::iterator itHits =
-					hitsX.begin();
-
-			int count = 0;
-			for (; itHits != hitsX.end(); itHits++)
-			{
-				time2 = time1;
-				time1 = itHits->first;
-
-				if ((time1 - time2 <= minDeltaT) || count == 0)
-				{
-					cluster.insert(
-							std::make_pair(itHits->second.first,
-									std::make_pair(time1,
-											itHits->second.second)));
-				}
-				else
-				{
-
-					if (cluster.size() >= minSize)
-					{
-						std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
-								cluster.begin();
-						float centerOfGravity = 0;
-						float centerOfTime = 0;
-						unsigned int totalADC = 0;
-						unsigned int adc1 = 9999, adc2 = 9999;
-						int strip1 = -1, strip2 = -1;
-						int stripCount = 0;
-						//std::cout << "**************************" << std::endl;
-						for (; itCluster != cluster.end(); itCluster++)
-						{
-							adc2 = adc1;
-							adc1 = itCluster->second.second;
-							strip2 = strip1;
-							strip1 = itCluster->first;
-							if(stripCount != 0  && abs(strip1 - strip2))
-							{
-
-								//std::cout << strip1 << " " << itCluster->second.first << " " << adc1 << " " << adc1%16 << " " << itCluster->second.first << " " <<adc2 << " " << adc2%16 << " " << abs((int)adc1-(int)adc2) << std::endl;
-
-
-							}
-							if (stripCount == 0 || (abs(strip1 - strip2) != 0 && abs(strip1 - strip2) <=2) )
-							{
-								stripCount++;
-								centerOfGravity += itCluster->first
-										* itCluster->second.second;
-								centerOfTime += itCluster->second.first
-										* itCluster->second.second;
-								totalADC += itCluster->second.second;
-								/*
-								 std::cout << itBuf->first << " "
-								 << itBuf->second.first << " "
-								 << itBuf->second.second << std::endl;
-								 */
-							}
-
-						}
-						if (stripCount >= minSize)
-						{
-							centerOfGravity = (centerOfGravity / (double)totalADC);
-							centerOfTime = (centerOfTime / totalADC);
-							if(centerOfGravity > 127)
-								std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
-							fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
-									centerOfTime);
-						}
-
-					}
-					cluster.clear();
-					cluster.insert(
-							std::make_pair(itHits->second.first,
-									std::make_pair(time1,
-											itHits->second.second)));
-
-				}
-				count++;
-			}
-
-			if (cluster.size() >= minSize)
-			{
-				std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
-						cluster.begin();
-				float centerOfGravity = 0;
-				float centerOfTime = 0;
-				unsigned int totalADC = 0;
-				unsigned int adc1 = 9999, adc2 = 9999;
-				int strip1 = -1, strip2 = -1;
-				int stripCount = 0;
-				//std::cout << "**************************" << std::endl;
-				for (; itCluster != cluster.end(); itCluster++)
-				{
-					adc2 = adc1;
-					adc1 = itCluster->second.second;
-					strip2 = strip1;
-					strip1 = itCluster->first;
-					if (stripCount == 0 || (abs(strip1 - strip2) != 0 && abs(strip1 - strip2) <=2) )
-					{
-						stripCount++;
-						centerOfGravity += itCluster->first
-								* itCluster->second.second;
-						centerOfTime += itCluster->second.first
-								* itCluster->second.second;
-						totalADC += itCluster->second.second;
-						/*
-						 std::cout << itBuf->first << " "
-						 << itBuf->second.first << " "
-						 << itBuf->second.second << std::endl;
-						 */
-					}
-
-				}
-				if (stripCount >= minSize)
-				{
-					centerOfGravity = (centerOfGravity / (double)totalADC);
-					centerOfTime = (centerOfTime / totalADC);
-					if(centerOfGravity > 127)
-					std::cout <<  "\n" << centerOfTime << " " << centerOfGravity	<< " " << totalADC << std::endl;
-					fRoot->AddClusters(centerOfGravity, -1.0, stripCount,totalADC,
-							centerOfTime);
-				}
-
-			}
-			cluster.clear();
-
-			//std::cout << "*****************************    Fill Hits!" << std::endl;
 			fRoot->FillHits();
 			hitsX.clear();
 			hitsY.clear();
@@ -718,5 +587,97 @@ int RawdataParser::MMStripMappingHybrid3(unsigned int chNo)
 			chNo += 96;
 	}
 	return chNo;
+}
+
+int RawdataParser::createClusters(
+		std::multimap<double, std::pair<int, unsigned int>>& hits,
+		double minDeltaT, int minDeltaStrip)
+{
+	std::multimap<int, std::pair<double, unsigned int> > cluster;
+
+	std::multimap<double, std::pair<int, unsigned int>>::iterator itHits =
+			hits.begin();
+
+	int stripCount = 0;
+	int clusterCount = 0;
+	double time1 = 0, time2 = 0;
+	unsigned int adc1 = 0;
+	int strip1 = 0;
+	for (; itHits != hits.end(); itHits++)
+	{
+		time2 = time1;
+		time1 = itHits->first;
+		strip1 = itHits->second.first;
+		adc1 = itHits->second.second;
+
+		if ((time1 - time2 > minDeltaT) && stripCount > 0)
+		{
+			clusterCount += clusterStrips(cluster,minDeltaStrip);
+			cluster.clear();
+		}
+		cluster.insert(std::make_pair(strip1, std::make_pair(time1, adc1)));
+		stripCount++;
+	}
+	clusterCount += clusterStrips(cluster,minDeltaStrip);
+	return clusterCount;
+}
+
+int RawdataParser::clusterStrips(
+		std::multimap<int, std::pair<double, unsigned int>> & cluster,
+		int minDeltaStrip)
+{
+
+	std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
+			cluster.begin();
+	double centerOfGravity = 0;
+	double centerOfTime = 0;
+	unsigned int totalADC = 0;
+	double time1 = 0;
+	unsigned int adc1 = 0;
+	int strip1 = 0, strip2 = 0;
+	int stripCount = 0;
+	int clusterCount = 0;
+
+	for (; itCluster != cluster.end(); itCluster++)
+	{
+		adc1 = itCluster->second.second;
+		strip2 = strip1;
+		strip1 = itCluster->first;
+		time1 = itCluster->second.first;
+
+		if (stripCount == 0
+				|| (abs(strip1 - strip2) > 0
+						&& abs(strip1 - strip2) <= minDeltaStrip))
+		{
+			centerOfGravity += strip1 * adc1;
+			centerOfTime += time1 * adc1;
+			totalADC += adc1;
+			stripCount++;
+
+		}
+		else if (abs(strip1 - strip2) > minDeltaStrip)
+		{
+			centerOfGravity = (centerOfGravity / (double) totalADC);
+			centerOfTime = (centerOfTime / totalADC);
+			fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
+					centerOfTime);
+
+			clusterCount++;
+			stripCount = 0;
+			centerOfGravity = 0;
+			centerOfTime = 0;
+			totalADC = 0;
+			strip1 = 0;
+		}
+	}
+	if (stripCount > 0)
+	{
+		centerOfGravity = (centerOfGravity / (double) totalADC);
+		centerOfTime = (centerOfTime / totalADC);
+		fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
+				centerOfTime);
+		clusterCount++;
+	}
+	return clusterCount;
 }
 
