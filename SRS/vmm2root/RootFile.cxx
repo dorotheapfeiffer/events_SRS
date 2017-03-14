@@ -54,17 +54,22 @@ void RootFile::DeleteHitsTree()
 	if (m_vmmID)
 		delete[] m_vmmID;
 
-	if (m_clusterSize)
-			delete[] m_clusterSize;
+	if (m_clusterSizeX)
+		delete[] m_clusterSizeX;
+	if (m_clusterSizeY)
+		delete[] m_clusterSizeY;
 	if (m_clusterX)
 		delete[] m_clusterX;
 	if (m_clusterY)
 		delete[] m_clusterY;
-	if (m_clusterADC)
-		delete[] m_clusterADC;
-
-	if (m_clusterTime)
-		delete[] m_clusterTime;
+	if (m_clusterADCX)
+		delete[] m_clusterADCX;
+	if (m_clusterTimeX)
+		delete[] m_clusterTimeX;
+	if (m_clusterADCY)
+		delete[] m_clusterADCY;
+	if (m_clusterTimeY)
+		delete[] m_clusterTimeY;
 
 }
 
@@ -118,30 +123,30 @@ void RootFile::AddHits(signed int timestamp, unsigned int us,
 }
 
 //====================================================================================================================
-void RootFile::AddClusters(float clusterX, float clusterY, short clusterSize, unsigned int clusterADC, float clusterTime)
+void RootFile::AddClusters(float clusterPosition, short clusterSize,
+		unsigned int clusterADC, float clusterTime, string coordinate)
 {
 
-	if (m_ncl < max_hit)
+	if (m_nclX < max_hit || m_nclY < max_hit)
 	{
-
-		m_clusterNr++;
-
-
-		if (clusterX > -1.0)
+		if (coordinate == "x" && clusterPosition > -1.0)
 		{
-			m_clusterX[m_nclX] = clusterX;
+			m_clusterX[m_nclX] = clusterPosition;
+			m_clusterSizeX[m_nclX] = clusterSize;
+			m_clusterADCX[m_nclX] = clusterADC;
+			m_clusterTimeX[m_nclX] = clusterTime;
+			clustersX.insert(std::make_pair(clusterTime, clusterPosition));
 			m_nclX++;
 		}
-		if (clusterY > -1.0)
+		if (coordinate == "y" && clusterPosition > -1.0)
 		{
-			m_clusterY[m_nclY] = clusterY;
+			m_clusterY[m_nclY] = clusterPosition;
+			m_clusterSizeY[m_nclY] = clusterSize;
+			m_clusterADCY[m_nclY] = clusterADC;
+			m_clusterTimeY[m_nclY] = clusterTime;
+			clustersY.insert(std::make_pair(clusterTime, clusterPosition));
 			m_nclY++;
 		}
-		m_clusterSize[m_ncl] = clusterSize;
-		m_clusterADC[m_ncl] = clusterADC;
-		m_clusterTime[m_ncl] = clusterTime;
-
-		m_ncl++;
 
 	}
 	else
@@ -153,14 +158,75 @@ void RootFile::AddClusters(float clusterX, float clusterY, short clusterSize, un
 
 void RootFile::FillHits()
 {
+	std::multimap<float, float>::iterator itClusterX = clustersX.begin();
+
+	for (; itClusterX != clustersX.end(); itClusterX++)
+	{
+		float tx = itClusterX->first;
+		float px = itClusterX->second;
+		int nx = 0;
+
+		std::multimap<float, float>::iterator itClusterY = clustersY.begin();
+		m_clusterNumberY[nx] = 0;
+		for (; itClusterY != clustersY.end(); itClusterY++)
+		{
+			float ty = itClusterY->first;
+			float py = itClusterY->second;
+
+			if (abs(ty - tx) <= minDeltaT)
+			{
+				m_clusterNumberY[nx]++;
+
+				//std::cout << "Cluster time x " << tx << ", " << px << ", cluster time y "
+				///		<< ty << ", " << py << " - " << m_clusterNumberY[nx] << std::endl;
+			}
+			if (ty - tx > minDeltaT)
+			{
+				break;
+			}
+		}
+		nx++;
+	}
+
+	std::multimap<float, float>::iterator itClusterY = clustersY.begin();
+
+	for (; itClusterY != clustersY.end(); itClusterY++)
+	{
+		float ty = itClusterY->first;
+		float py = itClusterY->second;
+		int ny = 0;
+
+		std::multimap<float, float>::iterator itClusterX = clustersX.begin();
+		m_clusterNumberX[ny] = 0;
+		for (; itClusterX != clustersX.end(); itClusterX++)
+		{
+			float tx = itClusterX->first;
+			float px = itClusterX->second;
+
+			if (abs(tx - ty) <= minDeltaT)
+			{
+				m_clusterNumberX[ny]++;
+
+				//std::cout << "Cluster time y " << ty << ", " << py << ", cluster time x "
+				//						<< tx << ", " << px << " - " << m_clusterNumberX[ny] << std::endl;
+			}
+			if (tx - ty > minDeltaT)
+			{
+				break;
+			}
+		}
+		ny++;
+	}
+	if(m_nch>0)
 	fHitTree->Fill();
 	//fHitTree->Write(0, TObject::kWriteDelete);
 	m_nch = 0;
 	m_nchX = 0;
 	m_nchY = 0;
-	m_ncl = 0;
-		m_nclX = 0;
-		m_nclY = 0;
+	m_nclX = 0;
+	m_nclY = 0;
+	clustersX.clear();
+	clustersY.clear();
 }
 
 //====================================================================================================================
@@ -171,8 +237,6 @@ void RootFile::InitRootFile()
 	m_nchX = 0;
 	m_nchY = 0;
 
-	m_clusterNr = 0;
-	m_ncl = 0;
 	m_nclX = 0;
 	m_nclY = 0;
 
@@ -194,12 +258,16 @@ void RootFile::InitRootFile()
 	m_bcid = new unsigned short[max_hit];
 	//m_gray_bcid = new unsigned short[max_hit];
 	m_chipTime = new double[max_hit];
-	m_clusterSize = new short[max_hit];
-
+	m_clusterSizeX = new unsigned short[max_hit];
+	m_clusterSizeY = new unsigned short[max_hit];
+	m_clusterNumberX = new unsigned short[max_hit];
+	m_clusterNumberY = new unsigned short[max_hit];
 	m_clusterX = new float[max_hit];
 	m_clusterY = new float[max_hit];
-	m_clusterADC = new unsigned int[max_hit];
-	m_clusterTime = new float[max_hit];
+	m_clusterADCX = new unsigned int[max_hit];
+	m_clusterTimeX = new float[max_hit];
+	m_clusterADCY = new unsigned int[max_hit];
+	m_clusterTimeY = new float[max_hit];
 
 	fHitTree->Branch("timestamp", &m_timestamp, "timestamp/I");
 	fHitTree->Branch("us", &m_us, "us/i");
@@ -211,11 +279,8 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("eventSize", &m_eventSize, "eventSize/s");
 	fHitTree->Branch("frameCounter", m_frameCounter, "frameCounter[nch]/i");
 	fHitTree->Branch("vmmID", m_vmmID, "vmmID[nch]/s");
-	//fHitTree->Branch("triggerCount", m_triggerCount, "triggerCount[nch]/i");
 	fHitTree->Branch("triggerTimestamp", m_triggerTimestamp,
 			"triggerTimestamp[nch]/D");
-	//fHitTree->Branch("clockCycles", m_clockCycles,
-	//			"clockCycles[nch]/i");
 	fHitTree->Branch("overThresholdFlag", m_overThresholdFlag,
 			"overThresholdFlag[nch]/b");
 	fHitTree->Branch("chNo", m_chNo, "chNo[nch]/s");
@@ -224,18 +289,21 @@ void RootFile::InitRootFile()
 	fHitTree->Branch("adc", m_adc, "adc[nch]/s");
 	fHitTree->Branch("tdc", m_tdc, "tdc[nch]/s");
 	fHitTree->Branch("bcid", m_bcid, "bcid[nch]/s");
-	//fHitTree->Branch("gray_bcid", m_gray_bcid, "gray_bcid[nch]/s");
 	fHitTree->Branch("chipTime", m_chipTime, "chipTime[nch]/D");
 
-	fHitTree->Branch("ncl", &m_ncl, "ncl/i");
 	fHitTree->Branch("nclX", &m_nclX, "nclX/i");
 	fHitTree->Branch("nclY", &m_nclY, "nclY/i");
-	fHitTree->Branch("clusterNr", &m_clusterNr, "clusterNr/i");
-	fHitTree->Branch("clusterSize", m_clusterSize, "clusterSize[ncl]/s");
+
 	fHitTree->Branch("clusterX", m_clusterX, "clusterX[nclX]/F");
+	fHitTree->Branch("clusterSizeX", m_clusterSizeX, "clusterSizeX[nclX]/s");
+	fHitTree->Branch("clusterADCX", m_clusterADCX, "clusterADC[nclX]/s");
+	fHitTree->Branch("clusterTimeX", m_clusterTimeX, "clusterTime[nclX]/F");
+	fHitTree->Branch("clusterNumberY", m_clusterNumberY, "m_clusterNumberY[nclX]/s");
 	fHitTree->Branch("clusterY", m_clusterY, "clusterY[nclY]/F");
-	fHitTree->Branch("clusterADC", m_clusterADC, "clusterADC[ncl]/s");
-	fHitTree->Branch("clusterTime", m_clusterTime, "clusterTime[ncl]/F");
+	fHitTree->Branch("clusterSizeY", m_clusterSizeY, "clusterSizeY[nclY]/s");
+	fHitTree->Branch("clusterADCY", m_clusterADCY, "clusterADC[nclY]/s");
+	fHitTree->Branch("clusterTimeY", m_clusterTimeY, "clusterTime[nclY]/F");
+	fHitTree->Branch("clusterNumberX", m_clusterNumberX,"m_clusterNumberX[nclY]/s");
 
 	std::cout << "Root file " << fFileName << " created!" << std::endl;
 

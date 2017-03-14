@@ -25,6 +25,8 @@ int discarded = 0;
 int vStart = 0;
 int vEnd = 0;
 int limit = 0;
+int threshold = 0;
+int clusterSize = 3;
 double tac = 125;
 double bc = 40;
 std::vector<int> xChips;
@@ -39,6 +41,8 @@ bool bcFound = false;
 bool xFound = false;
 bool yFound = false;
 bool readoutFound = false;
+bool thresholdFound = false;
+bool clusterSizeFound = false;
 
 int printUsage(std::string errorMessage);
 
@@ -136,16 +140,29 @@ int main(int argc, char**argv)
 				return printUsage("Wrong usage of -v start-end!");
 			}
 		}
-		else if (strncmp(argv[i], "-readout", 2) == 0)
+		else if (strncmp(argv[i], "-readout", 8) == 0)
 		{
 			readoutFound = true;
 			readout = argv[i + 1];
-			if(readout != "MM1" && readout != "MM2" && readout != "MM3" && readout != "mm1" &&
-					readout != "mm2" && readout != "mm3" &&
-					readout != "GEM" && readout != "gem")
+			if (readout != "MM1" && readout != "MM2" && readout != "MM3"
+					&& readout != "mm1" && readout != "mm2" && readout != "mm3"
+					&& readout != "GEM" && readout != "gem")
 			{
-				return printUsage("Wrong type of readout: MM1, MM2, MM3 or GEM are valid!");
+				return printUsage(
+						"Wrong type of readout: MM1, MM2, MM3 or GEM are valid!");
 			}
+		}
+		else if (strncmp(argv[i], "-th", 2) == 0)
+		{
+			thresholdFound = true;
+			threshold = atoi(argv[i + 1]);
+
+		}
+		else if (strncmp(argv[i], "-cs", 2) == 0)
+		{
+			clusterSizeFound = true;
+			clusterSize = atoi(argv[i + 1]);
+
 		}
 		else
 		{
@@ -176,8 +193,8 @@ int main(int argc, char**argv)
 		message << "File " << fileName << " does not exist!" << std::endl;
 		return printUsage(message.str());
 	}
-	parser = new RawdataParser(fileName, bc, tac, xChips, yChips, readout, vFound,
-			vStart, vEnd);
+	parser = new RawdataParser(fileName, bc, tac, xChips, yChips, readout,
+			vFound, vStart, vEnd, threshold, clusterSize);
 
 	if (in)
 	{
@@ -243,6 +260,8 @@ int printUsage(std::string errorMessage)
 	printf("-bc: bunch crossing clock. Optional argument (default 40 MHz)\n\n");
 	printf("-tac: tac slope. Optional argument (default 125 ns)\n\n");
 	printf("-readout: type of readout board. Optional argument (default GEM)\n\n");
+	printf("-th: threshold value in ADC counts. Optional argument (default 0)\n\n");
+	printf("-cs: minimum cluster size. Optional argument (default 3)\n\n");
 
 	return -1;
 }
