@@ -14,6 +14,8 @@
 
 #define NFEC 4
 const long max_hit = 100000;
+const int minDeltaStrip = 2;
+const int minDeltaT = 150;
 
 using namespace std;
 
@@ -34,8 +36,8 @@ public:
 			unsigned short chNo, short x, short y, short adc, short tdc,
 			short bcid, double chipTime);
 
-	void AddClusters(float clusterX, float clusterY,short clusterSize,
-			unsigned int clusterADC, float clusterTime);
+	void AddClusters(float clusterPosition, short clusterSize,
+			unsigned int clusterADC, float clusterTime, string coordinate);
 	void FillHits();
 
 	void DeleteHitsTree();
@@ -71,15 +73,21 @@ private:
 	unsigned short * m_bcid;    //BCID value
 	double * m_chipTime;    //Composed time of BCID and TDC (1 ns resolution)
 
-	unsigned long m_ncl;
 	unsigned long m_nclX;
 	unsigned long m_nclY;
-	unsigned int m_clusterNr;
-	short* m_clusterSize;
+	unsigned short * m_clusterNumberX;
+	unsigned short * m_clusterNumberY;
+	unsigned short* m_clusterSizeX;
+	unsigned short* m_clusterSizeY;
 	float * m_clusterX;
 	float * m_clusterY;
-	unsigned int * m_clusterADC;
-	float * m_clusterTime;
+	unsigned int * m_clusterADCX;
+	unsigned int * m_clusterADCY;
+	float * m_clusterTimeX;
+	float * m_clusterTimeY;
+
+	std::multimap<float, float > clustersX;
+	std::multimap<float, float > clustersY;
 
 	ClassDef(RootFile,1)
 };

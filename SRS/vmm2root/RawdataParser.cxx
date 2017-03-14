@@ -4,10 +4,10 @@
 
 RawdataParser::RawdataParser(std::string fileName, double bc, double tac,
 		std::vector<int> xChips, std::vector<int> yChips, std::string readout,
-		bool viewEvent, int viewStart, int viewEnd) :
+		bool viewEvent, int viewStart, int viewEnd, int threshold, int clusterSize) :
 		bcClock(bc), tacSlope(tac), xChipIDs(xChips), yChipIDs(yChips), readoutType(
 				readout), fViewEvent(viewEvent), fViewStart(viewStart), fViewEnd(
-				viewEnd)
+				viewEnd), fThreshold(threshold), fMinClusterSize(clusterSize)
 {
 	if (!fViewEvent)
 	{
@@ -54,9 +54,10 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 	{
 		if (validEvent && !fViewEvent)
 		{
-			const int minDeltaStrip = 2;
-			const int minDeltaT = 150;
-			int clusterCount = createClusters(hitsX,minDeltaT,minDeltaStrip);
+
+			int clusterCount = createClusters(hitsX, minDeltaT, minDeltaStrip,
+					"x");
+			clusterCount = createClusters(hitsY, minDeltaT, minDeltaStrip, "y");
 
 			fRoot->FillHits();
 			hitsX.clear();
@@ -334,13 +335,14 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 									triggerTimestamp, overThresholdFlag, chNo,
 									x, y, adc, tdc, bcid, chipTime);
 						}
-						if (x > -1)
+
+						if (x > -1 && overThresholdFlag && adc >= fThreshold)
 						{
 							hitsX.insert(
 									std::make_pair(chipTime,
 											std::make_pair(x, adc)));
 						}
-						if (y > -1)
+						if (y > -1 && overThresholdFlag && adc >= fThreshold)
 						{
 							hitsY.insert(
 									std::make_pair(chipTime,
@@ -591,7 +593,7 @@ int RawdataParser::MMStripMappingHybrid3(unsigned int chNo)
 
 int RawdataParser::createClusters(
 		std::multimap<double, std::pair<int, unsigned int>>& hits,
-		double minDeltaT, int minDeltaStrip)
+		double minDeltaT, int minDeltaStrip, string coordinate)
 {
 	std::multimap<int, std::pair<double, unsigned int> > cluster;
 
@@ -612,19 +614,19 @@ int RawdataParser::createClusters(
 
 		if ((time1 - time2 > minDeltaT) && stripCount > 0)
 		{
-			clusterCount += clusterStrips(cluster,minDeltaStrip);
+			clusterCount += clusterStrips(cluster, minDeltaStrip, coordinate);
 			cluster.clear();
 		}
 		cluster.insert(std::make_pair(strip1, std::make_pair(time1, adc1)));
 		stripCount++;
 	}
-	clusterCount += clusterStrips(cluster,minDeltaStrip);
+	clusterCount += clusterStrips(cluster, minDeltaStrip, coordinate);
 	return clusterCount;
 }
 
 int RawdataParser::clusterStrips(
 		std::multimap<int, std::pair<double, unsigned int>> & cluster,
-		int minDeltaStrip)
+		int minDeltaStrip, string coordinate)
 {
 
 	std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
@@ -659,8 +661,11 @@ int RawdataParser::clusterStrips(
 		{
 			centerOfGravity = (centerOfGravity / (double) totalADC);
 			centerOfTime = (centerOfTime / totalADC);
-			fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
-					centerOfTime);
+			if (stripCount >= fMinClusterSize)
+			{
+				fRoot->AddClusters(centerOfGravity, stripCount, totalADC,
+						centerOfTime, coordinate);
+			}
 
 			clusterCount++;
 			stripCount = 0;
@@ -674,8 +679,11 @@ int RawdataParser::clusterStrips(
 	{
 		centerOfGravity = (centerOfGravity / (double) totalADC);
 		centerOfTime = (centerOfTime / totalADC);
-		fRoot->AddClusters(centerOfGravity, -1.0, stripCount, totalADC,
-				centerOfTime);
+		if (stripCount >= fMinClusterSize)
+		{
+			fRoot->AddClusters(centerOfGravity, stripCount, totalADC,
+					centerOfTime, coordinate);
+		}
 		clusterCount++;
 	}
 	return clusterCount;

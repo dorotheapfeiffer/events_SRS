@@ -9,7 +9,7 @@ class RawdataParser
 public:
 	RawdataParser(std::string fileName, double bc, double tac,
 			std::vector<int> xChipIDs, std::vector<int> yChipIDs,
-			std::string readout, bool viewEvent, int viewStart, int viewEnd);
+			std::string readout, bool viewEvent, int viewStart, int viewEnd, int threshold, int clusterSize);
 	~RawdataParser();
 
 	unsigned int AnalyzeWord(unsigned int rawdata, unsigned int rawdata_before,
@@ -28,9 +28,9 @@ public:
 	int MMStripMappingHybrid3(unsigned int chNo);
 
 	int clusterStrips(std::multimap<int, std::pair<double, unsigned int>> & cluster,
-			int minDeltaStrip);
+			int minDeltaStrip,string coordinate);
 	int createClusters(std::multimap<double, std::pair<int, unsigned int>>& hits,
-			double minDeltaT,int minDeltaStrip);
+			double minDeltaT,int minDeltaStrip,string coordinate);
 private:
 	RootFile *fRoot = 0;
 	double bcClock = 0;
@@ -38,9 +38,12 @@ private:
 	std::vector<int> xChipIDs;
 	std::vector<int> yChipIDs;
 	std::string readoutType;
+
 	bool fViewEvent = false;
 	int fViewStart = 0;
 	int fViewEnd = 0;
+	int fThreshold = 0;
+	int fMinClusterSize = 0;
 	long discarded = 0;
 
 	std::multimap<double, std::pair<int, unsigned int> > hitsX;
