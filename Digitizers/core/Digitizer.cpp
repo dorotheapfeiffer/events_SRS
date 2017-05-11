@@ -21,7 +21,8 @@ Int_t Digitizer::mDigitizers = 0;
 
 Digitizer* Digitizer::Factory(const string& type) throw(Digitizer::BadDigitizerCreation) {
    if(type == "SIM")           { return new SimCard(10);     } 
-   if(type == "CAEN5740")      { return new CAEN5740(1);     } 
+    if(type == "CAEN5740")      { return new CAEN5740(1);     }
+    if(type == "CAENV1718")      { return new CAEN5740(1);     } //--FraMe: --> needed to be changed
  throw BadDigitizerCreation(type);
 }
 
