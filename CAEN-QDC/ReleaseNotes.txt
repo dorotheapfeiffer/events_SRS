@@ -1,0 +1,38 @@
+
+  -----------------------------------------------------------------------------
+
+                   --- CAEN SpA - Computing Division ---
+
+  -----------------------------------------------------------------------------
+
+  CAENDPP-QDC-Demo Release Notes
+
+  -----------------------------------------------------------------------------
+  
+  Rel. 1.0   - October 2015 - First official Release
+
+  -----------------------------------------------------------------------------
+
+
+  Description
+  -----------
+
+  This file describes the revision history of CAENDPP-QDC-Demo, a sample program for
+  the CAEN VME Digitisers boards.
+  See the file README.txt for more informations.
+
+  System Requirements
+  -------------------
+
+  - Microsoft Windows Vista/7/8
+  - GNUplot 4.2 (www.gnuplot.org)
+
+
+  How to get support
+  ------------------
+
+  Our Software Support Group is available for questions, support and any other
+  software related issue concerning CAEN products; for software support
+  visit the page www.caen.it/computing/support.php or send an email to
+  support.computing@caen.it
+

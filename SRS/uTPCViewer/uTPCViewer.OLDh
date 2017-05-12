@@ -1,0 +1,115 @@
+#include <TGFrame.h>
+#include <TGButton.h>
+#include <TGLabel.h>
+#include <TRootEmbeddedCanvas.h>
+#include <TGMenu.h>
+#include <TGStatusBar.h>
+#include <TGNumberEntry.h>
+#include <TTreeViewer.h>
+#include <TFile.h>
+#include <TH3D.h>
+#include <TH2D.h>
+#include <TH1D.h>
+#include <TGTextView.h>
+#include <TGProgressBar.h>
+#include <TGButtonGroup.h>
+#include <TGComboBox.h>
+#include <TSystem.h>
+
+#include "uTPCAnalysis.h"
+
+
+
+
+class uTPCViewer: public TGMainFrame {
+public:
+	uTPCViewer(const TGWindow *p, UInt_t w, UInt_t h);
+
+	void CloseWindow();
+	void ShowEvent(int eventNr);
+	void OpenFile(TString dir, TString fileName, Bool_t analyze);
+	void CloseFile();
+	void DoNumberEntry(Int_t pos = 0);
+	/*
+	int GetClusterChoice() {
+		return fClusterChoice;
+	}
+	*/
+	int GetThresholdAmplitude(){return fThresholdAmplitude->GetNumber();}
+	int GetThresholdDistance(){return fThresholdDistance->GetNumber();}
+	int GetThresholdPCA(){return fThresholdPCA->GetNumber();}
+	int GetThresholdGamma(){return fThresholdGamma->GetNumber();}
+	int GetThresholdDiscard(){return fThresholdDiscard->GetNumber();}
+	//void SetClusterChoice(Int_t id);
+	void SetProgressBarPosition(float pos) {
+		fProgressBar->SetPosition(pos);
+	}
+
+	void SetProgressBarRange(float min, float max) {
+		fProgressBar->Reset();
+		fProgressBar->SetRange(min, max);
+	}
+	virtual Bool_t ProcessMessage(Long_t msg, Long_t parm1, Long_t);
+	uTPCPlotData* plotData;
+	ClassDef(uTPCViewer,0)
+private:
+	bool fHistosExist;
+
+	uTPCRawData* rawData;
+
+	TH2F * h2x;
+	TH2F * h2y;
+	TH2F * h2ymm;
+	TH2F * h2xmm;
+	TH1F * hx;
+	TH1F * hy;
+
+	TGNumberEntry* fEventNr;
+	TGNumberEntry* fThresholdAmplitude;
+	TGNumberEntry* fThresholdDistance;
+	TGNumberEntry* fThresholdPCA;
+	TGNumberEntry* fThresholdGamma;
+	TGNumberEntry* fThresholdDiscard;
+
+	TGLabel* fLabelThresholdAmplitude;
+	TGLabel* fLabelThresholdDistance;
+	TGLabel* fLabelThresholdPCA;
+	TGLabel* fLabelThresholdGamma;
+	TGLabel* fLabelThresholdDiscard;
+
+	TGStatusBar* fStatusBar;
+	TGMenuBar* fMenuBar;
+	TGPopupMenu* fMenuFile;
+
+	TGLayoutHints* fMBItemLayout;
+	TGCompositeFrame *vframeTop;
+	TGCompositeFrame *vframeMiddle1;
+	TGCompositeFrame *vframeMiddle2;
+	TGCompositeFrame *vframeBottom;
+	TGVerticalFrame *vframe1;
+	TGVerticalFrame *vframe2;
+	TGVerticalFrame *vframe3;
+	TGVerticalFrame *vframe4;
+	TGVerticalFrame *vframe5;
+	TGVerticalFrame *vframe6;
+	TGHorizontalFrame *vframeControls;
+	TCanvas *fCanvas;
+	TRootEmbeddedCanvas* fEcanvas1;
+	TRootEmbeddedCanvas* fEcanvas2;
+	TRootEmbeddedCanvas* fEcanvas3;
+	TRootEmbeddedCanvas* fEcanvas4;
+	TRootEmbeddedCanvas* fEcanvas5;
+	TRootEmbeddedCanvas* fEcanvas6;
+	TGLabel* fLabel1;
+	TGLabel* fLabel2;
+	TGLabel* fLabel3;
+	TGLabel* fLabel4;
+	TGLabel* fLabel5;
+	TGLabel* fLabel6;
+	TGLabel* fLabelEvent;
+	TGLabel* fLabelEventTotal;
+	TTreeViewer* treeViewer;
+	TGHProgressBar* fProgressBar;
+
+};
+

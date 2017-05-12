@@ -1,0 +1,2 @@
+This folder contains the vmm_daq program.
+It uses qt5 (5.4.2 used to develop) and until now also root and boost, which both will be removed.
