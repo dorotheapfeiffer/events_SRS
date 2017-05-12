@@ -160,9 +160,10 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     m_SaveChannel		= 7;
     m_SWTriggerMode	= 1;
     m_ExtTriggerMode	= 1;
-    m_FPIOtype		= 0;
+    //m_FPIOtype		= 0;
     //m_RunSyncMode		= CAEN_DGTZ_RUN_SYNC_Disabled;
-    m_RunSyncMode = CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain;  // questa riga lha messa FRAPI  
+    m_RunSyncMode = CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain;  // questa riga lha messa FRAPI
+    // dovrebbe prenderla da zabarc  
     m_Delay		= 0;
     //m_IRQ 		= 0;
     
@@ -296,19 +297,18 @@ void DCAEN1740D::ConfigureModule() {
 // Some of the settings are the same but
 // I decided setup the digitizer in (if else) depends on the model.
 
-/** void DCAEN1740D::InitMOdule NON CI ENTRA SE VME_CRATE = 0 !!!
- ** VME_CRATE È DEFINITA IN MAIN.CPP -- non gira su main ma su szaba dove VME_CRATE=1 **/
-
 void DCAEN1740D::InitModule() {
     if( !VME_CRATE ){
         return;
     }
     
+/** 1) reset module **/
     ret = CAEN_DGTZ_Reset(m_Handle);
     CheckError(ret);
-    if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] PIPPO Reset, error code = " << ret << "\n"; return; }
+    if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] Reset Module, error code = " << ret << "\n"; return; }
     uint32_t mask = 0;
     
+/** set trigger mask DPP **/
     for(unsigned i = 0; i < m_NrGroups; i++) {
         mask = 0;
         for(UInt_t j = 0; j< 8; j++){
@@ -320,6 +320,7 @@ void DCAEN1740D::InitModule() {
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Set individual trigger for group and channel " << CheckError(ret) << address << " " << mask << std::endl;
     }
     
+/** set readout enable mask **/
     for(UInt_t i = 0; i < m_NrGroups; i++){
         mask |= ((m_GroupEnableMaskDPP[i] & 0x1) << i);
         //std::cout << i << " mask: " << mask << endl;
@@ -337,6 +338,7 @@ void DCAEN1740D::InitModule() {
     }
     
     /* Disable Group self trigger for the acquisition (mask = 0) */
+/** ??? **/
     ret = CAEN_DGTZ_SetGroupSelfTrigger(m_Handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY, 0x00);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetGroupSelfTrigger " << CheckError(ret) << std::endl;
     
@@ -411,10 +413,10 @@ void DCAEN1740D::InitModule() {
     ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, 64);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Baseline " << CheckError(ret) << std::endl;
     
-    for(unsigned i = 0; i < m_NrGroups; i++) {
+    //for(unsigned i = 0; i < m_NrGroups; i++) {
         //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1038 + 0x100*i, m_BaseLineDPP[i]);
         //  if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
-    }
+    //}
     
     /* Set Gate Width (in samples) */
     for(unsigned i = 0; i < m_NrGroups; i++) {
@@ -462,6 +464,11 @@ void DCAEN1740D::InitModule() {
     /* Set Extended Time Stamp if enabled*/
     //if (params->EnableExtendedTimeStamp)
     //ret |= CAEN_DGTZ_WriteRegister(m_Handle, 0x8004, 1 << 17);
+
+/** Set pannel IOLevel **/
+    ret = CAEN_DGTZ_SetIOLevel(m_Handle, static_cast<CAEN_DGTZ_IOLevel_t>(m_FPIOtype) );
+    CheckError(ret);
+    //if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] SetIOLevel, error code = " << ret << "\n"; return; }
     
     
     // synchronization setting
@@ -490,26 +497,33 @@ void DCAEN1740D::InitModule() {
             break;
             
         case CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain:
+		cout << "ci sono " << endl;
             if(m_Handle > 0){
                 ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0xD);      // Run starts with 1st trigger edge
                 CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 1 " << CheckError(ret) << std::endl;
             }
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x810C, 0x40000000);  // accept EXT TRGIN
             CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 2 " << CheckError(ret) << std::endl;
             
             /*HERE MUST BE CHANGED!!!!	to set correct group mask*/
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x10A8, 0xF);         // group trigger mask
             CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 3 " << CheckError(ret) << std::endl;
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8110, 0x0);         // out trigger mask
             CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 4 " << CheckError(ret) << std::endl;
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8170, m_Delay);     // Run Delay decreases with the position (to compensate for run the propagation delay)
             CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 5 " << CheckError(ret) << std::endl;
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF0FFFF | 0x00010000); // set bit sIN to trigger out
             CheckError(ret);
+   		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 6 " << CheckError(ret) << std::endl;
             
             
             break;
@@ -559,6 +573,7 @@ void DCAEN1740D::ReadVME() {
 
     //******************************************
     // This might be unnecessary and slowing down DAQ
+/*
     std::ofstream tts("data/timestamp", std::ios::out | std::ios::app);
     for(uint32_t i = 0; i < m_NrChannels; i++) {
         for (uint32_t j = 0; j < NumEvents[i]; j++) {
@@ -573,6 +588,7 @@ void DCAEN1740D::ReadVME() {
         }
     }
     tts.close();
+*/
     //*******************************************
     
     
@@ -981,7 +997,7 @@ void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
     
     
     fAcquisition->m_AcqStatusEntry2 = m_Events;
-    UInt_t Nb = 0, Ne, prevNe = 0, prevNb = 0;
+    UInt_t Nb = 0, Ne, prevNb = 0;
     Nb  = GetDataSize();
     Ne  = GetNrEvents();
     //uint32_t a_TotEvCnt = 0;
@@ -990,7 +1006,6 @@ void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
     std::cout << "\tEvents =\t"      << Ne  << std::endl;
     std::cout << "\tRate =\t\t"        <<  ((float)Ne / ((fAcquisition->m_ElapsedAcqTime*1.048576f))/1000 ) << "[Kevt/s]"<< std::endl;
     
-    prevNe = Ne;
     prevNb = Nb;
     
     
@@ -1481,8 +1496,9 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
                 for(Int_t i = 0; i < 8; i++){ if(value[i] == '1') m_SelfTriggerMaskDPP[i+56] = 1; else m_SelfTriggerMaskDPP[i+56] = 0; }
             }
             
-            else if( name == string("IOLevel") 	)
+            else if( name == string("IOLevel") 	){
                 m_FPIOtype = atoi( value.c_str() );
+		cout << "IOLevel: " << m_FPIOtype << endl;}
             
             else if( name == string("AcquisitionMode") )
                 m_AcqMode = atoi( value.c_str() );
@@ -1586,8 +1602,9 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
                 m_MaxEventsAggBLT = atoi( value.c_str() );
             
             else if( name == string("SynchronizationMode"))
-                //FraMe disabled for test m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
-                cout << "SynchronisationMode HardCoded !!!" << endl;
+                //FraMe disabled for test 
+		m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+//                cout << "SynchronisationMode HardCoded !!!" << endl;
             
             else cout << "[ERROR] Parameter not recognized, line nr = " << lineNr << "\t[" << inSection << "] " << name << " : " << value << endl;
         }
