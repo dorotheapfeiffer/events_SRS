@@ -522,6 +522,7 @@ void DCAEN1740D::InitModule() {
     }
     
     RegisterDump();
+    std::cout << "SynchronisationMode: " << m_RunSyncMode << std::endl;
     std::cout << "Initialization " << m_Name << " module done!\n";
     
 }
@@ -1585,7 +1586,8 @@ void DCAEN1740D::LoadConfig(std::ifstream & inpfile){
                 m_MaxEventsAggBLT = atoi( value.c_str() );
             
             else if( name == string("SynchronizationMode"))
-                m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+                //FraMe disabled for test m_RunSyncMode      = static_cast<CAEN_DGTZ_RunSyncMode_t>(atoi( value.c_str() ));
+                cout << "SynchronisationMode HardCoded !!!" << endl;
             
             else cout << "[ERROR] Parameter not recognized, line nr = " << lineNr << "\t[" << inSection << "] " << name << " : " << value << endl;
         }
