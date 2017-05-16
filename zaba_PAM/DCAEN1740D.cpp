@@ -10,7 +10,7 @@
 
 #define MAX_AGGR_NUM_PER_BLOCK_TRANSFER   1023 /* MAX 1023 */
 
-int pluto = 1;
+int Using2Digitisers = 1;
 long InitValue = 99.9;
 
 static ULong_t gCurrentTimeADC = 0;
@@ -811,7 +811,7 @@ void DCAEN1740D::BuildEvent(){
     //cout << "BuildEvent m_Size = " << m_Size << endl;
     
     // 0 - no saving,
-    // 1-saving LIST short, forma1 < col1 = channel, col2 = charge, col3 = timestamp >
+    // 1-saving LIST short, forma1 < col1 = timestamp, col2 = BoardSerialNumber, col3 = channel, col3 = charge >
     // 2-saving LIST (long format), ready for Francesco's analysis in Matlab < col0...coln charge for each channel even if is 0, coln+1 timestamp >
     // e.g 0 0 0 ..... 64 times .... timestamp
     //
@@ -839,94 +839,36 @@ void DCAEN1740D::BuildEvent(){
             //int i = 0; cout << "while(pEventQueue.size() != 0) iteration n.   " << i << endl; i++;
             //** sembra sia sempre e solo una iterazione... da giocare con i buffer del digitiser...
             
-            
-//            m_StringBuffer1 +=  to_string(get<0>(pEventQueue.top())) + " "  + to_string(get<1>(pEventQueue.top()) ) + " " +to_string(get<2>(pEventQueue.top())) + "\n";
             /** Format of output string: <TimeStamp><DigitiserNumber><ChannelNumber><Energy> **/
             m_StringBuffer1 +=  to_string(get<2>(pEventQueue.top())) + " "  + to_string(BoardInfo.SerialNumber) + " " + to_string(get<0>(pEventQueue.top()) ) + " " +to_string(get<1>(pEventQueue.top())) + "\n";
             pEventQueue.pop(); // remove the oldest element of the queue --> reduce the size of the queue by 1
         }
-       /* 
-        if(BoardInfo.SerialNumber == 34)
-            cout <<
-        //"BuildEvent: " <<
-            m_StringBuffer1 << endl; //*/
-        
     }
     //--------- end of m_savingformat == 1   ------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------------------------------------------
-    if( m_savingformat == 2){
-        static uint32_t		flag = 1;
-        
-        if(flag == 1){
-            flag = 0;
-            memset(gExtendedTimeTag, 0, 64*sizeof(uint64_t));
-            memset(gETT,0, 64*sizeof(uint64_t));
-            memset(gPrevTimeTag, 0, 64*sizeof(uint64_t));
-        }
-        
-        
-        for (uint32_t i = 0; i < 64; i++) {
-            for(uint32_t j = 0; j < NumEvents[i]; j++) {
-                for(uint32_t k = 0; k < m_NrChannels; k++) {
-                    m_StringBuffer2 += to_string( gEvent[k][j].Charge ) + " " ;
-                }
-                
-                if (gEvent[i][j].TimeTag < gPrevTimeTag[i])
-                    gETT[i]++;
-                
-                gExtendedTimeTag[i] = (gETT[i] << 32) + (uint64_t)(gEvent[i][j].TimeTag);
-                
-                m_StringBuffer2 += to_string(gEvent[i][j].TimeTag) + " ";
-                m_StringBuffer2 += to_string(gExtendedTimeTag[i]) + "\n";
-                
-                gPrevTimeTag[i]   = gEvent[i][j].TimeTag;
-            }
-        }
-        
-        m_StringBufferSize2 = m_StringBuffer2.length();
-    }
+    //if( m_savingformat == 2)
     //--------- end of m_savingformat == 2   ------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------------------------------------------
-    if( m_savingformat == 4){  // like list2 but binary
-        for (uint32_t i = 0; i < m_NrChannels; i++) {
-            //cout << "====== i: NumEvents["<<i<<"] " << NumEvents[i] << endl;;
-            for(uint32_t j = 0; j < NumEvents[i]; j++) {
-                uint16_t Charge     = gEvent[i][j].Charge;
-                uint16_t SubChannel = uint16_t(8 * (i / 8)) + gEvent[i][j].SubChannel;
-                uint64_t TimeStamp  = gEvent[i][j].TimeTag;
-                //cout << "i= " << i << " j= " << j << "\t" << Charge << " " << SubChannel << " " << TimeStamp << endl;
-                memcpy(m_Buffer + m_BufferPos, &Charge,     sizeof(uint16_t));
-                m_BufferPos += sizeof(uint16_t);
-                memcpy(m_Buffer + m_BufferPos, &SubChannel, sizeof(uint16_t));
-                m_BufferPos += sizeof(uint16_t);
-                memcpy(m_Buffer + m_BufferPos, &TimeStamp,  sizeof(uint64_t));
-                m_BufferPos += sizeof(uint64_t);
-            }
-        }
-    }
-    //--------- end of m_savingformat == 4   ------------------------------------------------------------------------------------
+    //if( m_savingformat == 4)    //--------- end of m_savingformat == 4   ------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------------------------------------------
     //if( m_savingformat == 8) // need to be implemented
-    
+    else{
+        std::cout << "ERROR: savingformat = " << m_savingformat << " not implemented! \n !!! DATA NOT SAVED !!! " << std::endl;
+        return;
+    }
     
 }
 
 //======================================================================================================
-
 void DCAEN1740D::SaveEvent(){
-    
 }
-//======================================================================================================
 
+//======================================================================================================
 void DCAEN1740D::ShowEvent(){
-    
-    
 }
 
 //======================================================================================================
-
 void DCAEN1740D::SendEvent(){
-    
 }
 
 //======================================================================================================
@@ -977,9 +919,7 @@ std::string DCAEN1740D::CheckError(CAEN_DGTZ_ErrorCode err){
 }
 //======================================================================================================
 void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
-    
-    
-    
+
     fAcquisition->m_AcqStatusEntry2 = m_Events;
     UInt_t Nb = 0, Ne, prevNe = 0, prevNb = 0;
     Nb  = GetDataSize();
@@ -992,28 +932,10 @@ void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
     
     prevNe = Ne;
     prevNb = Nb;
-    
-    
-    // fill histograms only in GUI version when fDisplay is not NULL
-    if(fDisplay)
-    {
-        
-    }
-    
 }
 
 //-----------------------------------------------------------------------------
 void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
-    // write data to buffer only when the IRQ happend, otherwise return
-    // CHECK IF THIS IS REALLY NECESSARY, there is m_dataSizeByte which shoud be 0 if there is no IRQ
-    // If you want to simulate events you have to comment this line, m_IRQ = 1;
-    //std::cout << "[DEBUG] 1  BoardInfo: " << to_string(BoardInfo.SerialNumber) << "  DCAEN1740D::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
-    //**if( !VME_CRATE ) m_IRQ = 1;
-    //**if( fAcquisition->m_EmptyBuffer ) m_IRQ = 1;
-    //std::cout << "[DEBUG] 2 DCAEN1740D::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
-    //if(!m_IRQ) return;
-    //**m_IRQ = 0;
-    //std::cout << "[DEBUG] 3 DCAEN1740D::DataSave m_EmptyBuffer = "<< fAcquisition->m_EmptyBuffer << std::endl;
     
     Bool_t m_saveAfterSize = kFALSE; // variable to check if the buffer size reach the max size
     Bool_t m_saveAfterTime = kFALSE; // variable to check if the time elapsed to save file every sec/min/hour
@@ -1055,7 +977,6 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
         }
     }
     
-    
     // =============================================================================
     // writing bufer to file if one of the three conditions are fulfill
     if( m_saveAfterSize || m_saveAfterTime || fAcquisition->m_EmptyBuffer){
@@ -1085,7 +1006,7 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
             std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
             std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
         }
-        
+        /*
         if( m_savingformat == 2){
             //if( true ){
             string filename = fAcquisition->m_DataPath + string("/") + fAcquisition->GetFileTime()
@@ -1141,24 +1062,22 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
             std::cout << "[MESSAGE] data file [" << filename << "] has been saved " << std::endl;
             std::cout << "          Nr Events total: " << m_Events << " / in file: " << m_Events - m_fileEvents << std::endl;
         }
-        
-        // ===============================================================================
+        */
+        // =============================================================================== */
         // some cleaning after saving and writing message to the std output
         m_StringBuffer1.clear();
         m_StringBuffer2.clear();  // buffer usato in m_savingformat2
         m_BufferPos = 0;
         //** FUNZIONA SOLO CON DUE DIGIT>...
-	if(pluto) pluto = 0;
+        if(Using2Digitisers) Using2Digitisers = 0;
         else
         {
-            pluto=1;
-        m_fileEvents = m_Events;
-        fAcquisition->m_NrOfSavedFiles++;
-        gPrevRateTimeADC = gCurrentTimeADC;
+            Using2Digitisers=1;
+            m_fileEvents = m_Events;
+            fAcquisition->m_NrOfSavedFiles++;
+            gPrevRateTimeADC = gCurrentTimeADC;
         }
-        
     }
-    
 }
 
 //-----------------------------------------------------------------------------
@@ -1205,22 +1124,6 @@ void DCAEN1740D::ShowSettings() {
             std::cout << m_SelfTriggerMaskDPP[8*i+j] << " ";
         std::cout << std::endl;
     }
-    
-    /*
-     std::cout << "\t| --- group/channel gatewidth/threshold ---"<< std::endl;
-     std::cout << "\t+\t\t gr0\tgr1\tgr2\tgr3\tgr4\tgr5\tgr5\tgr7"<< std::endl;
-     std::cout << "\t| GateWidth\t" << m_GateWidthDPP[0] <<"\t"<< m_GateWidthDPP[1] <<"\t"<< m_GateWidthDPP[2] <<"\t"<< m_GateWidthDPP[3] <<"\t"
-     << m_GateWidthDPP[4] <<"\t"<< m_GateWidthDPP[5] <<"\t"<< m_GateWidthDPP[6] <<"\t"<< m_GateWidthDPP[7] << std::endl;
-     
-     for(unsigned i = 0; i < m_NrGroups; i++){
-     std::cout << "\t| Thr ch: " << 8*i << "-"<< 8*i+7 << "\t";
-     for(unsigned j = 0; j < 8; j++)
-     std::cout << m_ThresholdDPP[8*i+j] << "\t";
-     std::cout << std::endl;
-     }
-     std::cout << "\t+ =============================================="<< std::endl;
-     */
-    
 }
 
 //==================================================================================
