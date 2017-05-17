@@ -203,6 +203,7 @@ return kTRUE;
 
   m_CurrentTimeMS = GetTimeMS();
   m_ElapsedTimeMS = m_CurrentTimeMS - m_PrevTimeMS;
+        
   
   if (m_ElapsedTimeMS < 1000)
       return;
