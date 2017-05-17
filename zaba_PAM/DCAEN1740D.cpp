@@ -497,34 +497,50 @@ void DCAEN1740D::InitModule() {
             break;
             
         case CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain:
+		uint32_t read;
 		cout << "ci sono " << endl;
             if(m_Handle > 0){
-                ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0xD);      // Run starts with 1st trigger edge
+                ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0xD);      // Run starts with 1st trigger edge on Sin
+CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &read);
+	cout << "Register 0x8100: " << read << endl;
                 CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 1 " << CheckError(ret) << std::endl;
             }
             
-            ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x810C, 0x40000000);  // accept EXT TRGIN
+            ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x810C, 0x40000000);  // accept EXT TRGIN as OR in global trigger
+CAEN_DGTZ_ReadRegister(m_Handle, 0x810C, &read);
+	cout << "Register 0x810C: " << read << endl;
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 2 " << CheckError(ret) << std::endl;
             
             /*HERE MUST BE CHANGED!!!!	to set correct group mask*/
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x10A8, 0xF);         // group trigger mask
+CAEN_DGTZ_ReadRegister(m_Handle, 0x10a8, &read);
+	cout << "Register 0x10a8: " << read << endl;
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 3 " << CheckError(ret) << std::endl;
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8110, 0x0);         // out trigger mask
+CAEN_DGTZ_ReadRegister(m_Handle, 0x8110, &read);
+	cout << "Register 0x8110: " << read << endl;
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 4 " << CheckError(ret) << std::endl;
             
             ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8170, m_Delay);     // Run Delay decreases with the position (to compensate for run the propagation delay)
+CAEN_DGTZ_ReadRegister(m_Handle, 0x8170, &read);
+	cout << "Register 0x8170: " << read << endl;
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 5 " << CheckError(ret) << std::endl;
             
-            ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF0FFFF | 0x00010000); // set bit sIN to trigger out
+            //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF0FFFF | 0x00010000); // set bit sIN to trigger out
+		ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF37FFF);// | 0x00037000); // set bit sIN to trigger out, FrontPannel to TTL, TRIGIN sync to duration without delay
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 6 " << CheckError(ret) << std::endl;
             
+		//TO BE REMOVED
+	
+	CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
+	cout << "Register 0x811C: " << read << endl;
             
             break;
             
@@ -568,6 +584,16 @@ void DCAEN1740D::ReadVME() {
     int a_ret = _CAEN_DGTZ_GetDPPEvents(m_Handle, m_localBuffer, m_Size, (void **)gEvent, NumEvents);
     
     // PROVA !!!!
+uint32_t read;
+CAEN_DGTZ_ReadRegister(m_Handle, 0x8104, &read);
+	cout << "Register 0x8104: " << read  << "   " << endl;
+CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
+	cout << "Register 0x811C: " << read  << "   " << endl;
+
+
+
+
+
     //    for (int i=0; i< 64; i++)
     //		cout << "i: " << i << "   NumEvent:  " << NumEvents[i] << endl;
 
