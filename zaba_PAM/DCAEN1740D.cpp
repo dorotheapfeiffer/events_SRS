@@ -257,8 +257,8 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
             }
             
             /** controllo stupido da cancellare... **/
-            if(m_NrChannels == 64) std::cout << "ok, trovati 64 canali " << std::endl;
-            if(m_NrGroups == 8) std::cout << "ok, trovati 8 gruppi " << std::endl;
+      /*      if(m_NrChannels == 64) std::cout << "ok, trovati 64 canali " << std::endl;
+            if(m_NrGroups == 8) std::cout << "ok, trovati 8 gruppi " << std::endl; //*/
             
             gEquippedGroups = m_NrGroups; // this line needed by external library _CAENDigitizer_DPP-QDC.c
             for(UInt_t i = 0; i < m_NrGroups; i++)
@@ -298,12 +298,16 @@ void DCAEN1740D::ConfigureModule() {
 // I decided setup the digitizer in (if else) depends on the model.
 
 void DCAEN1740D::InitModule() {
+
+	uint32_t read;
+
     if( !VME_CRATE ){
         return;
     }
     
 /** 1) reset module **/
     ret = CAEN_DGTZ_Reset(m_Handle);
+//	cout<< "Module Reset " << endl;
     CheckError(ret);
     if(ret != CAEN_DGTZ_Success) { std::cout << "[ERROR] Reset Module, error code = " << ret << "\n"; return; }
     uint32_t mask = 0;
@@ -357,11 +361,13 @@ void DCAEN1740D::InitModule() {
     
     /* Trigger Hold Off */
     for(unsigned i = 0; i < m_NrGroups; i++) {
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8074, m_TriggerHoldOffDPP[i]);
+	uint32_t address = 0x1074 + 0x100*i;
+        //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8074, m_TriggerHoldOffDPP[i]);
+        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_TriggerHoldOffDPP[i]);  //DA CONTROLLARE !!! 170530
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Trigger Hold Off " << CheckError(ret) << std::endl;
     }
     
-    /* Pulse polarity */
+    /* Pulse polarity */    // FUNZIONA... da dove la prende??? 170530
     /*    for(unsigned i = 0; i < m_NrGroups; i++) {
      uint32_t address = 0x1040 + 0x100*i;
      ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_PulsePolarityDPP[i]);
@@ -384,7 +390,7 @@ void DCAEN1740D::InitModule() {
                     ((m_DisTrigHist             & 0x1) << 30)   ); // trigger histeresis, disable
         
         uint32_t address = 0x1040 + 0x100*i;
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, DppCtrl1);
+        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, DppCtrl1);	//Set Pulse Polarity
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] DppCtrl1 " << CheckError(ret) << std::endl;
     }
     
@@ -394,8 +400,8 @@ void DCAEN1740D::InitModule() {
     //if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Pre Trigger " << CheckError(ret) << std::endl;
     //this is per group
     for(unsigned i = 0; i < m_NrGroups; i++) {
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x103C + 0x100*i, m_PreTriggerDPP[i]);
-        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
+        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x103C + 0x100*i, m_PreTriggerDPP[i]); //set PreTrigger
+        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] PreTrigger " << CheckError(ret) << std::endl;
     }
     
     /* Set Gate Offset (in samples) */
@@ -404,18 +410,18 @@ void DCAEN1740D::InitModule() {
     //if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Offset " << CheckError(ret) << std::endl;
     for(unsigned i = 0; i < m_NrGroups; i++) {
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1034 + 0x100*i, m_PreGateDPP[i]);
-        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
+        if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Offset (PreGate) " << CheckError(ret) << std::endl;
     }
     
     /* Set Baseline (used in fixed baseline mode only) */
     // this is if you want to set all channels with one value
-    //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_FixedBaseLineDPP);
+    //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, m_FixedBaseLineDPP); // da implementare la lettura da zabaRC 170530
     ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8038, 64);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR]  Baseline " << CheckError(ret) << std::endl;
     
     //for(unsigned i = 0; i < m_NrGroups; i++) {
         //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x1038 + 0x100*i, m_BaseLineDPP[i]);
-        //  if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Gate Width " << CheckError(ret) << std::endl;
+        //  if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] BaseLine " << CheckError(ret) << std::endl;
     //}
     
     /* Set Gate Width (in samples) */
@@ -425,7 +431,7 @@ void DCAEN1740D::InitModule() {
     }
     
     /* Set the waveform lenght (in samples) */
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP/8); // i do not know why but must be divided by 8....
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP/8); // va diviso per 2^n con n=0,1,2,3 legato alla baseline
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetRecordLength " << CheckError(ret) << std::endl;
     
     /* Set DC offset */
@@ -434,12 +440,18 @@ void DCAEN1740D::InitModule() {
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Set DC offset " << CheckError(ret) << std::endl;
     }
     
+///////////////////////////////
+/////////////////////////////// clarabella
     /* enable Charge mode */
     ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8004, 0x00080000);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] enable Charge mode " << CheckError(ret) << std::endl;
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x8000, &read); 
+//cout << "Register 0x8000: " << read << endl;
     
     /* enable Timestamp */
     ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8004, 0x00040000);
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x8000, &read); 
+//cout << "Register 0x8000: " << read << endl;
     
     /* set Scope mode */
     if ( m_AcqModeDPP == 0)
@@ -447,6 +459,8 @@ void DCAEN1740D::InitModule() {
     else
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8008, 0x00010000);
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] m_AcqModeDPP " << CheckError(ret) << std::endl;
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x8000, &read); 
+//cout << "Register 0x8000: " << read << endl;
     
     /* Set number of events per memory buffer */
     _CAEN_DGTZ_DPP_QDC_SetNumEvAggregate(m_Handle, m_MaxEventsAggBLT); // 0 - automatic
@@ -457,8 +471,21 @@ void DCAEN1740D::InitModule() {
     if (1) {
         uint32_t d32;
         ret = CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &d32);
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read); 
+//cout << "Register 0x811C: " << read << endl;
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &read); 
+//cout << "Register 0x8100: " << read << endl;
         ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, d32 | (1<<15));
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8168, 2);
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read); 
+//cout << "Register 0x811C: " << read << endl;
+//CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &read); 
+//cout << "Register 0x8100: " << read << endl;
+
+    /** solo per desktop digitisers **/
+       // ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8168, 2);
+	//CAEN_DGTZ_ReadRegister(m_Handle, 0x8168, &read); 
+	//cout << "Register 0x8168: " << read << endl;
+
     }
     
     /* Set Extended Time Stamp if enabled*/
@@ -497,12 +524,14 @@ void DCAEN1740D::InitModule() {
             break;
             
         case CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain:
-		//uint32_t read;
-		//cout << "ci sono " << endl;
-            if(m_Handle > 0){
-                ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0xD);      // Run starts with 1st trigger edge on Sin
-		//CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &read);
-		//cout << "Register 0x8100: " << read << endl;
+		uint32_t read;
+		cout << "ci sono " << endl; // clarabella
+          //  if(m_Handle > 0)
+	    {
+                //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0xD);      // Run starts with 1st trigger edge on Sin
+                ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8100, 0x8);      // Run starts with 1st trigger edge on Sin
+		CAEN_DGTZ_ReadRegister(m_Handle, 0x8100, &read);
+		cout << "Register 0x8100: " << read << endl;
                 CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 1 " << CheckError(ret) << std::endl;
             }
@@ -533,14 +562,14 @@ void DCAEN1740D::InitModule() {
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 5 " << CheckError(ret) << std::endl;
             
             //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF0FFFF | 0x00010000); // set bit sIN to trigger out
-		ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF37FFF);// | 0x00037000); // set bit sIN to trigger out, FrontPannel to TTL, TRIGIN sync to duration without delay
+		ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0x3F03F); //FFF3FFFF);// | 0x00037000); // set bit sIN to trigger out, FrontPannel to TTL, TRIGIN sync to duration without delay
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 6 " << CheckError(ret) << std::endl;
             
 		//TO BE REMOVED
 	
-	//CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
-	//cout << "Register 0x811C: " << read << endl;
+	CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
+	cout << "Register 0x811C: " << read << endl;
             
             break;
             
@@ -599,7 +628,7 @@ void DCAEN1740D::ReadVME() {
 
     //******************************************
     // This might be unnecessary and slowing down DAQ
-/*
+/*     // UNCONSISTENT WITH TIME STAMP RESET...
     std::ofstream tts("data/timestamp", std::ios::out | std::ios::app);
     for(uint32_t i = 0; i < m_NrChannels; i++) {
         for (uint32_t j = 0; j < NumEvents[i]; j++) {
@@ -614,7 +643,7 @@ void DCAEN1740D::ReadVME() {
         }
     }
     tts.close();
-*/
+//*/
     //*******************************************
     
     
@@ -968,6 +997,7 @@ void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
     Ne  = GetNrEvents();
     //uint32_t a_TotEvCnt = 0;
     
+std::cout << "Digitiser " << m_Name << std::endl;
     std::cout << "\tReading bytes =\t" << ( (float)(Nb-prevNb) / 1024 / 1024 / fAcquisition->m_ElapsedAcqTime*1.048576f )  << " [MB/s]" << std::endl;
     std::cout << "\tEvents =\t"      << Ne  << std::endl;
     std::cout << "\tRate =\t\t"        <<  ((float)Ne / ((fAcquisition->m_ElapsedAcqTime*1.048576f))/1000 ) << "[Kevt/s]"<< std::endl;
