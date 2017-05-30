@@ -1,5 +1,5 @@
 # Configuration file for ZABA data acquisition system
-# the file was created:  2017.5.17	17:53:9
+# the file was created:  2017.5.30	15:25:27
 # Line starts with a '#' is a comment line
 #
 #
@@ -9,7 +9,7 @@
 StopAfterSec 0
  
 # Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
-StopAfterFile 1
+StopAfterFile 0
  
 # Stop acquisition after certain number of Events, default 0 means acq will runn forever
 StopAfterEvents 0
@@ -18,7 +18,7 @@ StopAfterEvents 0
 SaveFileSize 100
  
 # Save each file after certain number of seconds
-SaveFileTime 1000
+SaveFileTime 10000
  
 # Default path where the data is stored, if you do not set this parameter the path will be ./data
 DataPath ./data
@@ -79,10 +79,10 @@ SelfTriggerMaskGr6 11111111
 SelfTriggerMaskGr7 11111111
 # 
 # All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 0
-IOLevel 1
+IOLevel 2576980377
 # 
 # Acquisition Mode could be software controled = 0; or by signal from the front panel = 1
-AcquisitionMode 1
+AcquisitionMode 0
 # 
 # ===== These options are only for DPP-QDC firmware =====
 # 
@@ -303,10 +303,10 @@ SelfTriggerMaskGr6 11111111
 SelfTriggerMaskGr7 11111111
 # 
 # All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 0
-IOLevel 1
+IOLevel 2576980377
 # 
 # Acquisition Mode could be software controled = 0; or by signal from the front panel = 1
-AcquisitionMode 1
+AcquisitionMode 0
 # 
 # ===== These options are only for DPP-QDC firmware =====
 # 
