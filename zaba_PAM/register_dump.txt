@@ -135,3 +135,6 @@
 (0x814C) EventSize	0x0
 (0xEF00) ReadoutControl	0x10
 (0xEF1C) AggregateNumber per BLT	0x1F4
+(0x8100) Acquisition Control	0x8
+(0x8110) Front Panel TRG-OUT (GPO) Enable Mask	0x0
+(0x811C) Front Panel I/O Control	0x3403D
