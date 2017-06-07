@@ -562,17 +562,15 @@ void DCAEN1740D::InitModule() {
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 5 " << CheckError(ret) << std::endl;
             
             //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xFFF0FFFF | 0x00010000); // set bit sIN to trigger out
-		//ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0xF03F); // TTL, high imp, LVDS out, TRGOUT = 1, 
-		//ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0x3C03F); // TRGOUT=1
 		ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0x3403D); // TRGOUT = SIN
-		//ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0x30000); // TRGOUT = SIN (suggested by CAEN)
+		//ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x811C, 0x5403D); // TRGOUT = CLK
             CheckError(ret);
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 6 " << CheckError(ret) << std::endl;
             
 		//TO BE REMOVED
 	
-	CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
-	cout << "Register 0x811C: " << read << endl;
+	//CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
+	//cout << "Register 0x811C: " << read << endl;
             
             break;
             
@@ -1002,9 +1000,6 @@ void DCAEN1740D::ShowData(DGDisplay *fDisplay, DAcquisition *fAcquisition) {
 uint32_t read;
     
 	std::cout << "Digitiser " << m_Name << std::endl;
-CAEN_DGTZ_ReadRegister(m_Handle, 0x811C, &read);
-cout << "Register 0x811C: " << read << endl;
-
     std::cout << "\tReading bytes =\t" << ( (float)(Nb-prevNb) / 1024 / 1024 / fAcquisition->m_ElapsedAcqTime*1.048576f )  << " [MB/s]" << std::endl;
     std::cout << "\tEvents =\t"      << Ne  << std::endl;
     std::cout << "\tRate =\t\t"        <<  ((float)Ne / ((fAcquisition->m_ElapsedAcqTime*1.048576f))/1000 ) << "[Kevt/s]"<< std::endl;
@@ -1147,7 +1142,7 @@ void DCAEN1740D::DataSave(DAcquisition *fAcquisition){
         m_StringBuffer2.clear();  // buffer usato in m_savingformat2
         m_BufferPos = 0;
         //** FUNZIONA SOLO CON DUE DIGIT>...
-        if(Using2Digitisers) Using2Digitisers = 0;
+        if(Using2Digitisers != 5) Using2Digitisers++;
         else
         {
             Using2Digitisers=1;
