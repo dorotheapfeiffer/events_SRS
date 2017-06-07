@@ -29,10 +29,11 @@ extern std::string g_Path;
 
   //fModuleList->Add(fDV1718     = new DV1718(   (char*)"VME_USB_Bridge",  0x00000000));
   //fModuleList->Add(fDMadc32    = new DMadc32(  (char*)"Mesytec MADC-32", 0xd0000000));
-  //fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"CAEN 1740D",      0x32100000));
-  //fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"CAEN 1740D new",      0x35100000));
-  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"CAEN 1740D Master",     0x33100000));
-  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"CAEN 1740D Slave",      0x34100000));
+  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"MB1 Master",     0x22210000));
+  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"MB2 Slave",      0x22220000));
+  fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"MG1",      0x11110000));
+  //fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"MG2",      0x11120000));
+  //fModuleList->Add(fDCAEN1740D  = new DCAEN1740D((char*)"MG3",      0x11130000));
 
   //int nrDigitiser = 1;
   //UInt_t AddrDigitiser[0x34100000, 0x33100000];
