@@ -137,15 +137,15 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     
     std::cout<<"\t+ module CAEN 1740...\n";
     
-    m_BaseAddress		= addr;
-    m_ModuleID		= 0x6004;
-    m_Firmware		= 1;
-    m_Enabled         = 0;
+    m_BaseAddress    = addr;
+    m_ModuleID	     = 0x6004;
+    m_Firmware	     = 1;
+    m_Enabled        = 0;
     
     UInt_t LinkNum = 0;
     UInt_t ConetNode = 0;
     
-    m_localBuffer		= NULL;
+    m_localBuffer       = NULL;
     m_AcqMode		= 0;
     m_Handle		= -1;
     m_Clock		= 0;
@@ -153,7 +153,7 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     //m_RecordLength	= 512;
     //m_Range		= 4096;
     //m_Range_mV		= 2000;
-    m_NrChannels		= 64;
+    m_NrChannels	= 64;
     m_NrGroups		= 8;
     m_DecimationFactor	= 1;
     //m_PostTrigger		= 50;
@@ -162,8 +162,7 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     m_ExtTriggerMode	= 1;
     //m_FPIOtype		= 0;
     //m_RunSyncMode		= CAEN_DGTZ_RUN_SYNC_Disabled;
-    m_RunSyncMode = CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain;  // questa riga lha messa FRAPI
-    // dovrebbe prenderla da zabarc  
+    m_RunSyncMode = CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain;  // questa riga lha messa FRAPI -- dovrebbe prenderla da zabarc  
     m_Delay		= 0;
     //m_IRQ 		= 0;
     
@@ -191,21 +190,21 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     
     //m_SelfTriggerMaskDPP[0] = 1; // this is not in the for loop, set element 0 to 1;
     
-    m_AcqModeDPP 		= 1;
+    m_AcqModeDPP 	= 1;
     m_RecordLengthDPP	= 600;
     
     m_EnableChargePedestalDPP = 0;
     
     for(UInt_t i = 0; i < m_NrGroups; i++){
-        m_GroupEnableMaskDPP[i]	= 1;
+        m_GroupEnableMaskDPP[i]	    = 1;
         m_DCoffsetDPP[i]            = 32768; // this is in the middle, no offset
-        m_BaseLineDPP[i] 		= 16;
-        m_PreGateDPP[i] 		= 20;
-        m_GateWidthDPP[i] 		= 200;
+        m_BaseLineDPP[i]        	= 64;
+        m_PreGateDPP[i] 		= 50;
+        m_GateWidthDPP[i] 		= 250;
         m_PulsePolarityDPP[i]	= 0;
-        m_TriggerHoldOffDPP[i] 	= 0;
-        m_PreTriggerDPP[i]		= 50;
-        m_ChargeSensitivityDPP[i]	= 5;
+        m_TriggerHoldOffDPP[i] 	= 350;
+        m_PreTriggerDPP[i]		= 100;
+        m_ChargeSensitivityDPP[i]	= 0;
         m_TriggerSmoothingDPP[i]	= 0;
     }
     
@@ -221,7 +220,7 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     
     
     for(UInt_t i = 0; i < m_NrChannels; i++){
-        m_ThresholdDPP[i] 		= 100;
+        m_ThresholdDPP[i]  = 100;
     }
     
     /** perchè è un nuovo loop??? **/
@@ -230,8 +229,6 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     
     //** da capire memset(NumEvents, 0, MAX_CHANNELS*sizeof(NumEvents[0])) cosa fa... **/
     memset(NumEvents, 0, MAX_CHANNELS*sizeof(NumEvents[0]));
-    
-
     
     if( VME_CRATE ){
         /** CAEN_DGTZ_OpenDigitizer() qui cambiare per USB,Opt, etc...) **/
@@ -363,7 +360,7 @@ void DCAEN1740D::InitModule() {
     for(unsigned i = 0; i < m_NrGroups; i++) {
 	uint32_t address = 0x1074 + 0x100*i;
         //ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8074, m_TriggerHoldOffDPP[i]);
-        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_TriggerHoldOffDPP[i]);  //DA CONTROLLARE !!! 170530
+        ret = CAEN_DGTZ_WriteRegister(m_Handle, address, m_TriggerHoldOffDPP[i]);  //DA CONTROLLARE !!! 170530 ma dovrebbe funzionare gia cosi! 
         if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] Trigger Hold Off " << CheckError(ret) << std::endl;
     }
     
@@ -376,6 +373,7 @@ void DCAEN1740D::InitModule() {
      }
      */
     
+    // what is the follwing function???? 
     for(unsigned i = 0; i < m_NrGroups; i++) {
         uint32_t DppCtrl1 = 0;
         DppCtrl1 = ( ((m_ChargeSensitivityDPP[i] & 0x7) <<  0)   |  // charge sensitivity 0x7 = 20.48pC
@@ -431,7 +429,7 @@ void DCAEN1740D::InitModule() {
     }
     
     /* Set the waveform lenght (in samples) */
-    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP/8); // va diviso per 2^n con n=0,1,2,3 legato alla baseline
+    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x8024, m_RecordLengthDPP/8); // va diviso per 2^n con n=0,1,2,3 legato alla baseline, ma senconde me non dovrebbe esserci il diviso 8 ! 
     if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] SetRecordLength " << CheckError(ret) << std::endl;
     
     /* Set DC offset */
@@ -697,7 +695,9 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
     
     // this function could possibly goes to separate thread...
     //static flag = 0;
-    if( m_Size == 0 ) return; // no data to display, return
+    if( m_Size == 0 ) 
+      cout << "no data to display. " << endl;  //added by FraPi 
+    return; // no data to display, return
     //UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot
     
     DKeyboard *dKeyboard = &DKeyboard::GetInstance();
@@ -712,7 +712,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
         gp << "set x2tics nomirror tc lt 0\n";
         gp << "set yrange  [0:4095] \n"; //65535] \n";
         gp << "set ytics nomirror tc lt 0\n";
-        gp << "set y2range [-2.2:2.2] \n";
+	gp << "set y2range [-1:1] \n"; //gp << "set y2range [-2.2:2.2] \n";
         gp << "set y2tics nomirror tc lt 0\n";
         gp << "set grid ytics lt 0 lw 1 lc rgb \"#880000\"\n";
         gp << "set grid xtics lt 0 lw 1 lc rgb \"#880000\"\n";
@@ -740,7 +740,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
         //    cout << "event i: "<< i << "\tj: " << j << endl;
         //uint32_t Charge     = gEvent[i][0].Charge & 0xFFFF;
         uint32_t SubChannel = gEvent[i][0].SubChannel & 0xFFFF;
-        cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << " i: " << i << endl;
+        //cout << "SubChannel: "<< SubChannel << "\tdKeyboard->m_ch["<<i<<"]: " <<  dKeyboard->m_ch[i] << " i: " << i << endl;
         //if(dKeyboard->m_ch[i] && SubChannel == i){
         if(dKeyboard->m_ch[i]){
             cout << "in, ch: "<< SubChannel << "\tdK" <<  dKeyboard->m_ch[i] << endl;
@@ -759,25 +759,33 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
                 gpfile << endl;
             }
       */
-            float ScalingFactor = 0.0625;
+            float ScalingFactor = 0.0625; //(=4096/65536)
             float pippo;
             for(uint32_t k = 0; k < gWaveforms->Ns; k++){
-                pippo = (65535 - m_DCoffsetDPP[i]) * ScalingFactor;
-                
+	      pippo = (65535 - m_DCoffsetDPP[i]) * ScalingFactor;   // offset in 16bit (65536) everything else in 12bit
                 gpfile << gWaveforms->Trace1[k] << " ";                  // signal           column 1
-                gpfile << 100 + 3900 * gWaveforms->DTrace1[k] << " ";            // gate             column 2
-                gpfile << pippo + 500 * gWaveforms->DTrace2[k] << " ";            // trigger + DCOffset(scaled)         column 3
+                gpfile << 100 + 3900 * gWaveforms->DTrace1[k] << " ";            // gate   from 100 to 3900          column 2
+                gpfile << pippo + 500 * gWaveforms->DTrace2[k] << " ";            // trigger + DCOffset(scaled)         column 3 (from pippo to pippo+500)
                 gpfile << endl;
             }
             gpfile.close();
             gp_command += string("'") + fname + string("' u 1 w l ls 1 t 'ch") + to_string(i) + string("', ");
-            gp_command += string("'") + fname + string("' u 2 w l ls 2 t 'gt") + to_string(i) + string("', ");
-            gp_command += string("'") + fname + string("' u 3 w l ls 3 t 'ho") + to_string(i) + string("', ");
-            gp_command += string("'") + fname + string("' u 4 w l ls 4 t 'th") + to_string(i) + string("', ");
+            gp_command += string("'") + fname + string("' u 2 w l ls 2 t 'gate") + to_string(i) + string("', ");
+            gp_command += string("'") + fname + string("' u 3 w l ls 3 t 'trigger") + to_string(i) + string("', ");
+            //gp_command += string("'") + fname + string("' u 4 w l ls 4 t 'th") + to_string(i) + string("', ");
             gp << gp_command << endl;
         }
         //if (gp_command.length() > 5) gp << gp_command << endl;
         //}
+
+	//FRAPI: THIS IS FROM THE CAEN DEMO
+	// fprintf(gPlotDataFile, "%d ", gWaveforms->Trace1[j]);                 /* samples */
+	//   fprintf(gPlotDataFile, "%d ", 2000 + 200 *  gWaveforms->DTrace1[j]);  /* gate    */
+	//   fprintf(gPlotDataFile, "%d ", 1000 + 200 *  gWaveforms->DTrace2[j]);  /* trigger */
+	//   fprintf(gPlotDataFile, "%d ", 500 + 200 *  gWaveforms->DTrace3[j]);   /* trg hold off */
+	//  fprintf(gPlotDataFile, "%d\n", 100 + 200 *  gWaveforms->DTrace4[j]);  /* overthreshold */
+
+
     }
     
 }
