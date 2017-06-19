@@ -23,6 +23,7 @@ public:
 	void CreateHistograms();
 private:
 	RootFile *fRoot = 0;
+	int format=0;
 	bool isRawPedestalRun = false;
 	bool isPedestalRun = false;
 	bool isZSRun = false;
@@ -32,7 +33,7 @@ private:
 	int fViewEnd = 0;
 	signed int unixtimestamp = 0;
 	int timestamp_us = 0;
-	int eventNr = 0;
+	int eventNr = 1;
 	unsigned int runNr = 0;
 	int headerLDC = 0;
 	int headerEquipment = 0;

@@ -10,8 +10,8 @@
 
 const int BUFFER_SIZE_INT = 1;
 
-FILE *in;
-FILE *out;
+FILE *in=0;
+FILE *out=0;
 int n;
 
 unsigned int rawdata_before_two = 0;
@@ -185,7 +185,7 @@ int main(int argc, char**argv)
 		return printUsage("Wrong combination of arguments!");
 
 	}
-	if ((cFound && zsCut == 0) || (nFound && numEvents == 0))
+	if ((cFound && zsCut < 0) || (nFound && numEvents == 0))
 	{
 		return printUsage("Wrong combination of arguments!");
 	}
@@ -218,6 +218,9 @@ int main(int argc, char**argv)
 	{
 		eventNr = 0;
 		counter = 0;
+		rawdata_before_two = 0;
+		rawdata_before = 0;
+		rawdata = 0;
 		in = fopen(fileName.c_str(), "rb");
 		if (!in)
 		{
@@ -235,6 +238,7 @@ int main(int argc, char**argv)
 		}
 		else
 		{
+			
 			isPedestal = true;
 			isRawPedestal = false;
 			parser->SetRunFlags(isRawPedestal, isPedestal);
@@ -242,24 +246,24 @@ int main(int argc, char**argv)
 
 		if (in)
 		{
-			while (!feof(in) && (eventNr < numEvents || numEvents == 0))
+			rewind(in);
+			while (!feof(in) && (eventNr <= numEvents || numEvents == 0))
 			{
-
 				rawdata_before_two = rawdata_before;
 				rawdata_before = rawdata;
+			
 				n = fread(&rawdata, sizeof(unsigned int), BUFFER_SIZE_INT, in);
 				counter += n;
 
 				eventNr = parser->AnalyzeWord(rawdata, rawdata_before,
 						rawdata_before_two);
-
+	
 				if (eventNr < 0)
 				{
 					fclose(in);
 					delete parser;
 					return -1;
 				}
-
 			}
 
 			time_t end = time(0);
@@ -267,20 +271,30 @@ int main(int argc, char**argv)
 
 			printf("\n%ld kB, %ld words read from library in %d s.\n",
 					(long int) (counter * 4 / 1024), counter, duration);
+			int cnt=0;
+			if(feof(in))
+			{
+				cnt = eventNr;
+			}
+			else
+			{
+				cnt = eventNr-1;
+			}
 			if (isRawPedestal)
 			{
-				printf("RawPedestal Events %d\n\n", eventNr);
+				printf("RawPedestal Events %d\n\n", cnt);
 			}
 			else if (isPedestal)
 			{
-				printf("Pedestal Events %d\n\n", eventNr);
+				printf("Pedestal Events %d\n\n", cnt);
 			}
 			else
 			{
 				limit = 0;
-				printf("Events %d\n", eventNr);
+				printf("Events %d\n", cnt);
 			}
 			fclose(in);
+			in = 0;
 
 		}
 		else
@@ -303,11 +317,11 @@ int printUsage(std::string errorMessage)
 
 	printf("\nUsages:\n");
 	printf(
-			"1a) analyse non zero-suppressed pedestal data:\n\traw2root -rp pedestal.raw  [-n events]\n");
+			"1a) analyse non zero-suppressed pedestal data:\n\tapv2root -rp pedestal.raw\n");
 	printf(
-			"1b) analyse non zero-suppressed data and subtract pedestal:\n\traw2root -rd data.raw -r pedestal.root -c ZSCut -x 0,1 -y 2,3 [-n events] [-utpc]\n");
+			"1b) analyse non zero-suppressed data and subtract pedestal:\n\tapv2root -rd data.raw -p pedestal.root -c ZSCut -x 0,1 -y 2,3 [-n events] [-utpc]\n");
 	printf(
-			"2) analyse zero-suppressed data:\n\traw2root -rd data.raw -x 0,1 -y 2,3 [-n events]  [-utpc]\n");
+			"2) analyse zero-suppressed data:\n\tapv2root -rd data.raw -x 0,1 -y 2,3 [-n events]  [-utpc]\n");
 
 	printf("\nFlags:\n");
 	printf(
@@ -315,7 +329,7 @@ int printUsage(std::string errorMessage)
 	printf(
 			"-rp: raw pedestal file with the extension .raw\n\tUsed only for non-zero suppressed data.\n\tThe pedestal file was created by DATE.\n");
 	printf(
-			"-p: pedestal root file with the extension .root\n\tUsed only for non-zero suppressed data.\n\tThis file has to be created with raw2root in step 1a)\n");
+			"-p: pedestal root file with the extension .root\n\tUsed only for non-zero suppressed data.\n\tThis file has to be created with apv2root in step 1a)\n");
 	printf(
 			"-c: zero-supression cut for non-zero supressed data.\n\tA threshold is calculated by multiplying the pedestal noise with the cut value for each strip.\n\t"
 					"Per event it is checked whether the mean strip ADC is over the threshold, in which case the strip is included in the data.\n");

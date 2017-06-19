@@ -13,9 +13,9 @@
 #include "TString.h"
 
 #define NFEC 4
-const long max_hit = 100000;
+const long max_hit = 1000000000;
 const int minDeltaStrip = 2;
-const int minDeltaT = 150;
+const int minDeltaT = 600;
 
 using namespace std;
 
@@ -36,8 +36,9 @@ public:
 			unsigned short chNo, short x, short y, short adc, short tdc,
 			short bcid, double chipTime);
 
-	void AddClusters(float clusterPosition, short clusterSize,
-			unsigned int clusterADC, float clusterTime, string coordinate);
+	void AddClusters(float clusterPosition, float clusterPositionUTPC,
+			short clusterSize, unsigned int clusterADC, float clusterTime,
+			string coordinate);
 	void FillHits();
 
 	void DeleteHitsTree();
@@ -81,13 +82,15 @@ private:
 	unsigned short* m_clusterSizeY;
 	float * m_clusterX;
 	float * m_clusterY;
+	float * m_clusterXUTPC;
+	float * m_clusterYUTPC;
 	unsigned int * m_clusterADCX;
 	unsigned int * m_clusterADCY;
 	float * m_clusterTimeX;
 	float * m_clusterTimeY;
 
-	std::multimap<float, float > clustersX;
-	std::multimap<float, float > clustersY;
+	std::multimap<float, float> clustersX;
+	std::multimap<float, float> clustersY;
 
 	ClassDef(RootFile,1)
 };

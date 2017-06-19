@@ -56,16 +56,18 @@ void RawdataParser::SetRunFlags(bool isRawPedestal, bool isPedestal)
 	isPedestalRun = isPedestal;
 
 	numTimeBins = 0;
+	eventNr=1;
 	if (!fViewEvent)
 	{
 		fRoot->SetRunFlags(isRawPedestalRun, isPedestalRun);
+		
 	}
 }
 
 int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 		int rawdata_before_two)
 {
-
+//std::cout <<eventNr<< " " << rawdata_before_two << " " << rawdata_before << " " << rawdata << std::endl;
 	if ((rawdata_before >> 8) == 0x414443)
 	{
 
@@ -146,19 +148,34 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			}
 			else if (!isRawPedestalRun && !isPedestalRun && !isZSRun)
 			{
+			
 				ComputeCorrectedData(apvID);
 			}
 		}
+		
 
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50
-			&& rawdata_before_two == 0x50)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50 && rawdata_before_two == 0x50)
 	{
+		format=0;
 		header++;
 		inEvent = false;
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50
-			&& rawdata_before_two != 0x50)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48 && rawdata_before_two == 0x48)
+	{
+		format = 1;
+		header++;
+		inEvent = false;
+	}
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50 && rawdata_before_two != 0x50)
+	{
+		headerLDC++;
+		headerEquipment++;
+
+		inEquipmentHeader = true;
+		inEvent = false;
+	}
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48 && rawdata_before_two != 0x48)
 	{
 		headerLDC++;
 		headerEquipment++;
@@ -171,37 +188,78 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 	{
 		wordCountEquipmentHeader++;
 
-		if (wordCountEquipmentHeader == 5)
+		if(format == 0)
 		{
-			runNr = rawdata_before;
-			eventNr = rawdata;
-			if (fViewEnd < eventNr && fViewEnd != 0)
+			if (wordCountEquipmentHeader == 5)
 			{
-				return -1;
+				runNr = rawdata_before;
+				eventNr = rawdata;
+				
+				if (fViewEnd < eventNr && fViewEnd != 0)
+				{
+					return -1;
+				}
+
+				if (fViewStart <= eventNr && fViewEnd >= eventNr)
+				{
+					printf("\neventNr  %d - run Nr %d\n", eventNr, runNr);
+
+				}
 			}
-
-			if (fViewStart <= eventNr && fViewEnd >= eventNr)
+			else if (wordCountEquipmentHeader == 18)
 			{
-				printf("\neventNr  %d - run Nr %d\n", eventNr, runNr);
-
+				unixtimestamp = rawdata_before;
+				timestamp_us = rawdata;
+				
+			}
+			if (wordCountEquipmentHeader == 22)
+			{
+				fecID = rawdata_before & 0xff;
+				if (maxFECID < fecID)
+				{
+					maxFECID = fecID;
+				}
+				if (minFECID > fecID)
+				{
+					minFECID = fecID;
+				}
 			}
 		}
-		else if (wordCountEquipmentHeader == 18)
+		else
 		{
-			unixtimestamp = rawdata_before;
-			timestamp_us = rawdata;
-		}
-		if (wordCountEquipmentHeader == 22)
-		{
-			fecID = rawdata_before & 0xff;
-			if (maxFECID < fecID)
+			if (wordCountEquipmentHeader == 5)
 			{
-				maxFECID = fecID;
+				runNr = rawdata_before;
+				eventNr = rawdata;
+				
+				if (fViewEnd < eventNr && fViewEnd != 0)
+				{
+					return -1;
+				}
+				if (fViewStart <= eventNr && fViewEnd >= eventNr)
+				{
+					printf("\neventNr  %d - run Nr %d\n", eventNr, runNr);
+
+				}
 			}
-			if (minFECID > fecID)
+			else if (wordCountEquipmentHeader == 16)
 			{
-				minFECID = fecID;
+				unixtimestamp = rawdata_before;
+				timestamp_us = rawdata;
+				
 			}
+			if (wordCountEquipmentHeader == 20)
+			{
+				fecID = rawdata_before & 0xff;
+				if (maxFECID < fecID)
+				{
+					maxFECID = fecID;
+				}
+				if (minFECID > fecID)
+				{
+					minFECID = fecID;
+				}
+			}		
 		}
 	}
 	if ((rawdata >> 8) == 0x41505a || (rawdata >> 8) == 0x414443)
@@ -508,6 +566,7 @@ void RawdataParser::ComputePedestalData(int theApvID)
 
 void RawdataParser::ComputeCorrectedData(int theApvID)
 {
+
 	for (int stripNo = 0; stripNo < NCH; stripNo++)
 	{
 		maxADC = 0;
@@ -541,6 +600,7 @@ void RawdataParser::ComputeCorrectedData(int theApvID)
 
 void RawdataParser::CreateHistograms()
 {
+
 	fRoot->CreateHistograms(minFECID, maxFECID, minAPVID, maxAPVID);
 
 }

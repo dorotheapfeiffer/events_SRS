@@ -67,8 +67,11 @@ private:
 	bool isPedestalRun;
 	bool isZSRun;
 	bool isUTPCRun;
+	bool isFirstLine = true;
+	bool newData = false;
 	int amplitudeThreshold;
-
+	ofstream fTextFile;
+ 
 	TFile * fFile;
 	TFile * fFilePedestal;
 	TTree * fHitTree;

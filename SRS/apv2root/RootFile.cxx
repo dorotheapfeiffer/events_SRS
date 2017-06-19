@@ -4,7 +4,6 @@
 #include <TStyle.h>
 #include "TMath.h"
 
-
 RootFile::RootFile(TString fileName, TString pedestalName,
 		bool isRawPedestalRun, bool isPedestalRun, bool isZSRun, bool isUTPC,
 		int uTPCThreshold, std::vector<int> xChips, std::vector<int> yChips) :
@@ -31,7 +30,7 @@ RootFile::RootFile(TString fileName, TString pedestalName,
 //====================================================================================================================
 RootFile::~RootFile()
 {
-
+	FillHits();
 	fFile->Close();
 
 	if (!isRawPedestalRun && !isPedestalRun)
@@ -180,7 +179,6 @@ void RootFile::FillPedestalData(int fecID, int apvID, int stripNo, float mean)
 	int theID = (fecID - 1) * NAPV + apvID;
 	chipData[theID][stripNo]->Fill(mean);
 
-
 }
 
 void RootFile::CreateHistograms(int minFecID, int maxFecID, int minAPVID,
@@ -218,7 +216,6 @@ void RootFile::CreateHistograms(int minFecID, int maxFecID, int minAPVID,
 				for (int stripNo = 0; stripNo < NCH; stripNo++)
 				{
 					float offset = chipData[theID][stripNo]->GetMean();
-
 					float noise = chipData[theID][stripNo]->GetRMS();
 					pedestalNoise[theID]->Fill(stripNo, noise);
 					pedestalOffset[theID]->Fill(stripNo, offset);
@@ -352,7 +349,23 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 		int apvID, int chNo, float maxADC, int timeBinMaxADC,
 		std::vector<float> &timeBinADCs)
 {
+	newData = true;
 
+	if (isFirstLine)
+	{
+		isFirstLine = false;
+		fTextFile
+				<< "timestamp, us, eventId, fecID, apvID, chNo, adc00, adc01, adc02, adc03,adc04,adc05,adc06,adc07,adc08,adc09,adc10,adc11, adc12,adc13,adc14,adc15,adc16,adc17,adc18,adc19,adc20,adc21,adc22,adc23,adc24,adc25,adc26,adc27,adc28,adc29"
+				<< std::endl;
+	}
+
+	fTextFile << timestamp << "," << us << "," << eventId << "," << fecID << ","
+			<< apvID << "," << chNo;
+	for (int i = 0; i < 30; i++)
+	{
+		fTextFile << "," << timeBinADCs[i];
+	}
+	fTextFile << std::endl;
 
 	m_timestamp = timestamp;
 	m_us = us;
@@ -368,8 +381,8 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 	unsigned int planeID = GetPlaneID(apvID);
 	// Plane 0: x
 	// plane 1: y
-	unsigned int x =0;
-	unsigned int y =0;
+	unsigned int x = 0;
+	unsigned int y = 0;
 
 	if (planeID == 0)
 	{
@@ -387,7 +400,7 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 		y = -1;
 	}
 
-	if(planeID == 0)
+	if (planeID == 0)
 	{
 		m_strip[m_chID] = x;
 		m_planeID[m_chID] = 0;
@@ -700,7 +713,8 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 
 void RootFile::FillHits()
 {
-	if (!isPedestalRun && !isRawPedestalRun)
+
+	if (!isPedestalRun && !isRawPedestalRun && newData)
 	{
 		ntx = TMath::Abs(tx0 - txf) + 1;
 		nty = TMath::Abs(ty0 - tyf) + 1;
@@ -752,6 +766,7 @@ void RootFile::FillHits()
 			}
 		}
 		fHitTree->Fill();
+		newData = false;
 		resetUTPCData();
 		m_chID = 0;
 		m_nchX = 0;
@@ -770,6 +785,10 @@ void RootFile::InitRootFile()
 
 	if (!isPedestalRun && !isRawPedestalRun)
 	{
+		TString textFileName = fFileName;
+		textFileName.ReplaceAll(".root", ".csv");
+		fTextFile.open(textFileName);
+
 		fHitTree = new TTree("events", "GEM events ROOT file");
 
 		fHitTree->SetDirectory(fFile);
@@ -812,7 +831,7 @@ void RootFile::InitRootFile()
 		m_adc27 = new short[10000];
 		m_adc28 = new short[10000];
 		m_adc29 = new short[10000];
-		
+
 		fHitTree->Branch("timestamp", &m_timestamp, "timestamp/I");
 		fHitTree->Branch("us", &m_us, "us/I");
 		fHitTree->Branch("evtID", &m_evtID, "evtID/I");
@@ -858,7 +877,7 @@ void RootFile::InitRootFile()
 		fHitTree->Branch("adc27", m_adc27, "adc27[nch]/S");
 		fHitTree->Branch("adc28", m_adc28, "adc28[nch]/S");
 		fHitTree->Branch("adc29", m_adc29, "adc29[nch]/S");
-	
+
 		//std::cout << "Hit tree created!" << std::endl;
 		if (isUTPCRun)
 		{
@@ -976,9 +995,14 @@ void RootFile::WriteRootFile()
 	else
 	{
 		fHitTree->Write(0, TObject::kWriteDelete);
+		if (fTextFile.is_open())
+		{
+			fTextFile.close();
+		}
 	}
 	//fFile->Write(0, TObject::kWriteDelete);
 //fFile->Write();
+
 }
 
 int RootFile::GetStripNumber(int chNo)
@@ -1014,7 +1038,6 @@ void RootFile::resetUTPCData()
 	energyMaximaY.clear();
 }
 
-
 unsigned int RootFile::GetPlaneID(unsigned int chipID)
 {
 	std::vector<int>::iterator it;
@@ -1037,7 +1060,6 @@ unsigned int RootFile::GetPlaneID(unsigned int chipID)
 		}
 	}
 }
-
 
 unsigned int RootFile::GetChannelX(unsigned int chipID, unsigned int channelID)
 {

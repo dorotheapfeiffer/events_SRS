@@ -4,7 +4,8 @@
 
 RawdataParser::RawdataParser(std::string fileName, double bc, double tac,
 		std::vector<int> xChips, std::vector<int> yChips, std::string readout,
-		bool viewEvent, int viewStart, int viewEnd, int threshold, int clusterSize) :
+		bool viewEvent, int viewStart, int viewEnd, int threshold,
+		int clusterSize) :
 		bcClock(bc), tacSlope(tac), xChipIDs(xChips), yChipIDs(yChips), readoutType(
 				readout), fViewEvent(viewEvent), fViewStart(viewStart), fViewEnd(
 				viewEnd), fThreshold(threshold), fMinClusterSize(clusterSize)
@@ -336,13 +337,13 @@ unsigned int RawdataParser::AnalyzeWord(unsigned int rawdata,
 									x, y, adc, tdc, bcid, chipTime);
 						}
 
-						if (x > -1 && overThresholdFlag && adc >= fThreshold)
+						if (x > -1 && adc >= fThreshold)
 						{
 							hitsX.insert(
 									std::make_pair(chipTime,
 											std::make_pair(x, adc)));
 						}
-						if (y > -1 && overThresholdFlag && adc >= fThreshold)
+						if (y > -1 && adc >= fThreshold)
 						{
 							hitsY.insert(
 									std::make_pair(chipTime,
@@ -631,6 +632,8 @@ int RawdataParser::clusterStrips(
 
 	std::multimap<int, std::pair<double, unsigned int> >::iterator itCluster =
 			cluster.begin();
+	double lastTime = 0;
+	double lastTimeStrip = 0;
 	double centerOfGravity = 0;
 	double centerOfTime = 0;
 	unsigned int totalADC = 0;
@@ -651,6 +654,11 @@ int RawdataParser::clusterStrips(
 				|| (abs(strip1 - strip2) > 0
 						&& abs(strip1 - strip2) <= minDeltaStrip))
 		{
+			if (time1 > lastTime)
+			{
+				lastTime = time1;
+				lastTimeStrip = strip1;
+			}
 			centerOfGravity += strip1 * adc1;
 			centerOfTime += time1 * adc1;
 			totalADC += adc1;
@@ -663,11 +671,13 @@ int RawdataParser::clusterStrips(
 			centerOfTime = (centerOfTime / totalADC);
 			if (stripCount >= fMinClusterSize)
 			{
-				fRoot->AddClusters(centerOfGravity, stripCount, totalADC,
+				fRoot->AddClusters(centerOfGravity, lastTimeStrip, stripCount, totalADC,
 						centerOfTime, coordinate);
 			}
 
 			clusterCount++;
+			lastTime = 0;
+			lastTimeStrip = 0;
 			stripCount = 0;
 			centerOfGravity = 0;
 			centerOfTime = 0;
@@ -681,7 +691,7 @@ int RawdataParser::clusterStrips(
 		centerOfTime = (centerOfTime / totalADC);
 		if (stripCount >= fMinClusterSize)
 		{
-			fRoot->AddClusters(centerOfGravity, stripCount, totalADC,
+			fRoot->AddClusters(centerOfGravity, lastTimeStrip, stripCount, totalADC,
 					centerOfTime, coordinate);
 		}
 		clusterCount++;
