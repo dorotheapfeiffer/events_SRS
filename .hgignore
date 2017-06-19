@@ -17,4 +17,5 @@
 \.gch$
 \.out$
 \.DS_Store$
+\.pcm$
 \.swp

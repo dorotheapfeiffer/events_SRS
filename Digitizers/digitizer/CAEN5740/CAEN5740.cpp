@@ -1,4 +1,4 @@
-/***************************************************************************F 
+/***************************************************************************F
 *
 * Implementation class Spectrum
 *
@@ -175,7 +175,10 @@ for(Int_t i = 0; i < 32; i++)
  int LinkNum = gDeviceNr++;
  
  int ConetNode = 0;
- int BaseAddress = 0;
+    
+//--FraMe: --> it MUST be a variable passed to the function !!!
+ //int BaseAddress = 0; //base address for a single USB Desk digitiser
+ int BaseAddress = 0x11110000; //base address of the V1740D in the test set-up on my desk
 
 
  cout << "OpenDigitizer: " << CAEN_DGTZ_USB << " " << LinkNum << " " <<  ConetNode << " " <<  BaseAddress << endl;
