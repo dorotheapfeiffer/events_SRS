@@ -1,0 +1,2256 @@
+#include "uTPCAnalysis.h"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <time.h>
+#include "uTPCViewer.h"
+#include "TMatrixD.h"
+#include "TMatrixDEigen.h"
+#include "TMath.h"
+#include "TF1.h"
+
+uTPCPlotData::uTPCPlotData()
+{
+	fThresholdAmplitude = 0;
+	fThresholdDistance = 0;
+	fThresholdPCA = 0;
+	fThresholdGamma = 0;
+	fThresholdDiscard = 0;
+}
+;
+
+uTPCPlotData::~uTPCPlotData()
+{
+	clearDataStructures();
+	fThresholdAmplitude = 0;
+	fThresholdDistance = 0;
+	fThresholdPCA = 0;
+	fThresholdGamma = 0;
+	fThresholdDiscard = 0;
+}
+;
+
+void uTPCPlotData::clearDataStructures()
+{
+	this->fPointClustersX.clear();
+	this->fPointClustersY.clear();
+	this->fEnergyX.clear();
+	this->fEnergyY.clear();
+	this->fEnergyMaximaX.clear();
+	this->fEnergyMaximaY.clear();
+	this->fStripMaximaX.clear();
+	this->fStripMaximaY.clear();
+	this->fTimeMaximaX.clear();
+	this->fTimeMaximaY.clear();
+	this->fXEigenvectorX.clear();
+	this->fXEigenvectorY.clear();
+	this->fXNormalX.clear();
+	this->fXNormalY.clear();
+	this->fYEigenvectorX.clear();
+	this->fYEigenvectorY.clear();
+	this->fYNormalX.clear();
+	this->fYNormalY.clear();
+}
+
+uTPCRawData::uTPCRawData()
+{
+	fileIn = 0;
+	fileOut = 0;
+	treeIn = 0;
+	treeOut = 0;
+	event = 0;
+
+}
+
+uTPCRawData::~uTPCRawData()
+{
+
+	if (event != 0)
+	{
+		delete event;
+		event = 0;
+	}
+
+	treeIn = 0;
+	treeOut = 0;
+	if (fileIn != 0)
+	{
+		fileIn->Close();
+		fileIn = 0;
+	}
+
+	if (fileOut != 0)
+	{
+		printf("close file\n");
+		fileOut->Close();
+		fileOut = 0;
+	}
+
+}
+
+int uTPCRawData::getNumberOfStripsHit()
+{
+	return pNCH;
+}
+
+int uTPCRawData::getWaveformSize(unsigned int strip)
+{
+	//return pWaveform[strip].size();
+	return 27;
+}
+
+double uTPCRawData::getWaveformAtTimeBin(unsigned int strip,
+		unsigned int timeBin)
+{
+	unsigned int bin;
+	unsigned int stripNumber = getStripNumber(strip);
+	/*
+	 //CORRECTION ZS
+	 if ((stripNumber + 1) % 8 == 0 && timeBin>0)
+	 {
+	 bin = timeBin - 1;
+	 }
+	 else
+	 {
+	 bin = timeBin;
+	 }
+	 */
+	bin = timeBin;
+	switch (bin)
+	{
+	case 0:
+		return pADC0[strip];
+		break;
+	case 1:
+		return pADC1[strip];
+		break;
+	case 2:
+		return pADC2[strip];
+		break;
+	case 3:
+		return pADC3[strip];
+		break;
+	case 4:
+		return pADC4[strip];
+		break;
+	case 5:
+		return pADC5[strip];
+		break;
+	case 6:
+		return pADC6[strip];
+		break;
+	case 7:
+		return pADC7[strip];
+		break;
+	case 8:
+		return pADC8[strip];
+		break;
+	case 9:
+		return pADC9[strip];
+		break;
+	case 10:
+		return pADC10[strip];
+		break;
+	case 11:
+		return pADC11[strip];
+		break;
+	case 12:
+		return pADC12[strip];
+		break;
+	case 13:
+		return pADC13[strip];
+		break;
+	case 14:
+		return pADC14[strip];
+		break;
+	case 15:
+		return pADC15[strip];
+		break;
+	case 16:
+		return pADC16[strip];
+		break;
+	case 17:
+		return pADC17[strip];
+		break;
+	case 18:
+		return pADC18[strip];
+		break;
+	case 19:
+		return pADC19[strip];
+		break;
+	case 20:
+		return pADC20[strip];
+		break;
+	case 21:
+		return pADC21[strip];
+		break;
+	case 22:
+		return pADC22[strip];
+		break;
+	case 23:
+		return pADC23[strip];
+		break;
+	case 24:
+		return pADC24[strip];
+		break;
+	case 25:
+		return pADC25[strip];
+		break;
+	case 26:
+		return pADC26[strip];
+		break;
+	case 27:
+		return pADC27[strip];
+		break;
+	case 28:
+		return pADC28[strip];
+		break;
+	case 29:
+		return pADC29[strip];
+		break;
+	default:
+		return 0;
+	}
+
+	//return pWaveform[strip].at(timeBin);
+}
+
+int uTPCRawData::getStripNumber(unsigned int strip)
+{
+	return pStripNumber[strip];
+}
+
+int uTPCRawData::getStripId(unsigned int planeId, unsigned int stripNumber)
+{
+	for (int i = 0; i < SIZE; i++)
+	{
+		if (stripNumber == pStripNumber[i] && getPlaneId(i) == planeId)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+unsigned int uTPCRawData::getNumber()
+{
+	return pNumber;
+}
+
+int uTPCRawData::getPlaneId(unsigned int strip)
+{
+	return pPlaneId[strip];
+}
+
+int uTPCRawData::importData(TString dir, TString fileName, Bool_t analyze,
+		Bool_t fit, uTPCPlotData* plotData, uTPCViewer* mainFrame, int num)
+{
+	TString filePath = dir + "/" + fileName;
+
+	fileIn = TFile::Open(filePath);
+	treeIn = (TTree*) fileIn->Get("THit");
+
+	event = new uTPCEvent();
+
+	int numEvents = treeIn->GetEntries();
+	if (mainFrame)
+	{
+		mainFrame->SetProgressBarRange(0, numEvents);
+	}
+	treeIn->SetBranchAddress("nch", &pNCH);
+	treeIn->SetBranchAddress("planeID", &pPlaneId);
+	treeIn->SetBranchAddress("strip", &pStripNumber);
+	treeIn->SetBranchAddress("adc0", &pADC0);
+	treeIn->SetBranchAddress("adc1", &pADC1);
+	treeIn->SetBranchAddress("adc2", &pADC2);
+	treeIn->SetBranchAddress("adc3", &pADC3);
+	treeIn->SetBranchAddress("adc4", &pADC4);
+	treeIn->SetBranchAddress("adc5", &pADC5);
+	treeIn->SetBranchAddress("adc6", &pADC6);
+	treeIn->SetBranchAddress("adc7", &pADC7);
+	treeIn->SetBranchAddress("adc8", &pADC8);
+	treeIn->SetBranchAddress("adc9", &pADC9);
+	treeIn->SetBranchAddress("adc10", &pADC10);
+	treeIn->SetBranchAddress("adc11", &pADC11);
+	treeIn->SetBranchAddress("adc12", &pADC12);
+	treeIn->SetBranchAddress("adc13", &pADC13);
+	treeIn->SetBranchAddress("adc14", &pADC14);
+	treeIn->SetBranchAddress("adc15", &pADC15);
+	treeIn->SetBranchAddress("adc16", &pADC16);
+	treeIn->SetBranchAddress("adc17", &pADC17);
+	treeIn->SetBranchAddress("adc18", &pADC18);
+	treeIn->SetBranchAddress("adc19", &pADC19);
+	treeIn->SetBranchAddress("adc20", &pADC20);
+	treeIn->SetBranchAddress("adc21", &pADC21);
+	treeIn->SetBranchAddress("adc22", &pADC22);
+	treeIn->SetBranchAddress("adc23", &pADC23);
+	treeIn->SetBranchAddress("adc24", &pADC24);
+	treeIn->SetBranchAddress("adc25", &pADC25);
+	treeIn->SetBranchAddress("adc26", &pADC26);
+	treeIn->SetBranchAddress("adc27", &pADC27);
+	treeIn->SetBranchAddress("adc28", &pADC28);
+	treeIn->SetBranchAddress("adc29", &pADC29);
+	std::cout << "Analyze flag= " << analyze << std::endl;
+	if (analyze)
+	{
+		std::ofstream outputFile;
+		std::stringstream strParameters;
+
+		std::stringstream ending;
+		ending << "";
+		fileName.Replace(fileName.Length() - 5, fileName.Length(),
+				ending.str());
+
+		strParameters << dir << "/" << fileName << "_uTPC__Ampl_"
+				<< plotData->fThresholdAmplitude
+				//<< "__Dist_" << plotData->fThresholdDistance << "__PCA_"
+				//<< plotData->fThresholdPCA << "__Gamma_"
+				//<< plotData->fThresholdGamma
+				<< "__Discard_" << plotData->fThresholdDiscard << ".root";
+		TString theFileName;
+		if (!fit)
+		{
+
+			theFileName = strParameters.str();
+			fileOut = TFile::Open(theFileName, "RECREATE");
+		}
+		else
+		{
+			std::stringstream strName;
+			strName << dir << "uTPC_" << fileName;
+			theFileName = strName.str();
+			TString theFileNameOutput = theFileName;
+			theFileNameOutput.ReplaceAll(".root", ".txt");
+			std::cout << theFileNameOutput << std::endl;
+			outputFile.open(theFileNameOutput, std::ios_base::app);
+
+		}
+		fileOut = TFile::Open(theFileName, "RECREATE");
+		treeOut = new TTree("tree", "tree");
+		treeOut->Branch("uTPCEvent", "uTPCEvent", &event, 32000, 0);
+		std::cout << "Analyze" << std::endl;
+		if (num > 0)
+		{
+			numEvents = num;
+		}
+		for (int n = 0; n < numEvents && n < 8000000; n++)
+		{
+
+			selectEvent(n, plotData->fThresholdAmplitude,
+					plotData->fThresholdDistance, plotData->fThresholdPCA,
+					plotData->fThresholdGamma, plotData->fThresholdDiscard);
+			event->setEventID(n+1);
+			event->analyseEvent(this, plotData);
+			treeOut->Fill();
+			if ((n % 10000) == 0 && n > 0)
+			{
+				std::cout << "EventNr: " << n << std::endl;
+
+				treeOut->AutoSave("Overwrite");
+				if (mainFrame)
+				{
+					mainFrame->SetProgressBarPosition(n);
+				}
+
+				gSystem->Sleep(10);
+				gSystem->ProcessEvents();
+			}
+		}
+		if (mainFrame)
+		{
+			mainFrame->SetProgressBarPosition(numEvents);
+		}
+		gSystem->Sleep(100);
+		gSystem->ProcessEvents();
+
+		if (fit)
+		{
+
+			int xs, xe, ys, ye, fite, fits;
+
+			/*x position 2cm x 2 cm */
+			ys = 80;
+			ye = 95;
+			xs = 108;
+			xe = 123;
+
+			fite = ye;
+			fits = ys;
+
+			TString edge = "right";
+
+			TString cond1 = "(xs >=";
+			cond1 += xs;
+			cond1 += " && xs <= ";
+			cond1 += xe;
+			cond1 += " && ys >= ";
+			cond1 += ys;
+			cond1 += " && ys <= ";
+			cond1 += ye;
+			cond1 += ")&&fParticleTypeX==1&&fParticleTypeY==1";
+
+			TH1D* h1 = new TH1D("h1", "h1", fite - fits, fits, fite);
+			if (fite == ye && fits == ys)
+			{
+				treeOut->Draw("yfirst>>h1", cond1, "goff");
+			}
+			else
+			{
+				treeOut->Draw("xfirst>>h1", cond1, "goff");
+			}
+
+			treeOut->SetLineColor(4);
+
+			Double_t max1 = h1->GetMaximum();
+			Double_t min1 = h1->GetMinimum();
+			std::cout << "max1 " << max1 << std::endl;
+			std::cout << "min1 " << min1 << std::endl;
+
+			h1->SetLineColor(kRed);
+			h1->SetLineWidth(2);
+			h1->SetMarkerColor(kRed);
+
+			TF1 * f1;
+			if (edge == "right")
+			{
+				f1 = new TF1("f1", "[0]+[1]*TMath::Erfc(-(x-[2])/[3])");
+			}
+			else
+			{
+				f1 = new TF1("f1", "[0]+[1]*TMath::Erfc((x-[2])/[3])");
+			}
+			f1->SetParameters(min1, 0.5 * max1, (fits + fite) / 2, 2);
+			h1->Fit("f1");
+			std::cout << "FIT" << std::endl;
+			h1->GetFunction("f1")->SetLineColor(kRed);
+			h1->GetFunction("f1")->SetLineStyle(2);
+			h1->GetFunction("f1")->SetLineWidth(2);
+			f1->SetLineColor(kRed);
+			f1->SetLineStyle(2);
+			f1->SetLineWidth(2);
+			Double_t resolution1 = ((int) (100 * f1->GetParameter(3) * 400))
+					/ 100;
+			Double_t error1 = ((int) (100 * f1->GetParError(3) * 400)) / 100;
+
+			time_t rawtime;
+			struct tm * timeinfo;
+			time(&rawtime);
+			timeinfo = localtime(&rawtime);
+			char startTime[50];
+			strftime(startTime, 50, "%Y-%m-%d-%H-%M-%S", timeinfo);
+
+			outputFile << startTime << "," << strParameters.str() << ","
+					<< f1->GetParameter(0) << "," << f1->GetParError(0) << ","
+					<< f1->GetParameter(1) << "," << f1->GetParError(1) << ","
+					<< f1->GetParameter(2) << "," << f1->GetParError(2) << ","
+					<< f1->GetParameter(3) << "," << f1->GetParError(3)
+					<< std::endl;
+
+			std::cout << "Parameter 0: " << f1->GetParameter(0) << " "
+					<< f1->GetParError(0) << std::endl;
+			std::cout << "Parameter 1: " << f1->GetParameter(1) << " "
+					<< f1->GetParError(1) << std::endl;
+			std::cout << "Parameter 2: " << f1->GetParameter(2) << " "
+					<< f1->GetParError(2) << std::endl;
+			std::cout << "Parameter 3: " << f1->GetParameter(3) << " "
+					<< f1->GetParError(3) << std::endl;
+			outputFile.close();
+		}
+		else
+		{
+			treeOut->Write("", TObject::kOverwrite);
+			fileOut->Write();
+			fileOut->Close();
+		}
+	}
+	std::cout << "END import" << std::endl;
+
+	return numEvents;
+}
+
+void uTPCRawData::selectEvent(unsigned int eventNr, int thresholdAmplitude,
+		int thresholdDistance, int thresholdPCA, int thresholdGamma,
+		int thresholdDiscard)
+{
+	fThresholdAmplitude = thresholdAmplitude;
+	fThresholdDistance = thresholdDistance;
+	fThresholdPCA = thresholdPCA;
+	fThresholdGamma = thresholdGamma;
+	fThresholdDiscard = thresholdDiscard;
+
+	//std::cout << "rawData->getThresholdDiscard() " <<  this->getThresholdDiscard() << std::endl;
+	//std::cout << "thresholdDiscard " <<  thresholdDiscard << std::endl;
+	if (!fClusterX.empty())
+	{
+		fClusterX.clear();
+	}
+	if (!fClusterY.empty())
+	{
+		fClusterY.clear();
+	}
+	treeIn->GetEntry(eventNr);
+
+}
+
+void uTPCRawData::analyzeEvent(uTPCPlotData* plotData)
+{
+	event->analyseEvent(this, plotData);
+}
+
+uTPCEvent::uTPCEvent()
+{
+	//pHits = 0;
+	pStripNumber = 0;
+	pPlaneNumber = 0;
+	initializeDataStructures();
+}
+
+uTPCEvent::~uTPCEvent()
+{
+	freeDataStructures();
+}
+
+void uTPCEvent::freeDataStructures()
+{
+	/*
+	 if (pHits)
+	 {
+	 pHits->clear();
+	 delete pHits;
+	 pHits = 0;
+	 }
+	 */
+	if (pStripNumber)
+	{
+		pStripNumber->clear();
+		delete pStripNumber;
+		pStripNumber = 0;
+	}
+
+	if (pPlaneNumber)
+	{
+		pPlaneNumber->clear();
+		delete pPlaneNumber;
+		pPlaneNumber = 0;
+	}
+}
+
+void uTPCEvent::initializeDataStructures()
+{
+	freeDataStructures();
+	//pHits = new std::vector<uTPCHit>();
+	//pHits->clear();
+	pStripNumber = new std::vector<unsigned int>();
+	pStripNumber->clear();
+	pPlaneNumber = new std::vector<unsigned int>();
+	pPlaneNumber->clear();
+	x = y = x0 = y0 = xf = yf = xm = ym = xi = yi = xs = ys = xcs = ycs = xd =
+			yd = xmax = ymax = 0;
+	xAmplitude = xIntegral = yAmplitude = yIntegral = 0.;
+	mx = qx = my = qy = 0.;
+	xChi2 = yChi2 = 0.;
+	nx = ny = 0;
+	tX0 = tY0 = tXf = tYf = tXs = tYs = tXcs = tYcs = tXFirst = tYFirst =
+			tXLast = tYLast = tdx = tdy = tmaxx = tmaxy = -1.;
+	nx = ny = 0;
+	ntx = nty = 0;
+	xfirst = yfirst = xlast = ylast = tXFirst = tYFirst = tXLast = tYLast = 0;
+
+	fParticleTypeX = 0;
+	fParticleTypeY = 0;
+
+	fLargestClusterSizeX = 0;
+	fLargestClusterSizeY = 0;
+	fLargestClusterX = 0;
+	fLargestClusterY = 0;
+	maxAmplitudeX = 0;
+	maxAmplitudeY = 0;
+
+}
+/*
+ uTPCHit uTPCEvent::getHit(int ii)
+ {
+ return pHits->at(ii);
+ }
+ */
+//**************************************************************************************************
+//**************************************************************************************************
+//**************************************************************************************************
+//START:    void uTPCEvent::analyseEvent(uTPCRawData* rawData, uTPCPlotData *plotData)
+//**************************************************************************************************
+//**************************************************************************************************
+void uTPCEvent::analyseEvent(uTPCRawData* rawData, uTPCPlotData *plotData)
+{
+
+	initializeDataStructures();
+	plotData->clearDataStructures();
+
+	int discardFlag = 0;
+	int numMaximaStripX = 0;
+	int numMaximaStripY = 0;
+	double xyX, xxX, xX, yX, yyX;
+	double xyY, xxY, xY, yY, yyY;
+	double nnX, nnY;
+	int timeBin1;
+	xyX = xxX = xX = yX = yyX = 0.;
+	xyY = xxY = xY = yY = yyY = 0.;
+	nnX = nnY = 0.;
+
+	float maxX = 0;
+	float minX = 10000000;
+	float maxY = 0;
+	float minY = 10000000;
+
+	float amp0 = 0;
+	float amp1 = 0;
+	float amp2 = 0;
+	float amp3 = 0;
+
+	std::map<unsigned int, unsigned int> clusterX = rawData->getClusterX();
+	std::map<unsigned int, unsigned int> clusterY = rawData->getClusterY();
+
+	for (int strip = 0; strip < rawData->getNumberOfStripsHit(); strip++)
+	{
+		unsigned int stripNumber = rawData->getStripNumber(strip);
+		//uTPCHit hit;
+		float pAmplitude = 0;
+		float pHalf = 0;
+		float pPeak = 0;
+		float pIntegral = 0;
+		float pStrip = 0;
+		float pPlane = 0;
+		if (rawData->getPlaneId(strip) == 0)
+		{
+			pPlane = 0;
+			pStrip = stripNumber;
+			amp0 = 0;
+			amp1 = 0;
+			amp2 = 0;
+			timeBin1 = 100;
+			numMaximaStripX = 0;
+			for (int timeBin = rawData->getWaveformSize(strip) - 1;
+					timeBin >= 0; timeBin--)
+			{
+				if (rawData->getWaveformAtTimeBin(strip, timeBin)
+						> rawData->getThresholdAmplitude())
+				{
+					if (tdx < timeBin
+							|| (tdx == timeBin
+									&& rawData->getWaveformAtTimeBin(strip,
+											timeBin) > amp3))
+					{
+
+						xd = stripNumber;
+						tdx = timeBin;
+						amp3 = rawData->getWaveformAtTimeBin(strip, timeBin);
+
+					}
+					break;
+				}
+			}
+			for (int timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+					timeBin++)
+			{
+				clusterX[stripNumber] = strip;
+				if (maxX < rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					maxX = rawData->getWaveformAtTimeBin(strip, timeBin);
+				}
+				if (minX > rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					minX = rawData->getWaveformAtTimeBin(strip, timeBin);
+				}
+
+				amp2 = amp1;
+				amp1 = amp0;
+				amp0 = rawData->getWaveformAtTimeBin(strip, timeBin);
+				if (amp2 <= amp1 && amp0 < amp1
+						&& amp1 > rawData->getThresholdAmplitude()
+						&& abs(timeBin1 - timeBin) > 2)
+				{
+					plotData->fStripMaximaX.push_back(stripNumber);
+					plotData->fTimeMaximaX.push_back(timeBin - 1);
+					plotData->fEnergyMaximaX.push_back(amp1);
+					timeBin1 = timeBin - 1;
+					if (amp0 > 1400)
+					{
+						numMaximaStripX++;
+					}
+				}
+				else if (timeBin == rawData->getWaveformSize(strip) - 1
+						&& amp0 > amp1 && amp1 > amp2
+						&& amp0 > rawData->getThresholdAmplitude()
+						&& abs(timeBin1 - timeBin) > 2)
+				{
+					plotData->fStripMaximaX.push_back(stripNumber);
+					plotData->fTimeMaximaX.push_back(timeBin);
+					plotData->fEnergyMaximaX.push_back(amp0);
+					timeBin1 = timeBin;
+					if (amp0 > 1400)
+					{
+						numMaximaStripX++;
+					}
+				}
+
+				if (pAmplitude < rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					pAmplitude = rawData->getWaveformAtTimeBin(strip, timeBin);
+					pPeak = timeBin;
+
+				}
+				pIntegral += rawData->getWaveformAtTimeBin(strip, timeBin);
+			}
+			if (numMaximaStripX >= 4)
+			{
+				discardFlag = 1;
+			}
+			int timeBin;
+			for (timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+					timeBin++)
+			{
+				if (rawData->getWaveformAtTimeBin(strip, timeBin)
+						> pAmplitude / 2.)
+					break;
+			}
+			if (timeBin > 0 && timeBin < rawData->getWaveformSize(strip) - 1)
+			{
+				pHalf = (timeBin - 1)
+						+ (pAmplitude / 2.
+								- rawData->getWaveformAtTimeBin(strip,
+										timeBin - 1))
+								/ (rawData->getWaveformAtTimeBin(strip, timeBin)
+										- rawData->getWaveformAtTimeBin(strip,
+												timeBin - 1));
+			}
+			else
+			{
+				pHalf = -.5;
+			}
+
+			if ((pHalf > tX0 || tX0 < 0.)
+					&& pAmplitude > rawData->getThresholdAmplitude())
+			{
+				tX0 = pHalf;
+				x0 = pStrip;
+			}
+
+			if ((pHalf < tXf || tXf < 0.)
+					&& pAmplitude > rawData->getThresholdAmplitude())
+			{
+				tXf = pHalf;
+				xf = pStrip;
+
+			}
+			if (tmaxx < pPeak || (tmaxx == pPeak && maxAmplitudeX < pAmplitude))
+			{
+
+				maxAmplitudeX = pAmplitude;
+				xmax = pStrip;
+				tmaxx = pPeak;
+
+			}
+			xm += pAmplitude * (double) pStrip;
+			xi += pIntegral * (double) pStrip;
+			xAmplitude += pAmplitude;
+			xIntegral += pIntegral;
+			xX += pStrip * pIntegral * pIntegral;
+			yX += pHalf * pIntegral * pIntegral;
+			xxX += pStrip * pStrip * pIntegral * pIntegral;
+			xyX += pStrip * pHalf * pIntegral * pIntegral;
+			yyX += pHalf * pHalf * pIntegral * pIntegral;
+			nnX += pIntegral * pIntegral;
+			nx++;
+
+			//pHits->push_back(hit);
+			pStripNumber->push_back(stripNumber);
+			pPlaneNumber->push_back(pPlane);
+		}
+
+		else if (rawData->getPlaneId(strip) == 1)
+		{
+			pPlane = 1;
+			pStrip = stripNumber;
+			amp0 = 0;
+			amp1 = 0;
+			amp2 = 0;
+			numMaximaStripY = 0;
+			for (int timeBin = rawData->getWaveformSize(strip) - 1;
+					timeBin >= 0; timeBin--)
+			{
+				if (rawData->getWaveformAtTimeBin(strip, timeBin)
+						> rawData->getThresholdAmplitude())
+				{
+					if (tdy < timeBin
+							|| (tdy == timeBin
+									&& rawData->getWaveformAtTimeBin(strip,
+											timeBin) > amp3))
+					{
+						yd = pStrip;
+						tdy = timeBin;
+						amp3 = rawData->getWaveformAtTimeBin(strip, timeBin);
+
+					}
+					break;
+				}
+			}
+			for (int timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+					timeBin++)
+			{
+				clusterY[stripNumber] = strip;
+				if (maxY < rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					maxY = rawData->getWaveformAtTimeBin(strip, timeBin);
+				}
+				if (minY > rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					minY = rawData->getWaveformAtTimeBin(strip, timeBin);
+				}
+
+				amp2 = amp1;
+				amp1 = amp0;
+				amp0 = rawData->getWaveformAtTimeBin(strip, timeBin);
+				if (amp2 <= amp1 && amp0 < amp1
+						&& amp1 > rawData->getThresholdAmplitude())
+				{
+					plotData->fStripMaximaY.push_back(pStrip);
+					plotData->fTimeMaximaY.push_back(timeBin - 1);
+					plotData->fEnergyMaximaY.push_back(amp1);
+					if (amp0 > 1400)
+					{
+						numMaximaStripY++;
+					}
+				}
+				else if (timeBin == rawData->getWaveformSize(strip) - 1
+						&& amp0 > amp1 && amp1 > amp2
+						&& amp0 > rawData->getThresholdAmplitude())
+				{
+					plotData->fStripMaximaY.push_back(pStrip);
+					plotData->fTimeMaximaY.push_back(timeBin);
+					plotData->fEnergyMaximaY.push_back(amp0);
+					if (amp0 > 1400)
+					{
+						numMaximaStripY++;
+					}
+				}
+				if (pAmplitude < rawData->getWaveformAtTimeBin(strip, timeBin))
+				{
+					pAmplitude = rawData->getWaveformAtTimeBin(strip, timeBin);
+					pPeak = timeBin;
+				}
+				pIntegral += rawData->getWaveformAtTimeBin(strip, timeBin);
+			}
+			if (numMaximaStripY >= 4)
+			{
+				discardFlag = 1;
+			}
+			int timeBin;
+			for (timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+					timeBin++)
+			{
+				if (rawData->getWaveformAtTimeBin(strip, timeBin)
+						> pAmplitude / 2.)
+					break;
+			}
+			if (timeBin > 0 && timeBin < rawData->getWaveformSize(strip) - 1)
+			{
+				pHalf = (timeBin - 1)
+						+ (pAmplitude / 2.
+								- rawData->getWaveformAtTimeBin(strip,
+										timeBin - 1))
+								/ (rawData->getWaveformAtTimeBin(strip, timeBin)
+										- rawData->getWaveformAtTimeBin(strip,
+												timeBin - 1));
+			}
+			else
+			{
+				pHalf = -.5;
+			}
+
+			if ((pHalf > tY0 || tY0 < 0.)
+					&& pAmplitude > rawData->getThresholdAmplitude())
+			{
+				tY0 = pHalf;
+				y0 = pStrip;
+			}
+			if ((pHalf < tYf || tYf < 0.)
+					&& pAmplitude > rawData->getThresholdAmplitude())
+			{
+				tYf = pHalf;
+				yf = pStrip;
+			}
+			if (tmaxy < timeBin
+					|| (tmaxy == timeBin && maxAmplitudeY < pAmplitude))
+			{
+				maxAmplitudeY = pAmplitude;
+				ymax = pStrip;
+				tmaxy = timeBin;
+			}
+			ym += pAmplitude * (double) pStrip;
+			yi += pIntegral * (double) pStrip;
+			yAmplitude += pAmplitude;
+			yIntegral += pIntegral;
+			xY += pStrip * pIntegral * pIntegral;
+			yY += pHalf * pIntegral * pIntegral;
+			xxY += pStrip * pStrip * pIntegral * pIntegral;
+			xyY += pStrip * pHalf * pIntegral * pIntegral;
+			yyY += pHalf * pHalf * pIntegral * pIntegral;
+			nnY += pIntegral * pIntegral;
+			ny++;
+			//pHits->push_back(hit);
+			pStripNumber->push_back(stripNumber);
+			pPlaneNumber->push_back(pPlane);
+		}
+	}
+	if (nx > 2)
+	{
+		mx = (nnX * xyX - xX * yX) / (nnX * xxX - xX * xX);
+		qx = (xxX * yX - xX * xyX) / (nnX * xxX - xX * xX);
+		xChi2 = (xxX * mx * mx + nnX * qx * qx + yyX + 2. * xX * mx * qx
+				- 2. * xyX * mx - 2. * yX * qx) / nnX;
+		x = (tX0 - qx) / mx;
+	}
+	if (ny > 2)
+	{
+		my = (nnY * xyY - xY * yY) / (nnY * xxY - xY * xY);
+		qy = (xxY * yY - xY * xyY) / (nnY * xxY - xY * xY);
+		yChi2 = (xxY * my * my + nnY * qy * qy + yyY + 2. * xY * my * qy
+				- 2. * xyY * my - 2. * yY * qy) / nnY;
+		y = (tY0 - qy) / my;
+	}
+	if (xAmplitude > 0)
+	{
+		xm /= xAmplitude;
+	}
+	if (xIntegral > 0)
+	{
+		xi /= xIntegral;
+	}
+	if (yAmplitude > 0)
+	{
+		ym /= yAmplitude;
+	}
+	if (yIntegral > 0)
+	{
+		yi /= yIntegral;
+	}
+	ntx = TMath::Abs(tX0 - tXf) + 1;
+	nty = TMath::Abs(tY0 - tYf) + 1;
+
+	rawData->setMaxX(maxX);
+	rawData->setMaxY(maxY);
+	rawData->setMinX(minX);
+	rawData->setMinY(minY);
+
+	rawData->setClusterX(clusterX);
+	rawData->setClusterY(clusterY);
+
+	int numMaximaX = plotData->fStripMaximaX.size();
+	int numMaximaY = plotData->fStripMaximaY.size();
+
+	std::vector<unsigned int> searchClusterX;
+	searchClusterX.resize(0, 0);
+	if (numMaximaX > 0 && numMaximaY > 0
+			&& numMaximaX < rawData->getThresholdDiscard()
+			&& numMaximaY < rawData->getThresholdDiscard() && discardFlag == 0)
+	{
+		fLargestClusterSizeX = numMaximaX;
+		fLargestClusterX = 0;
+		std::vector<unsigned int> searchClusterX;
+		searchClusterX.resize(0, 0);
+		double energyStartx = 0;
+
+		for (int row = 0; row < numMaximaX; row++)
+		{
+			searchClusterX.push_back(row);
+			if ((tXs < plotData->fTimeMaximaX[row])
+					|| (tXs == plotData->fTimeMaximaX[row]
+							&& energyStartx < plotData->fEnergyMaximaX[row]))
+			{
+				tXs = plotData->fTimeMaximaX[row];
+
+				xs = plotData->fStripMaximaX[row];
+				energyStartx = plotData->fEnergyMaximaX[row];
+			}
+		}
+		plotData->fPointClustersX.push_back(searchClusterX);
+		if (numMaximaX > rawData->getThresholdGamma())
+		{
+			fParticleTypeX = 1;
+
+		}
+		else
+		{
+			fParticleTypeX = 3;
+		}
+
+		fLargestClusterSizeY = numMaximaY;
+		fLargestClusterY = 0;
+		std::vector<unsigned int> searchClusterY;
+		searchClusterY.resize(0, 0);
+		double energyStarty = 0;
+
+		for (int row = 0; row < numMaximaY; row++)
+		{
+			searchClusterY.push_back(row);
+			if ((tYs < plotData->fTimeMaximaY[row])
+					|| (tYs == plotData->fTimeMaximaY[row]
+							&& energyStarty < plotData->fEnergyMaximaY[row]))
+			{
+				tYs = plotData->fTimeMaximaY[row];
+
+				ys = plotData->fStripMaximaY[row];
+				energyStarty = plotData->fEnergyMaximaY[row];
+			}
+
+		}
+		plotData->fPointClustersY.push_back(searchClusterY);
+		if (numMaximaY > rawData->getThresholdGamma())
+		{
+			fParticleTypeY = 1;
+
+		}
+		else
+		{
+			fParticleTypeY = 3;
+		}
+		if (numMaximaStripX > 1)
+		{
+			xfirst = xd;
+		}
+		else
+		{
+			xfirst = xs;
+		}
+		tXFirst = tXs;
+		if (numMaximaStripY > 1)
+		{
+			yfirst = yd;
+		}
+		else
+		{
+			yfirst = ys;
+		}
+		tYFirst = tYs;
+
+	}
+}
+//**************************************************************************************************
+//**************************************************************************************************
+//**************************************************************************************************
+//END:    void uTPCEvent::analyseEvent(uTPCRawData* rawData, uTPCPlotData *plotData)
+//**************************************************************************************************
+//**************************************************************************************************
+/*
+ uTPCHit::~uTPCHit()
+ {
+ }
+ */
+//**************************************************************************************************
+//**************************************************************************************************
+//**************************************************************************************************
+//START:    void uTPCEvent::analyseEventPCA(uTPCRawData* rawData, uTPCPlotData *plotData)
+//**************************************************************************************************
+//**************************************************************************************************
+/*
+ void uTPCEvent::analyseEventPCA(uTPCRawData* rawData, uTPCPlotData *plotData)
+ {
+
+ initializeDataStructures();
+ plotData->clearDataStructures();
+
+ int discardFlag = 0;
+ int numMaximaStripX = 0;
+ int numMaximaStripY = 0;
+ double xyX, xxX, xX, yX, yyX;
+ double xyY, xxY, xY, yY, yyY;
+ double nnX, nnY;
+ int timeBin1;
+ xyX = xxX = xX = yX = yyX = 0.;
+ xyY = xxY = xY = yY = yyY = 0.;
+ nnX = nnY = 0.;
+
+ float maxX = 0;
+ float minX = 10000000;
+ float maxY = 0;
+ float minY = 10000000;
+
+ float amp0 = 0;
+ float amp1 = 0;
+ float amp2 = 0;
+
+ double maxAmplitudeX = 0;
+ double maxAmplitudeY = 0;
+
+ std::map<unsigned int, unsigned int> clusterX = rawData->getClusterX();
+ std::map<unsigned int, unsigned int> clusterY = rawData->getClusterY();
+
+ for (int strip = 0; strip < rawData->getNumberOfStripsHit(); strip++)
+ {
+ unsigned int stripNumber = rawData->getStripNumber(strip);
+ uTPCHit hit;
+ pAmplitude = 0;
+ if (rawData->getPlaneId(strip) == 0)
+ {
+ pPlane = 0;
+ pStrip = stripNumber;
+ amp0 = 0;
+ amp1 = 0;
+ amp2 = 0;
+ timeBin1 = 100;
+ numMaximaStripX = 0;
+ for (int timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+ timeBin++)
+ {
+ clusterX[stripNumber] = strip;
+ if (maxX < rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ maxX = rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+ if (minX > rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ minX = rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+
+ amp2 = amp1;
+ amp1 = amp0;
+ amp0 = rawData->getWaveformAtTimeBin(strip, timeBin);
+ if (amp2 <= amp1 && amp0 < amp1
+ && amp1 > rawData->getThresholdAmplitude()
+ && abs(timeBin1 - timeBin) > 2)
+ {
+ plotData->fStripMaximaX.push_back(pStrip);
+ plotData->fTimeMaximaX.push_back(timeBin - 1);
+ plotData->fEnergyMaximaX.push_back(amp1);
+ timeBin1 = timeBin - 1;
+ if (amp0 > 1400)
+ {
+ numMaximaStripX++;
+ }
+ }
+ else if (timeBin == rawData->getWaveformSize(strip) - 1
+ && amp0 > amp1 && amp1 > amp2
+ && amp0 > rawData->getThresholdAmplitude()
+ && abs(timeBin1 - timeBin) > 2)
+ {
+ plotData->fStripMaximaX.push_back(pStrip);
+ plotData->fTimeMaximaX.push_back(timeBin);
+ plotData->fEnergyMaximaX.push_back(amp0);
+ timeBin1 = timeBin;
+ if (amp0 > 1400)
+ {
+ numMaximaStripX++;
+ }
+ }
+
+ if (pAmplitude
+ < rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ pAmplitude = rawData->getWaveformAtTimeBin(strip,
+ timeBin);
+
+ pPeak = timeBin;
+ }
+ pIntegral += rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+ if (numMaximaStripX >= 4)
+ {
+ discardFlag = 1;
+ }
+ int timeBin;
+ for (timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+ timeBin++)
+ {
+ if (rawData->getWaveformAtTimeBin(strip, timeBin)
+ > pAmplitude / 2.)
+ break;
+ }
+ if (timeBin > 0 && timeBin < rawData->getWaveformSize(strip) - 1)
+ {
+ pHalf = (timeBin - 1)
+ + (pAmplitude / 2.
+ - rawData->getWaveformAtTimeBin(strip,
+ timeBin - 1))
+ / (rawData->getWaveformAtTimeBin(strip, timeBin)
+ - rawData->getWaveformAtTimeBin(strip,
+ timeBin - 1));
+ }
+ else
+ {
+ pHalf = -.5;
+ }
+
+ if ((pHalf > tX0 || tX0 < 0.)
+ && pAmplitude > rawData->getThresholdAmplitude())
+ {
+ tX0 = pHalf;
+ x0 = pStrip;
+ }
+
+ if ((pHalf < tXf || tXf < 0.)
+ && pAmplitude > rawData->getThresholdAmplitude())
+ {
+ tXf = pHalf;
+ xf = pStrip;
+
+ }
+ xm += pAmplitude * (double) pStrip;
+ xi += pIntegral * (double) pStrip;
+ xAmplitude += pAmplitude;
+ xIntegral += pIntegral;
+ xX += pStrip * pIntegral * pIntegral;
+ yX += pHalf * pIntegral * pIntegral;
+ xxX += pStrip * pStrip * pIntegral * pIntegral;
+ xyX += pStrip * pHalf * pIntegral * pIntegral;
+ yyX += pHalf * pHalf * pIntegral * pIntegral;
+ nnX += pIntegral * pIntegral;
+ nx++;
+ if (maxAmplitudeX < pAmplitude)
+ {
+ maxAmplitudeX = pAmplitude;
+ }
+ pHits->push_back(hit);
+ pStripNumber->push_back(stripNumber);
+ pPlaneNumber->push_back(pPlane);
+ }
+
+ else if (rawData->getPlaneId(strip) == 1)
+ {
+ pPlane = 1;
+ pStrip = stripNumber;
+ amp0 = 0;
+ amp1 = 0;
+ amp2 = 0;
+ numMaximaStripY = 0;
+
+ for (int timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+ timeBin++)
+ {
+ clusterY[stripNumber] = strip;
+ if (maxY < rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ maxY = rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+ if (minY > rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ minY = rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+
+ amp2 = amp1;
+ amp1 = amp0;
+ amp0 = rawData->getWaveformAtTimeBin(strip, timeBin);
+ if (amp2 <= amp1 && amp0 < amp1
+ && amp1 > rawData->getThresholdAmplitude())
+ {
+ plotData->fStripMaximaY.push_back(pStrip);
+ plotData->fTimeMaximaY.push_back(timeBin - 1);
+ plotData->fEnergyMaximaY.push_back(amp1);
+ if (amp0 > 1400)
+ {
+ numMaximaStripY++;
+ }
+ }
+ else if (timeBin == rawData->getWaveformSize(strip) - 1
+ && amp0 > amp1 && amp1 > amp2
+ && amp0 > rawData->getThresholdAmplitude())
+ {
+ plotData->fStripMaximaY.push_back(pStrip);
+ plotData->fTimeMaximaY.push_back(timeBin);
+ plotData->fEnergyMaximaY.push_back(amp0);
+ if (amp0 > 1400)
+ {
+ numMaximaStripY++;
+ }
+ }
+ if (pAmplitude
+ < rawData->getWaveformAtTimeBin(strip, timeBin))
+ {
+ pAmplitude = rawData->getWaveformAtTimeBin(strip,
+ timeBin);
+ pPeak = timeBin;
+ }
+ pIntegral += rawData->getWaveformAtTimeBin(strip, timeBin);
+ }
+ if (numMaximaStripY >= 4)
+ {
+ discardFlag = 1;
+ }
+ int timeBin;
+ for (timeBin = 0; timeBin < rawData->getWaveformSize(strip);
+ timeBin++)
+ {
+ if (rawData->getWaveformAtTimeBin(strip, timeBin)
+ > pAmplitude / 2.)
+ break;
+ }
+ if (timeBin > 0 && timeBin < rawData->getWaveformSize(strip) - 1)
+ {
+ pHalf = (timeBin - 1)
+ + (pAmplitude / 2.
+ - rawData->getWaveformAtTimeBin(strip,
+ timeBin - 1))
+ / (rawData->getWaveformAtTimeBin(strip, timeBin)
+ - rawData->getWaveformAtTimeBin(strip,
+ timeBin - 1));
+ }
+ else
+ {
+ pHalf = -.5;
+ }
+
+ if ((pHalf > tY0 || tY0 < 0.)
+ && pAmplitude > rawData->getThresholdAmplitude())
+ {
+ tY0 = pHalf;
+ y0 = pStrip;
+ }
+ if ((pHalf < tYf || tYf < 0.)
+ && pAmplitude > rawData->getThresholdAmplitude())
+ {
+ tYf = pHalf;
+ yf = pStrip;
+ }
+
+ ym += pAmplitude * (double) pStrip;
+ yi += pIntegral * (double) pStrip;
+ yAmplitude += pAmplitude;
+ yIntegral += pIntegral;
+ xY += pStrip * pIntegral * pIntegral;
+ yY += pHalf * pIntegral * pIntegral;
+ xxY += pStrip * pStrip * pIntegral * pIntegral;
+ xyY += pStrip * pHalf * pIntegral * pIntegral;
+ yyY += pHalf * pHalf * pIntegral * pIntegral;
+ nnY += pIntegral * pIntegral;
+ ny++;
+ if (maxAmplitudeY < pAmplitude)
+ {
+ maxAmplitudeY = pAmplitude;
+ }
+ //pHits->push_back(hit);
+ pStripNumber->push_back(stripNumber);
+ pPlaneNumber->push_back(pPlane);
+ }
+ }
+ if (nx > 2)
+ {
+ mx = (nnX * xyX - xX * yX) / (nnX * xxX - xX * xX);
+ qx = (xxX * yX - xX * xyX) / (nnX * xxX - xX * xX);
+ xChi2 = (xxX * mx * mx + nnX * qx * qx + yyX + 2. * xX * mx * qx
+ - 2. * xyX * mx - 2. * yX * qx) / nnX;
+ x = (tX0 - qx) / mx;
+ }
+ if (ny > 2)
+ {
+ my = (nnY * xyY - xY * yY) / (nnY * xxY - xY * xY);
+ qy = (xxY * yY - xY * xyY) / (nnY * xxY - xY * xY);
+ yChi2 = (xxY * my * my + nnY * qy * qy + yyY + 2. * xY * my * qy
+ - 2. * xyY * my - 2. * yY * qy) / nnY;
+ y = (tY0 - qy) / my;
+ }
+ if (xAmplitude > 0)
+ {
+ xm /= xAmplitude;
+ }
+ if (xIntegral > 0)
+ {
+ xi /= xIntegral;
+ }
+ if (yAmplitude > 0)
+ {
+ ym /= yAmplitude;
+ }
+ if (yIntegral > 0)
+ {
+ yi /= yIntegral;
+ }
+ ntx = TMath::Abs(tX0 - tXf) + 1;
+ nty = TMath::Abs(tY0 - tYf) + 1;
+
+ rawData->setMaxX(maxX);
+ rawData->setMaxY(maxY);
+ rawData->setMinX(minX);
+ rawData->setMinY(minY);
+
+ rawData->setClusterX(clusterX);
+ rawData->setClusterY(clusterY);
+
+ int numMaximaX = plotData->fStripMaximaX.size();
+ int numMaximaY = plotData->fStripMaximaY.size();
+ int numberOfClustersX = 0;
+ int numberOfClustersY = 0;
+
+ float distance = 0;
+ if (numMaximaX > 0 && numMaximaY > 0
+ && numMaximaX < rawData->getThresholdDiscard()
+ && numMaximaY < rawData->getThresholdDiscard() && discardFlag == 0)
+ {
+
+ std::vector<std::vector<float> > slopesX;
+ slopesX.resize(numMaximaX, std::vector<float>(numMaximaX, 0));
+
+ std::vector<std::vector<float> > distancesX;
+ distancesX.resize(numMaximaX, std::vector<float>(numMaximaX, 0));
+
+ std::vector<std::vector<bool> > edgesX;
+ edgesX.resize(numMaximaX, std::vector<bool>(numMaximaX, false));
+
+ std::vector<float> energyX;
+ energyX.resize(numMaximaX, 0);
+
+ double energyStartx = 0;
+ //Calculate distances between edges
+ for (int row = 0; row < numMaximaX; row++)
+ {
+ if ((tXs < plotData->fTimeMaximaX[row])
+ || (tXs == plotData->fTimeMaximaX[row]
+ && energyStartx < plotData->fEnergyMaximaX[row]))
+ {
+ tXs = plotData->fTimeMaximaX[row];
+
+ xs = plotData->fStripMaximaX[row];
+ energyStartx = plotData->fEnergyMaximaX[row];
+ }
+ double energyNeighbors = 0;
+ int numEnergyNeighbors = 0;
+ for (int col = 0; col < numMaximaX; col++)
+ {
+ if (row != col)
+ {
+ distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaX[col]
+ - plotData->fStripMaximaX[row])
+ * (plotData->fStripMaximaX[col]
+ - plotData->fStripMaximaX[row])
+ + 500 * 500
+ * (plotData->fTimeMaximaX[col]
+ - plotData->fTimeMaximaX[row])
+ * (plotData->fTimeMaximaX[col]
+ - plotData->fTimeMaximaX[row]));
+ if (distance <= rawData->getThresholdDistance())
+ {
+ edgesX[col][row] = true;
+ edgesX[row][col] = true;
+ if (plotData->fEnergyMaximaX[col] > 0.9 * maxAmplitudeX)
+ {
+ energyNeighbors += plotData->fEnergyMaximaX[col]
+ / distance;
+
+ numEnergyNeighbors++;
+ }
+
+ }
+ distancesX[col][row] = distance;
+ distancesX[row][col] = distancesX[col][row];
+ }
+ else
+ {
+ edgesX[col][row] = true;
+ }
+
+ }
+ plotData->fEnergyX.push_back(energyNeighbors);
+ }
+ int numFound = 0;
+
+ std::vector<unsigned int> tempClusterX;
+ tempClusterX.resize(0, 0);
+ std::vector<unsigned int> searchClusterX;
+ searchClusterX.resize(0, 0);
+ std::vector<unsigned int> visitedPointsX;
+ visitedPointsX.resize(0, 0);
+
+ for (int row = 0; row < numMaximaX; row++)
+ {
+ if (std::find(visitedPointsX.begin(), visitedPointsX.end(), row)
+ == visitedPointsX.end())
+ {
+ tempClusterX.resize(0, 0);
+ searchClusterX.resize(0, 0);
+ for (int col = 0; col < numMaximaX; col++)
+ {
+ if (edgesX[col][row])
+ {
+ if (std::find(searchClusterX.begin(),
+ searchClusterX.end(), col)
+ == searchClusterX.end())
+ {
+ searchClusterX.push_back(col);
+ visitedPointsX.push_back(col);
+ numFound++;
+ }
+ }
+ }
+
+ while (numFound > 0)
+ {
+ numFound = 0;
+ tempClusterX = searchClusterX;
+ for (std::vector<unsigned int>::iterator it =
+ searchClusterX.begin(); it != searchClusterX.end();
+ ++it)
+ {
+ for (int col = 0; col < numMaximaX; col++)
+ {
+ if (edgesX[col][*it])
+ {
+ if (std::find(tempClusterX.begin(),
+ tempClusterX.end(), col)
+ == tempClusterX.end())
+ {
+ tempClusterX.push_back(col);
+ visitedPointsX.push_back(col);
+ numFound++;
+ }
+ }
+ }
+ }
+ searchClusterX = tempClusterX;
+ }
+ plotData->fPointClustersX.push_back(searchClusterX);
+
+ numberOfClustersX++;
+
+ }
+ if (searchClusterX.size() == numMaximaX)
+ {
+ break;
+ }
+
+ }
+ tempClusterX.resize(0, 0);
+ searchClusterX.resize(0, 0);
+ visitedPointsX.resize(0, 0);
+
+ double timeMin = 10000;
+ double timeMax = -10000;
+ int vertexEnd = 0;
+ int vertexStart = 0;
+ double energyStart = 0;
+ double energyEnd = 0;
+
+ for (int n = 0; n < numberOfClustersX; n++)
+ {
+ if (fLargestClusterSizeX < plotData->fPointClustersX[n].size())
+ {
+ fLargestClusterSizeX = plotData->fPointClustersX[n].size();
+ fLargestClusterX = n;
+ }
+ }
+
+ double std_track_x = 0;
+
+ for (int z = 0; z < fLargestClusterSizeX; z++)
+ {
+
+ double mean_track_x = 0;
+ double mean_track_y = 0;
+ std_track_x = 0;
+
+ int cnt = 0;
+
+ for (int col = 0; col < fLargestClusterSizeX; col++)
+ {
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]));
+ if (distance <= rawData->getThresholdPCA())
+ {
+ cnt++;
+ }
+ mean_track_x +=
+ 400
+ * plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]];
+ mean_track_y +=
+ 500
+ * plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]];
+
+ }
+ mx = mean_track_x;
+
+ TMatrixD a(2, cnt);
+ TMatrixD a_mean(2, cnt);
+ TMatrixD b(2, cnt);
+ TMatrixD covariance(2, 2);
+
+ double mean_x = 0;
+ double mean_y = 0;
+ cnt = 1;
+
+ a[0][0] =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]
+ + 0.5;
+ a[1][0] =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]
+ + 0.5;
+ mean_x += a[0][0];
+ mean_y += a[1][0];
+ for (int col = 0; col < fLargestClusterSizeX; col++)
+ {
+ std_track_x +=
+ (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - mean_track_x)
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - mean_track_x)
+ + (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - mean_track_y)
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - mean_track_y);
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]));
+ if (distance <= rawData->getThresholdPCA() && col != z)
+ {
+ a[0][cnt] =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ + 0.5;
+ a[1][cnt] =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ + 0.5;
+ mean_x += a[0][cnt];
+ mean_y += a[1][cnt];
+ cnt++;
+ }
+ }
+ std_track_x = sqrt(std_track_x / fLargestClusterSizeX);
+
+ mean_x = mean_x / cnt;
+ mean_y = mean_y / cnt;
+ for (int i = 0; i < cnt; i++)
+ {
+ a_mean[0][i] = mean_x;
+ a_mean[1][i] = mean_y;
+ }
+
+ if (cnt >= 2)
+ {
+ b = a - a_mean;
+ TMatrixD b_transposed(TMatrixD::kTransposed, b);
+ covariance = b * b_transposed;
+ TMatrixDEigen eg(covariance);
+ TMatrixD eigenvector = eg.GetEigenVectors();
+ TMatrixD eigenvalues = eg.GetEigenValues();
+
+ if (eigenvalues[0][0] > eigenvalues[1][1])
+ {
+ plotData->fXEigenvectorX.push_back(eigenvector[0][0]);
+ plotData->fXEigenvectorY.push_back(eigenvector[1][0]);
+ plotData->fXNormalX.push_back(eigenvector[0][1]);
+ plotData->fXNormalY.push_back(eigenvector[1][1]);
+
+ }
+ else
+ {
+ plotData->fXEigenvectorX.push_back(eigenvector[0][1]);
+ plotData->fXEigenvectorY.push_back(eigenvector[1][1]);
+ plotData->fXNormalX.push_back(eigenvector[0][0]);
+ plotData->fXNormalY.push_back(eigenvector[1][0]);
+ }
+ b_transposed.Clear();
+ eigenvector.Clear();
+ eigenvalues.Clear();
+ }
+ else
+ {
+ plotData->fXEigenvectorX.push_back(0);
+ plotData->fXEigenvectorY.push_back(0);
+ plotData->fXNormalX.push_back(0);
+ plotData->fXNormalY.push_back(0);
+ }
+ a.Clear();
+ a_mean.Clear();
+ b.Clear();
+ covariance.Clear();
+
+ }
+ plotData->fXEigenvectorX.resize(0, 0);
+ plotData->fXEigenvectorY.resize(0, 0);
+ plotData->fXNormalX.resize(0, 0);
+ plotData->fXNormalY.resize(0, 0);
+
+ double energyStartx2 = 0;
+
+ for (int z = 0; z < fLargestClusterSizeX; z++)
+ {
+ double position = -10, positionOld = -10;
+ int isStartEnd = 1;
+ for (int col = 0; col < fLargestClusterSizeX; col++)
+ {
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ * (plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]]
+ - plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]));
+
+ if (z != col && distance <= rawData->getThresholdPCA())
+ {
+ double ax =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ double ay =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ double bx = ax + plotData->fXNormalX[z];
+ double by = ay + plotData->fXNormalY[z];
+ double x =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][col]];
+ double y =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][col]];
+ positionOld = position;
+ position = TMath::Sign(1.0,
+ (bx - ax) * (y - ay) - (by - ay) * (x - ax));
+ if (position != positionOld && positionOld != -10)
+ {
+ isStartEnd = -1;
+
+ }
+
+ }
+ }
+
+ if (isStartEnd > 0)
+ {
+
+ if (timeMin
+ >= plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ {
+ timeMin =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ vertexEnd =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ energyEnd =
+ plotData->fEnergyX[plotData->fPointClustersX[fLargestClusterX][z]];
+
+ }
+ if (timeMax
+ < plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ {
+ timeMax =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ vertexStart =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ energyStart =
+ plotData->fEnergyX[plotData->fPointClustersX[fLargestClusterX][z]];
+ }
+ }
+
+ if ((tXcs
+ < plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]])
+ || (tXcs
+ == plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]
+ && energyStartx2
+ < plotData->fEnergyMaximaX[plotData->fPointClustersX[fLargestClusterX][z]]))
+ {
+ tXcs =
+ plotData->fTimeMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+
+ xcs =
+ plotData->fStripMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ energyStartx2 =
+ plotData->fEnergyMaximaX[plotData->fPointClustersX[fLargestClusterX][z]];
+ }
+
+ }
+
+ if (energyStart <= energyEnd)
+ {
+ xfirst = vertexStart;
+ xlast = vertexEnd;
+ tXFirst = timeMax;
+ tXLast = timeMin;
+ if (fLargestClusterSizeX > rawData->getThresholdGamma())
+ {
+ fParticleTypeX = 1;
+
+ }
+ else
+ {
+ fParticleTypeX = 3;
+ }
+
+ }
+ else
+ {
+ xfirst = vertexEnd;
+ xlast = vertexStart;
+ tXFirst = timeMin;
+ tXLast = timeMax;
+ if (fLargestClusterSizeX > rawData->getThresholdGamma())
+ {
+ fParticleTypeX = 2;
+ }
+ else
+ {
+ fParticleTypeX = 3;
+ }
+
+ }
+
+ }
+
+ if (numMaximaX > 0 && numMaximaY > 0
+ && numMaximaX < rawData->getThresholdDiscard()
+ && numMaximaY < rawData->getThresholdDiscard() && discardFlag == 0)
+ {
+
+ std::vector<std::vector<float> > slopesY;
+ slopesY.resize(numMaximaY, std::vector<float>(numMaximaY, 0));
+
+ std::vector<std::vector<float> > distancesY;
+ distancesY.resize(numMaximaY, std::vector<float>(numMaximaY, 0));
+
+ std::vector<std::vector<bool> > edgesY;
+ edgesY.resize(numMaximaY, std::vector<bool>(numMaximaY, false));
+
+ std::vector<float> energyY;
+ energyY.resize(numMaximaY, 0);
+
+ double energyStarty = 0;
+ //Calculate distances between edges
+ for (int row = 0; row < numMaximaY; row++)
+ {
+ if ((tYs < plotData->fTimeMaximaY[row])
+ || (tYs == plotData->fTimeMaximaY[row]
+ && energyStarty < plotData->fEnergyMaximaY[row]))
+ {
+ tYs = plotData->fTimeMaximaY[row];
+
+ ys = plotData->fStripMaximaY[row];
+ energyStarty = plotData->fEnergyMaximaY[row];
+ }
+ double energyNeighbors = 0;
+ int numEnergyNeighbors = 0;
+ for (int col = 0; col < numMaximaY; col++)
+ {
+ if (row != col)
+ {
+ distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaY[col]
+ - plotData->fStripMaximaY[row])
+ * (plotData->fStripMaximaY[col]
+ - plotData->fStripMaximaY[row])
+ + 500 * 500
+ * (plotData->fTimeMaximaY[col]
+ - plotData->fTimeMaximaY[row])
+ * (plotData->fTimeMaximaY[col]
+ - plotData->fTimeMaximaY[row]));
+ if (distance <= rawData->getThresholdDistance())
+ {
+ edgesY[col][row] = true;
+ edgesY[row][col] = true;
+ if (plotData->fEnergyMaximaY[col] > 0.9 * maxAmplitudeY)
+ {
+ energyNeighbors += plotData->fEnergyMaximaY[col]
+ / distance;
+ numEnergyNeighbors++;
+ }
+
+ }
+ distancesY[col][row] = distance;
+ distancesY[row][col] = distancesY[col][row];
+ }
+ else
+ {
+ edgesY[col][row] = true;
+ }
+
+ }
+ plotData->fEnergyY.push_back(energyNeighbors);
+
+ }
+ int numFound = 0;
+
+ std::vector<unsigned int> tempClusterY;
+ tempClusterY.resize(0, 0);
+ std::vector<unsigned int> searchClusterY;
+ searchClusterY.resize(0, 0);
+ std::vector<unsigned int> visitedPointsY;
+ visitedPointsY.resize(0, 0);
+
+ for (int row = 0; row < numMaximaY; row++)
+ {
+ if (std::find(visitedPointsY.begin(), visitedPointsY.end(), row)
+ == visitedPointsY.end())
+ {
+ tempClusterY.resize(0, 0);
+ searchClusterY.resize(0, 0);
+ for (int col = 0; col < numMaximaY; col++)
+ {
+ if (edgesY[col][row])
+ {
+ if (std::find(searchClusterY.begin(),
+ searchClusterY.end(), col)
+ == searchClusterY.end())
+ {
+ searchClusterY.push_back(col);
+ visitedPointsY.push_back(col);
+ numFound++;
+ }
+ }
+ }
+
+ while (numFound > 0)
+ {
+ numFound = 0;
+ tempClusterY = searchClusterY;
+ for (std::vector<unsigned int>::iterator it =
+ searchClusterY.begin(); it != searchClusterY.end();
+ ++it)
+ {
+ for (int col = 0; col < numMaximaY; col++)
+ {
+ if (edgesY[col][*it])
+ {
+ if (std::find(tempClusterY.begin(),
+ tempClusterY.end(), col)
+ == tempClusterY.end())
+ {
+ tempClusterY.push_back(col);
+ visitedPointsY.push_back(col);
+ numFound++;
+ }
+ }
+ }
+ }
+ searchClusterY = tempClusterY;
+ }
+ plotData->fPointClustersY.push_back(searchClusterY);
+
+ numberOfClustersY++;
+
+ }
+ if (searchClusterY.size() == numMaximaY)
+ {
+ break;
+ }
+
+ }
+ tempClusterY.resize(0, 0);
+ searchClusterY.resize(0, 0);
+ visitedPointsY.resize(0, 0);
+
+ double timeMin = 10000;
+ double timeMax = -10000;
+ int vertexEnd = 0;
+ int vertexStart = 0;
+ double energyStart = 0;
+ double energyEnd = 0;
+
+ for (int n = 0; n < numberOfClustersY; n++)
+ {
+ if (fLargestClusterSizeY < plotData->fPointClustersY[n].size())
+ {
+ fLargestClusterSizeY = plotData->fPointClustersY[n].size();
+ fLargestClusterY = n;
+ }
+ }
+
+ double std_track_y = 0;
+
+ for (int z = 0; z < fLargestClusterSizeY; z++)
+ {
+
+ double mean_track_x = 0;
+ double mean_track_y = 0;
+ std_track_y = 0;
+
+ int cnt = 0;
+
+ for (int col = 0; col < fLargestClusterSizeY; col++)
+ {
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]));
+ if (distance <= rawData->getThresholdPCA())
+ {
+ cnt++;
+ }
+ mean_track_x +=
+ 400
+ * plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]];
+ mean_track_y +=
+ 500
+ * plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]];
+
+ }
+
+ my = mean_track_x;
+
+ TMatrixD a(2, cnt);
+ TMatrixD a_mean(2, cnt);
+ TMatrixD b(2, cnt);
+ TMatrixD covariance(2, 2);
+
+ double mean_x = 0;
+ double mean_y = 0;
+ cnt = 1;
+
+ a[0][0] =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]
+ + 0.5;
+ a[1][0] =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]
+ + 0.5;
+ mean_x += a[0][0];
+ mean_y += a[1][0];
+ for (int col = 0; col < fLargestClusterSizeY; col++)
+ {
+ std_track_y +=
+ (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - mean_track_x)
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - mean_track_x)
+ + (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - mean_track_y)
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - mean_track_y);
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]));
+ if (distance <= rawData->getThresholdPCA() && col != z)
+ {
+ a[0][cnt] =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ + 0.5;
+ a[1][cnt] =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ + 0.5;
+ mean_x += a[0][cnt];
+ mean_y += a[1][cnt];
+ cnt++;
+ }
+ }
+ std_track_y = sqrt(std_track_y / fLargestClusterSizeY);
+ mean_x = mean_x / cnt;
+ mean_y = mean_y / cnt;
+ for (int i = 0; i < cnt; i++)
+ {
+ a_mean[0][i] = mean_x;
+ a_mean[1][i] = mean_y;
+ }
+
+ if (cnt >= 2)
+ {
+ b = a - a_mean;
+ TMatrixD b_transposed(TMatrixD::kTransposed, b);
+ covariance = b * b_transposed;
+ TMatrixDEigen eg(covariance);
+ TMatrixD eigenvector = eg.GetEigenVectors();
+ TMatrixD eigenvalues = eg.GetEigenValues();
+
+ if (eigenvalues[0][0] > eigenvalues[1][1])
+ {
+ plotData->fYEigenvectorX.push_back(eigenvector[0][0]);
+ plotData->fYEigenvectorY.push_back(eigenvector[1][0]);
+ plotData->fYNormalX.push_back(eigenvector[0][1]);
+ plotData->fYNormalY.push_back(eigenvector[1][1]);
+
+ }
+ else
+ {
+ plotData->fYEigenvectorX.push_back(eigenvector[0][1]);
+ plotData->fYEigenvectorY.push_back(eigenvector[1][1]);
+ plotData->fYNormalX.push_back(eigenvector[0][0]);
+ plotData->fYNormalY.push_back(eigenvector[1][0]);
+ }
+ b_transposed.Clear();
+ eigenvector.Clear();
+ eigenvalues.Clear();
+
+ }
+ else
+ {
+ plotData->fYEigenvectorY.push_back(0);
+ plotData->fYEigenvectorY.push_back(0);
+ plotData->fYNormalY.push_back(0);
+ plotData->fYNormalY.push_back(0);
+ }
+ a.Clear();
+ a_mean.Clear();
+ b.Clear();
+ covariance.Clear();
+
+ }
+
+ double energyStarty2 = 0;
+
+ for (int z = 0; z < fLargestClusterSizeY; z++)
+ {
+
+ double position = -10, positionOld = -10;
+ int isStartEnd = 1;
+ for (int col = 0; col < fLargestClusterSizeY; col++)
+ {
+ double distance =
+ sqrt(
+ 400 * 400
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ + 500 * 500
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ * (plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]]
+ - plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]));
+ if (z != col && distance <= rawData->getThresholdPCA())
+ {
+ double ax =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ double ay =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ double bx = ax + plotData->fYNormalX[z];
+ double by = ay + plotData->fYNormalY[z];
+ double x =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][col]];
+ double y =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][col]];
+ positionOld = position;
+ position = TMath::Sign(1.0,
+ (bx - ax) * (y - ay) - (by - ay) * (x - ax));
+ if (position != positionOld && positionOld != -10)
+ {
+ isStartEnd = -1;
+
+ }
+
+ }
+ }
+
+ if (isStartEnd > 0)
+ {
+ //std::cout << "\n" << z << " " << plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]+0.5 << std::endl;
+ //std::cout << z << " " << plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]+0.5 << std::endl;
+ if (timeMin
+ >= plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ {
+ timeMin =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ vertexEnd =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+
+ energyEnd =
+ plotData->fEnergyY[plotData->fPointClustersY[fLargestClusterY][z]];
+
+ }
+ if (timeMax
+ <= plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ {
+ timeMax =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ vertexStart =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ energyStart =
+ plotData->fEnergyY[plotData->fPointClustersY[fLargestClusterY][z]];
+
+ }
+
+ }
+ if ((tYcs
+ < plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]])
+ || (tYcs
+ == plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]
+ && energyStarty2
+ < plotData->fEnergyMaximaY[plotData->fPointClustersY[fLargestClusterY][z]]))
+ {
+ tYcs =
+ plotData->fTimeMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+
+ ycs =
+ plotData->fStripMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ energyStarty2 =
+ plotData->fEnergyMaximaY[plotData->fPointClustersY[fLargestClusterY][z]];
+ }
+
+ }
+
+ if (energyStart <= energyEnd)
+ {
+
+ yfirst = vertexStart;
+ ylast = vertexEnd;
+ tYFirst = timeMax;
+ tYLast = timeMin;
+ if (fLargestClusterSizeY > rawData->getThresholdGamma())
+ {
+ fParticleTypeY = 1;
+
+ }
+ else
+ {
+ fParticleTypeY = 3;
+ }
+
+ }
+ else
+ {
+
+ yfirst = vertexEnd;
+ ylast = vertexStart;
+ tYFirst = timeMin;
+ tYLast = timeMax;
+
+ if (fLargestClusterSizeY > rawData->getThresholdGamma())
+ {
+ fParticleTypeY = 2;
+ }
+ else
+ {
+ fParticleTypeY = 3;
+ }
+
+ }
+
+ }
+
+ }
+ */
+//**************************************************************************************************
+//**************************************************************************************************
+//**************************************************************************************************
+//END:    void uTPCEvent::analyseEventPCA(uTPCRawData* rawData, uTPCPlotData *plotData)
+//**************************************************************************************************
+//**************************************************************************************************

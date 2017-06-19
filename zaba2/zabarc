@@ -1,0 +1,258 @@
+# Configuration file for ZABA data acquisition system
+# the file was created:  2016.12.6	16:20:54
+# Line starts with a '#' is a comment line
+#
+#
+[GENERAL SETTINGS]
+# Stop acquisition after certain number of seconds, default 0 means acq will runn forever
+# Keep in mind that from StopAfterSec, StopAfterFile, StopAfterEvents ONLY ONE CAN BE DIFFERENT THAN 0!
+StopAfterSec 0
+ 
+# Stop acquisition after certain number of files, default 0 means acq will run forever, size of the file you have to define in annother variable
+StopAfterFile 1
+ 
+# Stop acquisition after certain number of Events, default 0 means acq will runn forever
+StopAfterEvents 0
+ 
+# Save each file after reach the file size
+SaveFileSize 100
+ 
+# Save each file after certain number of seconds
+SaveFileTime 30
+ 
+# Default path where the data is stored, if you do not set this parameter the path will be ./data
+DataPath /home/mb/dg_epool/zaba2/data2
+ 
+# Default file name, in the GUI version program will ask the user to set correct file name
+# The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin
+# where xxxxxx is the file name and nr file number
+# if you put the field of FileName empty then by default the name will be test
+# e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1
+#     the file name will be: 2016_07_14_1956_measurement1_000.bin
+#     then only the number will be increased, so 001, 002, 003, 004
+FileName Co60_Down_HV1100V_mix_
+ 
+[CAEN 1740D.142]
+# ======= Channel input signal settings ==========
+RecordLengthDPP 500
+# you can choose how many samples are stored before and after triggeer appear,  the value are between 0, 100 in %
+# in case of DPP-QDC PreTrigger must be > Pregate + 7
+# Offset for group channels 
+# The values are in ADC convertion numbers, to see coresponding mV value run acq, look at the right yaxis and addapt accordingly
+# 32768 is a middle, there is no offset
+# syntax: DCoffset <group> <value>
+DCoffsetDPP 0 32768
+DCoffsetDPP 1 32768
+DCoffsetDPP 2 32768
+DCoffsetDPP 3 32768
+DCoffsetDPP 4 32768
+DCoffsetDPP 5 32768
+DCoffsetDPP 6 32768
+DCoffsetDPP 7 32768
+
+# GroupEnableMask: disable = 0 or enable = 1 group channels
+# syntax: GroupEnableMask <group> <value>
+GroupEnableMaskDPP 0 1
+GroupEnableMaskDPP 1 1
+GroupEnableMaskDPP 2 1
+GroupEnableMaskDPP 3 1
+GroupEnableMaskDPP 4 1
+GroupEnableMaskDPP 5 1
+GroupEnableMaskDPP 6 1
+GroupEnableMaskDPP 7 1
+
+# The save option allows you to save certain channels. The digitizer is designed in such that even only one channel is used
+# all group must be transfered to PC. Then you can choose by software which channel you want to store and/or display.
+# It is one 32/64 bits word, Each bit correspond to each channel
+SaveChannels 7
+
+# ====== Trigger Configuration ==========
+# Global trigger can be built from logic OR all indyvidual channel triggers. This option allows you to set which indyvidual 
+# trigger will contribute to build the global one. This is set by indyvidual group. Every group consist of 8 channels
+SelfTriggerMaskGr0 11111111
+SelfTriggerMaskGr1 11111111
+SelfTriggerMaskGr2 11111111
+SelfTriggerMaskGr3 11111111
+SelfTriggerMaskGr4 11111111
+SelfTriggerMaskGr5 11111111
+SelfTriggerMaskGr6 11111111
+SelfTriggerMaskGr7 11111111
+# 
+# All digitial inputs on the fron panel can be set as TTL = 1 or NIM = 0
+IOLevel 0
+# 
+# Acquisition Mode could be software controled = 0; or by signal from the front panel = 1
+AcquisitionMode 0
+# 
+# ===== These options are only for DPP-QDC firmware =====
+# 
+# Acquisition DPP Mode could be MIXED = 0; or LIST = 1
+AcquisitionModeDPP 0
+# PulsePolarityDPP per group, 1 negative, 0 positive
+# syntax: PulsePolarityDPP <group> <value>
+PulsePolarityDPP 0 0
+PulsePolarityDPP 1 0
+PulsePolarityDPP 2 0
+PulsePolarityDPP 3 0
+PulsePolarityDPP 4 1
+PulsePolarityDPP 5 1
+PulsePolarityDPP 6 1
+PulsePolarityDPP 7 1
+# ======= BaseLine settings ==========
+# if FixedBaseLine equal 0 = fixed valu value, 1 = 4 samples, 2 = 16 samples, 3 = 64 samples, 4 = 256 samples
+# BaseLine: baseline value per group 
+# syntax: BaseLineDPP <group> <fixed value>
+FixedBaseLineDPP 99
+BaseLineDPP 0 16
+BaseLineDPP 1 16
+BaseLineDPP 2 16
+BaseLineDPP 3 16
+BaseLineDPP 4 16
+BaseLineDPP 5 16
+BaseLineDPP 6 16
+BaseLineDPP 7 16
+# ======= Gate settings ==========
+# syntax: GateWidth            <group> <value>
+#         Pregate              <group> <value>
+#         EnableChargePedestal <value>
+#         ChargeSensitivity    <value> 
+# gate width (in steps of 16 ns) 
+GateWidthDPP 0 180
+GateWidthDPP 1 180
+GateWidthDPP 2 180
+GateWidthDPP 3 180
+GateWidthDPP 4 180
+GateWidthDPP 5 180
+GateWidthDPP 6 180
+GateWidthDPP 7 180
+PreGateDPP 0 1
+PreGateDPP 1 1
+PreGateDPP 2 1
+PreGateDPP 3 1
+PreGateDPP 4 1
+PreGateDPP 5 1
+PreGateDPP 6 1
+PreGateDPP 7 1
+# EnableChargePedestal: 0 = disabled; 1 = enabled (add 1024 to the charge) 
+EnableChargePedestalDPP 0
+#  
+# ========== TriggerSettings 
+# TriggerSettings in case of DPP-QDC is different than the standard firmware.
+# In the DPP-QDC is per channel, in the standard firmware per group.
+# expressed in ADC LSB (1 LSB = 0.5mV) 
+# syntax: ThresholdDPP     <group> <value>
+ThresholdDPP 0 50
+ThresholdDPP 1 50
+ThresholdDPP 2 50
+ThresholdDPP 3 50
+ThresholdDPP 4 50
+ThresholdDPP 5 50
+ThresholdDPP 6 50
+ThresholdDPP 7 50
+ThresholdDPP 8 50
+ThresholdDPP 9 50
+ThresholdDPP 10 50
+ThresholdDPP 11 50
+ThresholdDPP 12 50
+ThresholdDPP 13 50
+ThresholdDPP 14 50
+ThresholdDPP 15 50
+ThresholdDPP 16 50
+ThresholdDPP 17 50
+ThresholdDPP 18 50
+ThresholdDPP 19 50
+ThresholdDPP 20 50
+ThresholdDPP 21 50
+ThresholdDPP 22 50
+ThresholdDPP 23 50
+ThresholdDPP 24 50
+ThresholdDPP 25 50
+ThresholdDPP 26 50
+ThresholdDPP 27 50
+ThresholdDPP 28 50
+ThresholdDPP 29 50
+ThresholdDPP 30 50
+ThresholdDPP 31 50
+ThresholdDPP 32 150
+ThresholdDPP 33 150
+ThresholdDPP 34 150
+ThresholdDPP 35 150
+ThresholdDPP 36 150
+ThresholdDPP 37 150
+ThresholdDPP 38 150
+ThresholdDPP 39 150
+ThresholdDPP 40 150
+ThresholdDPP 41 200
+ThresholdDPP 42 150
+ThresholdDPP 43 150
+ThresholdDPP 44 150
+ThresholdDPP 45 150
+ThresholdDPP 46 150
+ThresholdDPP 47 150
+ThresholdDPP 48 150
+ThresholdDPP 49 150
+ThresholdDPP 50 150
+ThresholdDPP 51 150
+ThresholdDPP 52 150
+ThresholdDPP 53 150
+ThresholdDPP 54 150
+ThresholdDPP 55 150
+ThresholdDPP 56 150
+ThresholdDPP 57 150
+ThresholdDPP 58 150
+ThresholdDPP 59 150
+ThresholdDPP 60 150
+ThresholdDPP 61 150
+ThresholdDPP 62 150
+ThresholdDPP 63 200
+# TriggerMode: 0 = Normal; 1 = Paired
+TriggerModeDPP 0
+# TriggerHoldOff: Trigger hold off (in steps of 16ns) 
+# syntax: TriggerHoldOffDPP     <group> <value>
+# Charge sensitivity:  0=0.16pC, 1=0.32pC, 2=0.64pC, 3=1.28pC, 4=2.56pC, 5=5.12pC, 6=10.24pC, 7=20.48pC  
+ChargeSensitivityDPP 0 7
+ChargeSensitivityDPP 1 7
+ChargeSensitivityDPP 2 7
+ChargeSensitivityDPP 3 7
+ChargeSensitivityDPP 4 7
+ChargeSensitivityDPP 5 7
+ChargeSensitivityDPP 6 7
+ChargeSensitivityDPP 7 7
+# TriggerSmoothing: 0 = no smoothing, otherwise mean over 2^n samples, with n <= 6 
+TriggerSmoothingDPP 0 0
+TriggerSmoothingDPP 1 0
+TriggerSmoothingDPP 2 0
+TriggerSmoothingDPP 3 0
+TriggerSmoothingDPP 4 3
+TriggerSmoothingDPP 5 3
+TriggerSmoothingDPP 6 3
+TriggerSmoothingDPP 7 3
+TriggerHoldOffDPP 0 2
+TriggerHoldOffDPP 1 2
+TriggerHoldOffDPP 2 2
+TriggerHoldOffDPP 3 2
+TriggerHoldOffDPP 4 2
+TriggerHoldOffDPP 5 2
+TriggerHoldOffDPP 6 2
+TriggerHoldOffDPP 7 2
+# PreTriggerDPP: must be bigger than pregate +7 
+# syntax: PreTriggerDPP     <group> <value>
+PreTriggerDPP 0 150
+PreTriggerDPP 1 150
+PreTriggerDPP 2 150
+PreTriggerDPP 3 150
+PreTriggerDPP 4 150
+PreTriggerDPP 5 150
+PreTriggerDPP 6 150
+PreTriggerDPP 7 150
+
+# Delay in the daisy chain, value in CLK of digitizer. The last digitizer in the chain should be equal 0 and value increase backward
+ClockDelay 0
+# if you want to change clock setings you have to first update firmware
+ClockSource 0
+# Define maximum parameter of how many events can be read from instrument
+MaxEventsAggBLT 1
+# DO not use it
+SynchronizationMode 0
+# 
+

@@ -1,0 +1,28 @@
+/* XPM */
+static char *ed_save[] = {
+/* columns rows colors chars-per-pixel */
+"16 16 6 1",
+"  c black",
+". c #7780D7",
+"X c #949694",
+"o c #B2C0DC",
+"O c #E7EBE7",
+"+ c None",
+/* pixels */
+"++++++++++++++++",
+"+              +",
+"+ .XOOOOOOOOX+ +",
+"+ .XOOOOOOOOXX +",
+"+ .XOOOOOOOOX. +",
+"+ .XOOOOOOOOX. +",
+"+ .XOOOOOOOOX. +",
+"+ .XOOOOOOOOX. +",
+"+ ..XXXXXXXX.. +",
+"+ ............ +",
+"+ ..         . +",
+"+ .. XXXX OO . +",
+"+ .. XXXX OO . +",
+"+ .. XXXX OO . +",
+"++             +",
+"++++++++++++++++"
+};

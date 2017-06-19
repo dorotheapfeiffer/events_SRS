@@ -1,0 +1,9 @@
+This folder contains software that is related to the CERN/RD51 readout system SRS (Scalable Readout System). 
+At the moment (September 2016) SRS is used together with the ALICE DAQ software DATE to create raw data files.
+If the APV-25 is used as a readout chip, one hybrid (PCB board on which the ASICs are mounted and that is directly connected to the detector) 
+contains one ASIC with 128 channels. For the VMM, two ASICs with 64 channels each are mounted on the hybrid. 
+The hybrid contains a Spartan-6 FPGA that reads the data from the ASIC. Up to 8 hybrids are then connected with HDMI cable to a SRS FEC card. 
+On the FEC card, a Virtex-6 FPGA builds the data frame from the data coming from the connected hybrids. 
+The data frames are then send via UDP on a network cable to a PC with the DATE software. 
+DATE adds several headers with event information to the data, and stores it on disk in a raw data file.
+Since the format of the raw data file depends on the ASIC, this folder contains two subfolders with programs to transform the raw data into root trees with all the hits.

@@ -1,0 +1,1 @@
+This folder contains the vmm2root program and a description of the SRS VMM-2 data format. To build the program, it is necessary to have root (https://root.cern.ch/)installed. Type "make all" to create the executable. Type "./vmm2root" to learn how to use the program. Test data to check the function of the program can be found in the folder "testdata".

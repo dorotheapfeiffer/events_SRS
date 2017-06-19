@@ -1,0 +1,17 @@
+daq 0
+fec 1
+
+tp_delay 81
+trigger_period 262142
+acq_sync 100
+acq_window 4096
+run_mode pulser
+bcid_reset 0
+fec_port 6007
+daq_port 6006
+vmmasic_port 6603
+vmmapp_port 6600
+s6_port 6602
+evbld_mode Frame_Cnt
+evbld_info HINFO+Datalength
+timeStampHighRes false

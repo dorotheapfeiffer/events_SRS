@@ -1,0 +1,25 @@
+//Conneted hardware and vmm position map. No comment in the following lines, take care of syntax!
+daq 0: fecs: 2
+	fec 0: hdmis: 3
+		hdmi 0: hybrids: 1
+			hybrid 0: x 0, vmms: 2
+		hdmi 2: hybrids: 1
+			hybrid 0: y 0, vmms: 2
+		hdmi 7: hybrids: 1
+			hybrid 0: y 1, vmms: 2
+	fec 1: hdmis: 1
+		hdmi 3: hybrids: 1
+			hybrid 0: x 1, vmms: 2
+// daq general settings
+ignore16 false
+debug 0
+run_count 20
+mapping_file mini2_map.txt
+output_filename binary_dump.txt
+config_filename test
+vmm_id_list 
+ip_list 
+config_version 0
+comment None
+output_path 
+
