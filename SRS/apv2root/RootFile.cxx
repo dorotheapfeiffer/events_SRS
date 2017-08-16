@@ -31,6 +31,7 @@ RootFile::RootFile(TString fileName, TString pedestalName,
 RootFile::~RootFile()
 {
 	FillHits();
+	this->WriteRootFile();
 	fFile->Close();
 
 	if (!isRawPedestalRun && !isPedestalRun)
@@ -713,9 +714,11 @@ void RootFile::AddHits(signed int timestamp, int us, int eventId, int fecID,
 
 void RootFile::FillHits()
 {
+	std::cout << m_evtID <<  " aaaa " << newData << " " << isRawPedestalRun << " " << isPedestalRun << std::endl;
 
 	if (!isPedestalRun && !isRawPedestalRun && newData)
 	{
+
 		ntx = TMath::Abs(tx0 - txf) + 1;
 		nty = TMath::Abs(ty0 - tyf) + 1;
 		if (xAmplitude > 0)
@@ -766,6 +769,8 @@ void RootFile::FillHits()
 			}
 		}
 		fHitTree->Fill();
+		std::cout << m_evtID <<  " xxxxx " << newData << " " << isRawPedestalRun << " " << isPedestalRun << std::endl;
+
 		newData = false;
 		resetUTPCData();
 		m_chID = 0;
