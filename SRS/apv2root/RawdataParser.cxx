@@ -4,10 +4,11 @@
 
 RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 		bool isRawPedestal, bool isPedestal, bool isZS, float zsCut,
-		bool isUTPC, int uTPCThreshold, std::vector<int> xChips, std::vector<int> yChips, bool viewEvent, int viewStart,
-		int viewEnd) :
-		isRawPedestalRun(isRawPedestal), isPedestalRun(isPedestal), isZSRun(isZS), fZsCut(zsCut),
-		fViewEvent(viewEvent), fViewStart(viewStart),fViewEnd(viewEnd)
+		bool isUTPC, int uTPCThreshold, std::vector<int> xChips,
+		std::vector<int> yChips, bool viewEvent, int viewStart, int viewEnd) :
+		isRawPedestalRun(isRawPedestal), isPedestalRun(isPedestal), isZSRun(
+				isZS), fZsCut(zsCut), fViewEvent(viewEvent), fViewStart(
+				viewStart), fViewEnd(viewEnd)
 {
 	fRawData16bits[0] = 0;
 	fRawData16bits[1] = 0;
@@ -37,15 +38,13 @@ RawdataParser::RawdataParser(std::string fileName, std::string pedestalName,
 		fRoot = new RootFile(fileName, pedestalName, isRawPedestal, isPedestal,
 				isZSRun, isUTPC, uTPCThreshold, xChips, yChips);
 
-
- 	}
+	}
 }
 
 RawdataParser::~RawdataParser()
 {
 	if (!fViewEvent)
 	{
-		fRoot->WriteRootFile();
 		delete fRoot;
 	}
 }
@@ -56,11 +55,11 @@ void RawdataParser::SetRunFlags(bool isRawPedestal, bool isPedestal)
 	isPedestalRun = isPedestal;
 
 	numTimeBins = 0;
-	eventNr=1;
+	eventNr = 1;
 	if (!fViewEvent)
 	{
 		fRoot->SetRunFlags(isRawPedestalRun, isPedestalRun);
-		
+
 	}
 }
 
@@ -148,26 +147,28 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			}
 			else if (!isRawPedestalRun && !isPedestalRun && !isZSRun)
 			{
-			
+
 				ComputeCorrectedData(apvID);
 			}
 		}
-		
 
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50 && rawdata_before_two == 0x50)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50
+			&& rawdata_before_two == 0x50)
 	{
-		format=0;
+		format = 0;
 		header++;
 		inEvent = false;
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48 && rawdata_before_two == 0x48)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48
+			&& rawdata_before_two == 0x48)
 	{
 		format = 1;
 		header++;
 		inEvent = false;
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50 && rawdata_before_two != 0x50)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x50
+			&& rawdata_before_two != 0x50)
 	{
 		headerLDC++;
 		headerEquipment++;
@@ -175,7 +176,8 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 		inEquipmentHeader = true;
 		inEvent = false;
 	}
-	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48 && rawdata_before_two != 0x48)
+	else if (rawdata_before == 0xda1e5afe && rawdata == 0x48
+			&& rawdata_before_two != 0x48)
 	{
 		headerLDC++;
 		headerEquipment++;
@@ -188,13 +190,13 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 	{
 		wordCountEquipmentHeader++;
 
-		if(format == 0)
+		if (format == 0)
 		{
 			if (wordCountEquipmentHeader == 5)
 			{
 				runNr = rawdata_before;
 				eventNr = rawdata;
-				
+
 				if (fViewEnd < eventNr && fViewEnd != 0)
 				{
 					return -1;
@@ -210,7 +212,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			{
 				unixtimestamp = rawdata_before;
 				timestamp_us = rawdata;
-				
+
 			}
 			if (wordCountEquipmentHeader == 22)
 			{
@@ -231,7 +233,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			{
 				runNr = rawdata_before;
 				eventNr = rawdata;
-				
+
 				if (fViewEnd < eventNr && fViewEnd != 0)
 				{
 					return -1;
@@ -246,7 +248,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 			{
 				unixtimestamp = rawdata_before;
 				timestamp_us = rawdata;
-				
+
 			}
 			if (wordCountEquipmentHeader == 20)
 			{
@@ -259,7 +261,7 @@ int RawdataParser::AnalyzeWord(int rawdata, int rawdata_before,
 				{
 					minFECID = fecID;
 				}
-			}		
+			}
 		}
 	}
 	if ((rawdata >> 8) == 0x41505a || (rawdata >> 8) == 0x414443)
@@ -393,6 +395,7 @@ void RawdataParser::AnalyzeEvent()
 		{
 			if (idata >= 9)
 			{
+				int chNo = (idata - 9) % NCH;
 				int stripNo = fRoot->GetStripNumber((idata - 9) % NCH);
 
 				//12 bit ADC value comes as 16 bit number
@@ -444,6 +447,7 @@ void RawdataParser::AnalyzeEvent()
 					}
 
 				}
+				//std::cout << chNo << " " << stripNo << " " <<  theTimeBin << std::endl;
 				//For each of the 128 strips, a vector is filled with the ADC values
 				//of the n time bins
 				//Data structure contains the full event (one APV)
@@ -586,10 +590,18 @@ void RawdataParser::ComputeCorrectedData(int theApvID)
 			}
 		}
 
-		if (TMath::Mean(timeBinADCs.begin(), timeBinADCs.end())
-				> fZsCut
-						* fRoot->GetStripPedestalNoise(fecID, theApvID,
-								stripNo))
+		if (fZsCut > 0)
+		{
+			if (TMath::Mean(timeBinADCs.begin(), timeBinADCs.end())
+					> fZsCut
+							* fRoot->GetStripPedestalNoise(fecID, theApvID,
+									stripNo))
+			{
+				fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
+						theApvID, stripNo, maxADC, timeBinMaxADC, timeBinADCs);
+			}
+		}
+		else
 		{
 			fRoot->AddHits(unixtimestamp, timestamp_us, eventNr, fecID,
 					theApvID, stripNo, maxADC, timeBinMaxADC, timeBinADCs);
