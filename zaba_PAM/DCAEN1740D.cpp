@@ -541,7 +541,7 @@ void DCAEN1740D::InitModule() {
    		 if(ret != CAEN_DGTZ_Success) std::cout << "[ERROR] CAEN_DGTZ_RUN_SYNC_TrgOutSinDaisyChain 2 " << CheckError(ret) << std::endl;
             
             /*HERE MUST BE CHANGED!!!!	to set correct group mask*/
-            ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x10A8, 0xF);         // group trigger mask
+        //    ret = CAEN_DGTZ_WriteRegister(m_Handle, 0x10A8, 0xF);         // group trigger mask
 		//CAEN_DGTZ_ReadRegister(m_Handle, 0x10a8, &read);
 		//cout << "Register 0x10a8: " << read << endl;
             CheckError(ret);
@@ -1750,8 +1750,6 @@ void DCAEN1740D::RegisterDump(){
     ret = CAEN_DGTZ_ReadRegister(m_Handle, address, &out);
     fprintf(fout, "(0x%X) Front Panel I/O Control\t0x%X\n", address, out);
     if(ret != CAEN_DGTZ_Success) fprintf(fout, "Errors during register dump.\n");
-    
-    
     
     
     /*
