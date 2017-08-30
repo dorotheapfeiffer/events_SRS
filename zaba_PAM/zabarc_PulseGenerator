@@ -21,7 +21,7 @@ SaveFileSize 100
 SaveFileTime 1000
  
 # Default path where the data is stored, if you do not set this parameter the path will be ./data
-DataPath /home/mb/ProveAMinchia/data
+DataPath ./data
  
 # Default file name, in the GUI version program will ask the user to set correct file name
 # The format of file name is: YYYY_MM_DD_hhmm_xxxxxx_nr.bin
@@ -30,7 +30,7 @@ DataPath /home/mb/ProveAMinchia/data
 # e.g is 2016 July 14, Thursday, 19:56 and you set filename measurement1
 #     the file name will be: 2016_07_14_1956_measurement1_000.bin
 #     then only the number will be increased, so 001, 002, 003, 004
-FileName 10HZ_
+FileName ppp_
  
 [CAEN 1740D.142]
 # ======= Channel input signal settings ==========

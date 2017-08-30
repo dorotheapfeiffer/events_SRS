@@ -141,6 +141,9 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
     m_ModuleID	     = 0x6004;
     m_Firmware	     = 1;
     m_Enabled        = 0;
+	
+	//std::cout<<"kjqebdqiwefxmqepwifxh3epzfie";
+//std::cout << "indirizzoss: " << addr << std::endl;
     
     UInt_t LinkNum = 0;
     UInt_t ConetNode = 0;
@@ -203,7 +206,7 @@ DModule((char*)"64 channels digitizer 62.5MHz",(char*)"CAEN v1740D",mdesc,addr) 
         m_GateWidthDPP[i] 		= 250;
         m_PulsePolarityDPP[i]	= 0;
         m_TriggerHoldOffDPP[i] 	= 350;
-        m_PreTriggerDPP[i]		= 100;
+        m_PreTriggerDPP[i]		= 150;
         m_ChargeSensitivityDPP[i]	= 0;
         m_TriggerSmoothingDPP[i]	= 0;
     }
@@ -692,12 +695,14 @@ void DCAEN1740D::ReadVME() {
 }
 //=============================================================================
 void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
-    
+	//int addr;
+//std::cout<<"addresso:"<<"addr"<< endl;
+  //  if(addr == 286392320){
     // this function could possibly goes to separate thread...
     //static flag = 0;
-    if( m_Size == 0 ) 
-      cout << "no data to display. " << endl;  //added by FraPi 
-    return; // no data to display, return
+    if( m_Size == 0 ) return;
+//      cout << "no data to display. " << endl;  //added by FraPi 
+   // return; // no data to display, return
     //UInt_t aEvent = 0;		     // otherwise we draw only the first event using gnuplot
     
     DKeyboard *dKeyboard = &DKeyboard::GetInstance();
@@ -708,7 +713,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
     if(first_time){
         gp << "set xrange  [" << 0 << ":" << m_RecordLengthDPP << "]\n";
         gp << "set xtics nomirror tc lt 0\n";
-        gp << "set x2range ["<< 0 << ":" << 16*m_RecordLengthDPP << "]\n";
+        gp << "set x2range ["<< 0 << ":" << 0.016*m_RecordLengthDPP << "]\n";
         gp << "set x2tics nomirror tc lt 0\n";
         gp << "set yrange  [0:4095] \n"; //65535] \n";
         gp << "set ytics nomirror tc lt 0\n";
@@ -787,7 +792,7 @@ void DCAEN1740D::GnuplotOnline(Gnuplot &gp){
 
 
     }
-    
+    //}
 }
 //-----------------------------------------------------------------------------
 void DCAEN1740D::StartAcq(){
@@ -816,7 +821,7 @@ void DCAEN1740D::StartAcq(){
         }
     }
     
-    //std::cout << "Alocate DPPWaveforms (gWaveforms).....\n";
+    std::cout << "Alocate DPPWaveforms (gWaveforms).....\n";
     ret = static_cast<CAEN_DGTZ_ErrorCode>(_CAEN_DGTZ_MallocDPPWaveforms(m_Handle, &gWaveforms, &gAllocatedSize));
     if (ret != CAEN_DGTZ_Success) std::cout << "Cannot allocate DPPWaveFormss " << ret << std::endl;
     

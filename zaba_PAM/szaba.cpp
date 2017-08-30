@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
    dAcquisition->BuildEvent();
    dAcquisition->DataSave();
    dAcquisition->ShowData(); // no arguments because we do not use graphics in the szaba version, prints only on the terminal
-   int delay = 0; // in millisecondi
+   int delay = 1; // in millisecondi
    std::this_thread::sleep_for(std::chrono::microseconds(1000*delay)); // converte in millisecondi
    //  cout << "*+*+*+*+*+*+*+*+*+*++*+**+*+*+++*+*+*+*+" << endl;
 
