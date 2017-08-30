@@ -9,7 +9,7 @@
 ConnectionType         USB                     # Connection link : USB / OPT
 ConnectionLinkNum        0                     # Connection Link number 
 ConnectionConetNode      0                     # Connection Node : Node Id in CONET daisy chain (0-7)
-ConnectionVmeBaseAddress 32100000              # VME Base Address : needed only for VME access via USB/Optical Bridge
+ConnectionVmeBaseAddress 11130000              # VME Base Address : needed only for VME access via USB/Optical Bridge
 
 #----------------------------------------------#
 # Acquisition setup                            # 
